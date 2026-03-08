@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --primary: #0070C0;
+  --primary-hover: #005696;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+}
+
+/* ── Excel cell flash animation ──────────────────────────────────────────────*/
+@keyframes cellFlash {
+  0%   { background-color: #bbf7d0; box-shadow: inset 0 0 0 2px #22c55e; }
+  60%  { background-color: #dcfce7; box-shadow: inset 0 0 0 1px #86efac; }
+  100% { background-color: transparent; box-shadow: none; }
+}
+
+.cell-flash {
+  animation: cellFlash 2.5s ease-out forwards;
+}
+
+/* ── Thin styled scrollbar for the Excel table area ──────────────────────── */
+.excel-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.excel-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+.excel-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.excel-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

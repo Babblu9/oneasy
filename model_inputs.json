@@ -1,0 +1,6058 @@
+{
+  "meta": {
+    "file": "Docty Healthcare - Business Plan.xlsx",
+    "model_type": "healthcare_financial_model",
+    "input_sheets": [
+      "A.I Revenue Streams - P1",
+      "Branch",
+      "A.IIOPEX",
+      "2. Basics"
+    ],
+    "computed_sheets": [
+      "Valuation",
+      "1. P&L (Only CR)",
+      "1. P&L",
+      "A. Data Needed",
+      "A.I Revenue Streams - P2",
+      "A.III CAPEX",
+      "B.I Sales - P1 (2)",
+      "B.I Sales - P1",
+      "B.I Sales - P2",
+      "B.II - OPEX",
+      "2.Total Project Cost",
+      "B.II OPEX - P1",
+      "3b. Costing - (Capital Exp) (2)",
+      "FA Schedule",
+      "3b. Costing - (Capital Exp)",
+      "Costing",
+      "5. Balance sheet",
+      "6. Ratios",
+      "DSCR",
+      "Repayment schedule",
+      "Phase 1",
+      "Phase 2",
+      "Sunk Cost",
+      "Branch Economics",
+      "Sheet1"
+    ],
+    "architecture": "3 input sheets → intermediate computation sheets → summary P&L. Branch count is the master multiplier: all revenues and all costs scale with it. Columns = time periods (years Y1-Y6). Rows = line items."
+  },
+  "input_impact_map": {
+    "branches (Branch!E)": {
+      "direct": [
+        "B.I Sales - P1",
+        "B.I Sales - P1 (2)",
+        "B.II OPEX - P1",
+        "B.II - OPEX"
+      ],
+      "indirect": [
+        "1. P&L",
+        "5. Balance sheet",
+        "6. Ratios",
+        "DSCR",
+        "Valuation"
+      ],
+      "note": "Changing branch count scales ALL revenue and ALL costs simultaneously"
+    },
+    "product price (A.I Revenue Streams!J col)": {
+      "direct": [
+        "B.I Sales - P1",
+        "B.I Sales - P1 (2)"
+      ],
+      "indirect": [
+        "1. P&L",
+        "Valuation"
+      ],
+      "note": "Affects revenue per unit sold"
+    },
+    "product qty formula (A.I Revenue Streams!H col)": {
+      "direct": [
+        "B.I Sales - P1",
+        "B.I Sales - P1 (2)"
+      ],
+      "indirect": [
+        "1. P&L",
+        "Valuation"
+      ],
+      "note": "Changes volume assumption for that product"
+    },
+    "growth rates (A.I Revenue Streams!L-V cols)": {
+      "direct": [
+        "B.I Sales - P1",
+        "B.I Sales - P1 (2)"
+      ],
+      "indirect": [
+        "1. P&L",
+        "6. Ratios",
+        "Valuation"
+      ],
+      "note": "Year-over-year revenue scaling"
+    },
+    "opex cost/month/branch (A.IIOPEX!I col)": {
+      "direct": [
+        "B.II OPEX - P1",
+        "B.II - OPEX"
+      ],
+      "indirect": [
+        "1. P&L",
+        "5. Balance sheet",
+        "DSCR"
+      ],
+      "note": "Scales with branch count. Main driver of cost structure"
+    },
+    "opex growth rates (A.IIOPEX!K-U cols)": {
+      "direct": [
+        "B.II OPEX - P1"
+      ],
+      "indirect": [
+        "1. P&L",
+        "DSCR"
+      ],
+      "note": "Cost escalation over time"
+    },
+    "subscriptions (Branch!J-L cols)": {
+      "direct": [
+        "B.I Sales - P2",
+        "B.II - OPEX"
+      ],
+      "indirect": [
+        "1. P&L"
+      ],
+      "note": "Marketplace/retail/corporate subscription volumes"
+    }
+  },
+  "revenue_streams": {
+    "schema": "revenue_streams",
+    "description": "Product-level revenue assumptions. Each product has a qty/branch formula, sale price, and year-over-year growth rates.",
+    "total_products": 153,
+    "branches_cell": "H7",
+    "branches_note": "H7 = number of branches. All qty formulas multiply by this.",
+    "streams": {
+      "Clinical Revenue": {
+        "Dental": [
+          {
+            "id": "1a",
+            "product": "Root Canal",
+            "qty_formula": "=2*4*H7",
+            "qty_note": "2*4*B  (B = no. of branches)",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H10",
+              "price": "J10",
+              "growth_Y2_monthly": "L10",
+              "growth_Y2_Y3": "N10",
+              "growth_Y3_Y4": "P10",
+              "growth_Y4_Y5": "R10",
+              "growth_Y5_Y6": "T10",
+              "growth_Y6_Y7": "V10"
+            }
+          },
+          {
+            "id": "1b",
+            "product": "Teeth Extraction",
+            "qty_formula": "=2*4*H7",
+            "qty_note": "2*4*B  (B = no. of branches)",
+            "price_inr": 1500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H11",
+              "price": "J11",
+              "growth_Y2_monthly": "L11",
+              "growth_Y2_Y3": "N11",
+              "growth_Y3_Y4": "P11",
+              "growth_Y4_Y5": "R11",
+              "growth_Y5_Y6": "T11",
+              "growth_Y6_Y7": "V11"
+            }
+          },
+          {
+            "id": "1c",
+            "product": "Wisdom tooth Removal",
+            "qty_formula": "=1*4*H7",
+            "qty_note": "1*4*B  (B = no. of branches)",
+            "price_inr": 5500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H12",
+              "price": "J12",
+              "growth_Y2_monthly": "L12",
+              "growth_Y2_Y3": "N12",
+              "growth_Y3_Y4": "P12",
+              "growth_Y4_Y5": "R12",
+              "growth_Y5_Y6": "T12",
+              "growth_Y6_Y7": "V12"
+            }
+          },
+          {
+            "id": "1d",
+            "product": "Implant",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 22000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H13",
+              "price": "J13",
+              "growth_Y2_monthly": "L13",
+              "growth_Y2_Y3": "N13",
+              "growth_Y3_Y4": "P13",
+              "growth_Y4_Y5": "R13",
+              "growth_Y5_Y6": "T13",
+              "growth_Y6_Y7": "V13"
+            }
+          },
+          {
+            "id": "None",
+            "product": "X Ray",
+            "qty_formula": "=10*30*H7",
+            "qty_note": "10*30*B  (B = no. of branches)",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H14",
+              "price": "J14",
+              "growth_Y2_monthly": "L14",
+              "growth_Y2_Y3": "N14",
+              "growth_Y3_Y4": "P14",
+              "growth_Y4_Y5": "R14",
+              "growth_Y5_Y6": "T14",
+              "growth_Y6_Y7": "V14"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Scaling",
+            "qty_formula": "=2*4*H7",
+            "qty_note": "2*4*B  (B = no. of branches)",
+            "price_inr": 1800.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H15",
+              "price": "J15",
+              "growth_Y2_monthly": "L15",
+              "growth_Y2_Y3": "N15",
+              "growth_Y3_Y4": "P15",
+              "growth_Y4_Y5": "R15",
+              "growth_Y5_Y6": "T15",
+              "growth_Y6_Y7": "V15"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Flap Surgery",
+            "qty_formula": "=1*H7",
+            "qty_note": "1*B  (B = no. of branches)",
+            "price_inr": 33000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H16",
+              "price": "J16",
+              "growth_Y2_monthly": "L16",
+              "growth_Y2_Y3": "N16",
+              "growth_Y3_Y4": "P16",
+              "growth_Y4_Y5": "R16",
+              "growth_Y5_Y6": "T16",
+              "growth_Y6_Y7": "V16"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Curetta (2-3 teeth)",
+            "qty_formula": "=4*H7",
+            "qty_note": "4*B  (B = no. of branches)",
+            "price_inr": 3700.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H17",
+              "price": "J17",
+              "growth_Y2_monthly": "L17",
+              "growth_Y2_Y3": "N17",
+              "growth_Y3_Y4": "P17",
+              "growth_Y4_Y5": "R17",
+              "growth_Y5_Y6": "T17",
+              "growth_Y6_Y7": "V17"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Complete Denture",
+            "qty_formula": "=0.5*H7",
+            "qty_note": "0.5*B  (B = no. of branches)",
+            "price_inr": 30000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H18",
+              "price": "J18",
+              "growth_Y2_monthly": "L18",
+              "growth_Y2_Y3": "N18",
+              "growth_Y3_Y4": "P18",
+              "growth_Y4_Y5": "R18",
+              "growth_Y5_Y6": "T18",
+              "growth_Y6_Y7": "V18"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Comple Denture (BPS Denture)",
+            "qty_formula": "=0.5*H7",
+            "qty_note": "0.5*B  (B = no. of branches)",
+            "price_inr": 47000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H19",
+              "price": "J19",
+              "growth_Y2_monthly": "L19",
+              "growth_Y2_Y3": "N19",
+              "growth_Y3_Y4": "P19",
+              "growth_Y4_Y5": "R19",
+              "growth_Y5_Y6": "T19",
+              "growth_Y6_Y7": "V19"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Removable Partial Denture",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 1500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H20",
+              "price": "J20",
+              "growth_Y2_monthly": "L20",
+              "growth_Y2_Y3": "N20",
+              "growth_Y3_Y4": "P20",
+              "growth_Y4_Y5": "R20",
+              "growth_Y5_Y6": "T20",
+              "growth_Y6_Y7": "V20"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Filling",
+            "qty_formula": "=2*30*H7",
+            "qty_note": "2*30*B  (B = no. of branches)",
+            "price_inr": 1500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H21",
+              "price": "J21",
+              "growth_Y2_monthly": "L21",
+              "growth_Y2_Y3": "N21",
+              "growth_Y3_Y4": "P21",
+              "growth_Y4_Y5": "R21",
+              "growth_Y5_Y6": "T21",
+              "growth_Y6_Y7": "V21"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Crowns",
+            "qty_formula": "=4*H7",
+            "qty_note": "4*B  (B = no. of branches)",
+            "price_inr": 5000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H22",
+              "price": "J22",
+              "growth_Y2_monthly": "L22",
+              "growth_Y2_Y3": "N22",
+              "growth_Y3_Y4": "P22",
+              "growth_Y4_Y5": "R22",
+              "growth_Y5_Y6": "T22",
+              "growth_Y6_Y7": "V22"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Crowns Zircornia",
+            "qty_formula": "=4*H7",
+            "qty_note": "4*B  (B = no. of branches)",
+            "price_inr": 10000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H23",
+              "price": "J23",
+              "growth_Y2_monthly": "L23",
+              "growth_Y2_Y3": "N23",
+              "growth_Y3_Y4": "P23",
+              "growth_Y4_Y5": "R23",
+              "growth_Y5_Y6": "T23",
+              "growth_Y6_Y7": "V23"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Bruxzir (Lifetime)",
+            "qty_formula": "=1*H7",
+            "qty_note": "1*B  (B = no. of branches)",
+            "price_inr": 20000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H24",
+              "price": "J24",
+              "growth_Y2_monthly": "L24",
+              "growth_Y2_Y3": "N24",
+              "growth_Y3_Y4": "P24",
+              "growth_Y4_Y5": "R24",
+              "growth_Y5_Y6": "T24",
+              "growth_Y6_Y7": "V24"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Metal Braces",
+            "qty_formula": "=0.25*H7",
+            "qty_note": "0.25*B  (B = no. of branches)",
+            "price_inr": 30000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H25",
+              "price": "J25",
+              "growth_Y2_monthly": "L25",
+              "growth_Y2_Y3": "N25",
+              "growth_Y3_Y4": "P25",
+              "growth_Y4_Y5": "R25",
+              "growth_Y5_Y6": "T25",
+              "growth_Y6_Y7": "V25"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ceramics Braces",
+            "qty_formula": "=0.25*H7",
+            "qty_note": "0.25*B  (B = no. of branches)",
+            "price_inr": 45000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H26",
+              "price": "J26",
+              "growth_Y2_monthly": "L26",
+              "growth_Y2_Y3": "N26",
+              "growth_Y3_Y4": "P26",
+              "growth_Y4_Y5": "R26",
+              "growth_Y5_Y6": "T26",
+              "growth_Y6_Y7": "V26"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Metal Braces(Self Ligating)",
+            "qty_formula": "=0.25*H7",
+            "qty_note": "0.25*B  (B = no. of branches)",
+            "price_inr": 55000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H27",
+              "price": "J27",
+              "growth_Y2_monthly": "L27",
+              "growth_Y2_Y3": "N27",
+              "growth_Y3_Y4": "P27",
+              "growth_Y4_Y5": "R27",
+              "growth_Y5_Y6": "T27",
+              "growth_Y6_Y7": "V27"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ceramics Braces (Self Ligating)",
+            "qty_formula": "=0.25*H7",
+            "qty_note": "0.25*B  (B = no. of branches)",
+            "price_inr": 65000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H28",
+              "price": "J28",
+              "growth_Y2_monthly": "L28",
+              "growth_Y2_Y3": "N28",
+              "growth_Y3_Y4": "P28",
+              "growth_Y4_Y5": "R28",
+              "growth_Y5_Y6": "T28",
+              "growth_Y6_Y7": "V28"
+            }
+          }
+        ],
+        "General Physician": [
+          {
+            "id": "None",
+            "product": "Consultation",
+            "qty_formula": "=20*30*H7",
+            "qty_note": "20*30*B  (B = no. of branches)",
+            "price_inr": 500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H31",
+              "price": "J31",
+              "growth_Y2_monthly": "L31",
+              "growth_Y2_Y3": "N31",
+              "growth_Y3_Y4": "P31",
+              "growth_Y4_Y5": "R31",
+              "growth_Y5_Y6": "T31",
+              "growth_Y6_Y7": "V31"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Medical Certificate",
+            "qty_formula": "=30*H7",
+            "qty_note": "30*B  (B = no. of branches)",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H32",
+              "price": "J32",
+              "growth_Y2_monthly": "L32",
+              "growth_Y2_Y3": "N32",
+              "growth_Y3_Y4": "P32",
+              "growth_Y4_Y5": "R32",
+              "growth_Y5_Y6": "T32",
+              "growth_Y6_Y7": "V32"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Fit to Fly Certificate",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H33",
+              "price": "J33",
+              "growth_Y2_monthly": "L33",
+              "growth_Y2_Y3": "N33",
+              "growth_Y3_Y4": "P33",
+              "growth_Y4_Y5": "R33",
+              "growth_Y5_Y6": "T33",
+              "growth_Y6_Y7": "V33"
+            }
+          }
+        ],
+        "Physio": [
+          {
+            "id": "None",
+            "product": "Excercises",
+            "qty_formula": "=1*30*H7",
+            "qty_note": "1*30*B  (B = no. of branches)",
+            "price_inr": 500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H36",
+              "price": "J36",
+              "growth_Y2_monthly": "L36",
+              "growth_Y2_Y3": "N36",
+              "growth_Y3_Y4": "P36",
+              "growth_Y4_Y5": "R36",
+              "growth_Y5_Y6": "T36",
+              "growth_Y6_Y7": "V36"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Interferentail Therapy(IFT)-Single",
+            "qty_formula": "=30*H7",
+            "qty_note": "30*B  (B = no. of branches)",
+            "price_inr": 700.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H37",
+              "price": "J37",
+              "growth_Y2_monthly": "L37",
+              "growth_Y2_Y3": "N37",
+              "growth_Y3_Y4": "P37",
+              "growth_Y4_Y5": "R37",
+              "growth_Y5_Y6": "T37",
+              "growth_Y6_Y7": "V37"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Interferentail Therapy(IFT)-Standard package",
+            "qty_formula": "=2*4*H7",
+            "qty_note": "2*4*B  (B = no. of branches)",
+            "price_inr": 3000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H38",
+              "price": "J38",
+              "growth_Y2_monthly": "L38",
+              "growth_Y2_Y3": "N38",
+              "growth_Y3_Y4": "P38",
+              "growth_Y4_Y5": "R38",
+              "growth_Y5_Y6": "T38",
+              "growth_Y6_Y7": "V38"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Interferentail Therapy(IFT)-Advance package",
+            "qty_formula": "=2*4*H7",
+            "qty_note": "2*4*B  (B = no. of branches)",
+            "price_inr": 5500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H39",
+              "price": "J39",
+              "growth_Y2_monthly": "L39",
+              "growth_Y2_Y3": "N39",
+              "growth_Y3_Y4": "P39",
+              "growth_Y4_Y5": "R39",
+              "growth_Y5_Y6": "T39",
+              "growth_Y6_Y7": "V39"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Therapy (UST) - Single",
+            "qty_formula": "=30*H7",
+            "qty_note": "30*B  (B = no. of branches)",
+            "price_inr": 600.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H40",
+              "price": "J40",
+              "growth_Y2_monthly": "L40",
+              "growth_Y2_Y3": "N40",
+              "growth_Y3_Y4": "P40",
+              "growth_Y4_Y5": "R40",
+              "growth_Y5_Y6": "T40",
+              "growth_Y6_Y7": "V40"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Therapy (UST) - Standard Package",
+            "qty_formula": "=2*4*H7",
+            "qty_note": "2*4*B  (B = no. of branches)",
+            "price_inr": 3000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H41",
+              "price": "J41",
+              "growth_Y2_monthly": "L41",
+              "growth_Y2_Y3": "N41",
+              "growth_Y3_Y4": "P41",
+              "growth_Y4_Y5": "R41",
+              "growth_Y5_Y6": "T41",
+              "growth_Y6_Y7": "V41"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Therapy (UST) - Advance Package",
+            "qty_formula": "=2*4*H7",
+            "qty_note": "2*4*B  (B = no. of branches)",
+            "price_inr": 5500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H42",
+              "price": "J42",
+              "growth_Y2_monthly": "L42",
+              "growth_Y2_Y3": "N42",
+              "growth_Y3_Y4": "P42",
+              "growth_Y4_Y5": "R42",
+              "growth_Y5_Y6": "T42",
+              "growth_Y6_Y7": "V42"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Muscle Stimulation -Single",
+            "qty_formula": "=30*H7",
+            "qty_note": "30*B  (B = no. of branches)",
+            "price_inr": 800.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H43",
+              "price": "J43",
+              "growth_Y2_monthly": "L43",
+              "growth_Y2_Y3": "N43",
+              "growth_Y3_Y4": "P43",
+              "growth_Y4_Y5": "R43",
+              "growth_Y5_Y6": "T43",
+              "growth_Y6_Y7": "V43"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Muscle Stimulation -Standard Package",
+            "qty_formula": "=2*4*H7",
+            "qty_note": "2*4*B  (B = no. of branches)",
+            "price_inr": 3000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H44",
+              "price": "J44",
+              "growth_Y2_monthly": "L44",
+              "growth_Y2_Y3": "N44",
+              "growth_Y3_Y4": "P44",
+              "growth_Y4_Y5": "R44",
+              "growth_Y5_Y6": "T44",
+              "growth_Y6_Y7": "V44"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Muscle Stimulation -Advance Package",
+            "qty_formula": "=2*4*H7",
+            "qty_note": "2*4*B  (B = no. of branches)",
+            "price_inr": 5500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H45",
+              "price": "J45",
+              "growth_Y2_monthly": "L45",
+              "growth_Y2_Y3": "N45",
+              "growth_Y3_Y4": "P45",
+              "growth_Y4_Y5": "R45",
+              "growth_Y5_Y6": "T45",
+              "growth_Y6_Y7": "V45"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IFT+UST-Single",
+            "qty_formula": "=8*H7",
+            "qty_note": "8*B  (B = no. of branches)",
+            "price_inr": 1200.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H46",
+              "price": "J46",
+              "growth_Y2_monthly": "L46",
+              "growth_Y2_Y3": "N46",
+              "growth_Y3_Y4": "P46",
+              "growth_Y4_Y5": "R46",
+              "growth_Y5_Y6": "T46",
+              "growth_Y6_Y7": "V46"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IFT+UST-Standard",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 5000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H47",
+              "price": "J47",
+              "growth_Y2_monthly": "L47",
+              "growth_Y2_Y3": "N47",
+              "growth_Y3_Y4": "P47",
+              "growth_Y4_Y5": "R47",
+              "growth_Y5_Y6": "T47",
+              "growth_Y6_Y7": "V47"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IFT+UST-Advance",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 9000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H48",
+              "price": "J48",
+              "growth_Y2_monthly": "L48",
+              "growth_Y2_Y3": "N48",
+              "growth_Y3_Y4": "P48",
+              "growth_Y4_Y5": "R48",
+              "growth_Y5_Y6": "T48",
+              "growth_Y6_Y7": "V48"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IFT+UST+Exercises-Single",
+            "qty_formula": "=8*H7",
+            "qty_note": "8*B  (B = no. of branches)",
+            "price_inr": 1300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H49",
+              "price": "J49",
+              "growth_Y2_monthly": "L49",
+              "growth_Y2_Y3": "N49",
+              "growth_Y3_Y4": "P49",
+              "growth_Y4_Y5": "R49",
+              "growth_Y5_Y6": "T49",
+              "growth_Y6_Y7": "V49"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IFT+UST+Exercises-Standard",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 5500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H50",
+              "price": "J50",
+              "growth_Y2_monthly": "L50",
+              "growth_Y2_Y3": "N50",
+              "growth_Y3_Y4": "P50",
+              "growth_Y4_Y5": "R50",
+              "growth_Y5_Y6": "T50",
+              "growth_Y6_Y7": "V50"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IFT+UST+Exercises-Advance",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 9500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H51",
+              "price": "J51",
+              "growth_Y2_monthly": "L51",
+              "growth_Y2_Y3": "N51",
+              "growth_Y3_Y4": "P51",
+              "growth_Y4_Y5": "R51",
+              "growth_Y5_Y6": "T51",
+              "growth_Y6_Y7": "V51"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IFT+Exercises-Single",
+            "qty_formula": "=8*H7",
+            "qty_note": "8*B  (B = no. of branches)",
+            "price_inr": 800.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H52",
+              "price": "J52",
+              "growth_Y2_monthly": "L52",
+              "growth_Y2_Y3": "N52",
+              "growth_Y3_Y4": "P52",
+              "growth_Y4_Y5": "R52",
+              "growth_Y5_Y6": "T52",
+              "growth_Y6_Y7": "V52"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IFT+Exercises-Standard",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 3500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H53",
+              "price": "J53",
+              "growth_Y2_monthly": "L53",
+              "growth_Y2_Y3": "N53",
+              "growth_Y3_Y4": "P53",
+              "growth_Y4_Y5": "R53",
+              "growth_Y5_Y6": "T53",
+              "growth_Y6_Y7": "V53"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IFT+Exercises-Advance",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 6000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H54",
+              "price": "J54",
+              "growth_Y2_monthly": "L54",
+              "growth_Y2_Y3": "N54",
+              "growth_Y3_Y4": "P54",
+              "growth_Y4_Y5": "R54",
+              "growth_Y5_Y6": "T54",
+              "growth_Y6_Y7": "V54"
+            }
+          },
+          {
+            "id": "None",
+            "product": "UST+Exercises-Single",
+            "qty_formula": "=8*H7",
+            "qty_note": "8*B  (B = no. of branches)",
+            "price_inr": 700.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H55",
+              "price": "J55",
+              "growth_Y2_monthly": "L55",
+              "growth_Y2_Y3": "N55",
+              "growth_Y3_Y4": "P55",
+              "growth_Y4_Y5": "R55",
+              "growth_Y5_Y6": "T55",
+              "growth_Y6_Y7": "V55"
+            }
+          },
+          {
+            "id": "None",
+            "product": "UST+Exercises-Standard",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 3000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H56",
+              "price": "J56",
+              "growth_Y2_monthly": "L56",
+              "growth_Y2_Y3": "N56",
+              "growth_Y3_Y4": "P56",
+              "growth_Y4_Y5": "R56",
+              "growth_Y5_Y6": "T56",
+              "growth_Y6_Y7": "V56"
+            }
+          },
+          {
+            "id": "None",
+            "product": "UST+Exercises-Advance",
+            "qty_formula": "=2*H7",
+            "qty_note": "2*B  (B = no. of branches)",
+            "price_inr": 5000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H57",
+              "price": "J57",
+              "growth_Y2_monthly": "L57",
+              "growth_Y2_Y3": "N57",
+              "growth_Y3_Y4": "P57",
+              "growth_Y4_Y5": "R57",
+              "growth_Y5_Y6": "T57",
+              "growth_Y6_Y7": "V57"
+            }
+          }
+        ],
+        "DayCare": [
+          {
+            "id": "None",
+            "product": "IV fluid therapy",
+            "qty_formula": "=30*H7",
+            "qty_note": "30*B  (B = no. of branches)",
+            "price_inr": 250.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H60",
+              "price": "J60",
+              "growth_Y2_monthly": "L60",
+              "growth_Y2_Y3": "N60",
+              "growth_Y3_Y4": "P60",
+              "growth_Y4_Y5": "R60",
+              "growth_Y5_Y6": "T60",
+              "growth_Y6_Y7": "V60"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IM/IV Injection",
+            "qty_formula": "=10*30*H7",
+            "qty_note": "10*30*B  (B = no. of branches)",
+            "price_inr": 100.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H61",
+              "price": "J61",
+              "growth_Y2_monthly": "L61",
+              "growth_Y2_Y3": "N61",
+              "growth_Y3_Y4": "P61",
+              "growth_Y4_Y5": "R61",
+              "growth_Y5_Y6": "T61",
+              "growth_Y6_Y7": "V61"
+            }
+          },
+          {
+            "id": "None",
+            "product": "GRBS checking",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H62",
+              "price": "J62",
+              "growth_Y2_monthly": "L62",
+              "growth_Y2_Y3": "N62",
+              "growth_Y3_Y4": "P62",
+              "growth_Y4_Y5": "R62",
+              "growth_Y5_Y6": "T62",
+              "growth_Y6_Y7": "V62"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Foleys Catheterization",
+            "qty_formula": "=5*H7",
+            "qty_note": "5*B  (B = no. of branches)",
+            "price_inr": 500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H63",
+              "price": "J63",
+              "growth_Y2_monthly": "L63",
+              "growth_Y2_Y3": "N63",
+              "growth_Y3_Y4": "P63",
+              "growth_Y4_Y5": "R63",
+              "growth_Y5_Y6": "T63",
+              "growth_Y6_Y7": "V63"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Wound Dressing",
+            "qty_formula": "=10*4*H7",
+            "qty_note": "10*4*B  (B = no. of branches)",
+            "price_inr": 100.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H64",
+              "price": "J64",
+              "growth_Y2_monthly": "L64",
+              "growth_Y2_Y3": "N64",
+              "growth_Y3_Y4": "P64",
+              "growth_Y4_Y5": "R64",
+              "growth_Y5_Y6": "T64",
+              "growth_Y6_Y7": "V64"
+            }
+          },
+          {
+            "id": "None",
+            "product": "IV Cannulaization",
+            "qty_formula": "=20*H7",
+            "qty_note": "20*B  (B = no. of branches)",
+            "price_inr": 150.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H65",
+              "price": "J65",
+              "growth_Y2_monthly": "L65",
+              "growth_Y2_Y3": "N65",
+              "growth_Y3_Y4": "P65",
+              "growth_Y4_Y5": "R65",
+              "growth_Y5_Y6": "T65",
+              "growth_Y6_Y7": "V65"
+            }
+          }
+        ]
+      },
+      "Docty Pharma": {
+        "DayCare": [
+          {
+            "id": "2a",
+            "product": "Ethical drugs",
+            "qty_formula": "=30*30*H7",
+            "qty_note": "30*30*B  (B = no. of branches)",
+            "price_inr": 500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H70",
+              "price": "J70",
+              "growth_Y2_monthly": "L70",
+              "growth_Y2_Y3": "N70",
+              "growth_Y3_Y4": "P70",
+              "growth_Y4_Y5": "R70",
+              "growth_Y5_Y6": "T70",
+              "growth_Y6_Y7": "V70"
+            }
+          },
+          {
+            "id": "2b",
+            "product": "Generic drugs",
+            "qty_formula": "=50*30*H7",
+            "qty_note": "50*30*B  (B = no. of branches)",
+            "price_inr": 200.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H71",
+              "price": "J71",
+              "growth_Y2_monthly": "L71",
+              "growth_Y2_Y3": "N71",
+              "growth_Y3_Y4": "P71",
+              "growth_Y4_Y5": "R71",
+              "growth_Y5_Y6": "T71",
+              "growth_Y6_Y7": "V71"
+            }
+          },
+          {
+            "id": "2c",
+            "product": "Nurtraceuticals",
+            "qty_formula": "=10*50*H7",
+            "qty_note": "10*50*B  (B = no. of branches)",
+            "price_inr": 700.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H72",
+              "price": "J72",
+              "growth_Y2_monthly": "L72",
+              "growth_Y2_Y3": "N72",
+              "growth_Y3_Y4": "P72",
+              "growth_Y4_Y5": "R72",
+              "growth_Y5_Y6": "T72",
+              "growth_Y6_Y7": "V72"
+            }
+          },
+          {
+            "id": "2d",
+            "product": "FMCG",
+            "qty_formula": "=20*30*H7",
+            "qty_note": "20*30*B  (B = no. of branches)",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H73",
+              "price": "J73",
+              "growth_Y2_monthly": "L73",
+              "growth_Y2_Y3": "N73",
+              "growth_Y3_Y4": "P73",
+              "growth_Y4_Y5": "R73",
+              "growth_Y5_Y6": "T73",
+              "growth_Y6_Y7": "V73"
+            }
+          },
+          {
+            "id": "2e",
+            "product": "Surgicals",
+            "qty_formula": "=10*30*H7",
+            "qty_note": "10*30*B  (B = no. of branches)",
+            "price_inr": 500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H74",
+              "price": "J74",
+              "growth_Y2_monthly": "L74",
+              "growth_Y2_Y3": "N74",
+              "growth_Y3_Y4": "P74",
+              "growth_Y4_Y5": "R74",
+              "growth_Y5_Y6": "T74",
+              "growth_Y6_Y7": "V74"
+            }
+          }
+        ]
+      },
+      "Lab & Diagnostics": {
+        "Packages": [
+          {
+            "id": "None",
+            "product": "Minor-Surgical Profile",
+            "qty_formula": "=3*30*H7",
+            "qty_note": "3*30*B  (B = no. of branches)",
+            "price_inr": 1500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H88",
+              "price": "J88",
+              "growth_Y2_monthly": "L88",
+              "growth_Y2_Y3": "N88",
+              "growth_Y3_Y4": "P88",
+              "growth_Y4_Y5": "R88",
+              "growth_Y5_Y6": "T88",
+              "growth_Y6_Y7": "V88"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Fever Profile",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H89",
+              "price": "J89",
+              "growth_Y2_monthly": "L89",
+              "growth_Y2_Y3": "N89",
+              "growth_Y3_Y4": "P89",
+              "growth_Y4_Y5": "R89",
+              "growth_Y5_Y6": "T89",
+              "growth_Y6_Y7": "V89"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Cardiac Profile",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H90",
+              "price": "J90",
+              "growth_Y2_monthly": "L90",
+              "growth_Y2_Y3": "N90",
+              "growth_Y3_Y4": "P90",
+              "growth_Y4_Y5": "R90",
+              "growth_Y5_Y6": "T90",
+              "growth_Y6_Y7": "V90"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Diabetic Proflie",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H91",
+              "price": "J91",
+              "growth_Y2_monthly": "L91",
+              "growth_Y2_Y3": "N91",
+              "growth_Y3_Y4": "P91",
+              "growth_Y4_Y5": "R91",
+              "growth_Y5_Y6": "T91",
+              "growth_Y6_Y7": "V91"
+            }
+          },
+          {
+            "id": "None",
+            "product": "General Health Check-Basic",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H92",
+              "price": "J92",
+              "growth_Y2_monthly": "L92",
+              "growth_Y2_Y3": "N92",
+              "growth_Y3_Y4": "P92",
+              "growth_Y4_Y5": "R92",
+              "growth_Y5_Y6": "T92",
+              "growth_Y6_Y7": "V92"
+            }
+          },
+          {
+            "id": "None",
+            "product": "General Health Check-Basic Plus",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H93",
+              "price": "J93",
+              "growth_Y2_monthly": "L93",
+              "growth_Y2_Y3": "N93",
+              "growth_Y3_Y4": "P93",
+              "growth_Y4_Y5": "R93",
+              "growth_Y5_Y6": "T93",
+              "growth_Y6_Y7": "V93"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Master Health Checkup",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H94",
+              "price": "J94",
+              "growth_Y2_monthly": "L94",
+              "growth_Y2_Y3": "N94",
+              "growth_Y3_Y4": "P94",
+              "growth_Y4_Y5": "R94",
+              "growth_Y5_Y6": "T94",
+              "growth_Y6_Y7": "V94"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Master Health Checkup Plus",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H95",
+              "price": "J95",
+              "growth_Y2_monthly": "L95",
+              "growth_Y2_Y3": "N95",
+              "growth_Y3_Y4": "P95",
+              "growth_Y4_Y5": "R95",
+              "growth_Y5_Y6": "T95",
+              "growth_Y6_Y7": "V95"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Monsoon Checkups Basic",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H96",
+              "price": "J96",
+              "growth_Y2_monthly": "L96",
+              "growth_Y2_Y3": "N96",
+              "growth_Y3_Y4": "P96",
+              "growth_Y4_Y5": "R96",
+              "growth_Y5_Y6": "T96",
+              "growth_Y6_Y7": "V96"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Monsoon Checkups Advanced",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H97",
+              "price": "J97",
+              "growth_Y2_monthly": "L97",
+              "growth_Y2_Y3": "N97",
+              "growth_Y3_Y4": "P97",
+              "growth_Y4_Y5": "R97",
+              "growth_Y5_Y6": "T97",
+              "growth_Y6_Y7": "V97"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Women Checkup-Basic",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H98",
+              "price": "J98",
+              "growth_Y2_monthly": "L98",
+              "growth_Y2_Y3": "N98",
+              "growth_Y3_Y4": "P98",
+              "growth_Y4_Y5": "R98",
+              "growth_Y5_Y6": "T98",
+              "growth_Y6_Y7": "V98"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Women Checkup-Basic Plus",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H99",
+              "price": "J99",
+              "growth_Y2_monthly": "L99",
+              "growth_Y2_Y3": "N99",
+              "growth_Y3_Y4": "P99",
+              "growth_Y4_Y5": "R99",
+              "growth_Y5_Y6": "T99",
+              "growth_Y6_Y7": "V99"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Women Checkup-Comprehensive",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H100",
+              "price": "J100",
+              "growth_Y2_monthly": "L100",
+              "growth_Y2_Y3": "N100",
+              "growth_Y3_Y4": "P100",
+              "growth_Y4_Y5": "R100",
+              "growth_Y5_Y6": "T100",
+              "growth_Y6_Y7": "V100"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Women Checkup-Comprehensive Plus",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H101",
+              "price": "J101",
+              "growth_Y2_monthly": "L101",
+              "growth_Y2_Y3": "N101",
+              "growth_Y3_Y4": "P101",
+              "growth_Y4_Y5": "R101",
+              "growth_Y5_Y6": "T101",
+              "growth_Y6_Y7": "V101"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Women Checkup-Advanced",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H102",
+              "price": "J102",
+              "growth_Y2_monthly": "L102",
+              "growth_Y2_Y3": "N102",
+              "growth_Y3_Y4": "P102",
+              "growth_Y4_Y5": "R102",
+              "growth_Y5_Y6": "T102",
+              "growth_Y6_Y7": "V102"
+            }
+          }
+        ],
+        "Diagnostics": [
+          {
+            "id": "None",
+            "product": "X-Ray",
+            "qty_formula": "=10*30*H7",
+            "qty_note": "10*30*B  (B = no. of branches)",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H104",
+              "price": "J104",
+              "growth_Y2_monthly": "L104",
+              "growth_Y2_Y3": "N104",
+              "growth_Y3_Y4": "P104",
+              "growth_Y4_Y5": "R104",
+              "growth_Y5_Y6": "T104",
+              "growth_Y6_Y7": "V104"
+            }
+          },
+          {
+            "id": "None",
+            "product": "2D Echo",
+            "qty_formula": "=10*30*H7",
+            "qty_note": "10*30*B  (B = no. of branches)",
+            "price_inr": 1000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H105",
+              "price": "J105",
+              "growth_Y2_monthly": "L105",
+              "growth_Y2_Y3": "N105",
+              "growth_Y3_Y4": "P105",
+              "growth_Y4_Y5": "R105",
+              "growth_Y5_Y6": "T105",
+              "growth_Y6_Y7": "V105"
+            }
+          },
+          {
+            "id": "None",
+            "product": "ECG",
+            "qty_formula": "=10*30*H7",
+            "qty_note": "10*30*B  (B = no. of branches)",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H106",
+              "price": "J106",
+              "growth_Y2_monthly": "L106",
+              "growth_Y2_Y3": "N106",
+              "growth_Y3_Y4": "P106",
+              "growth_Y4_Y5": "R106",
+              "growth_Y5_Y6": "T106",
+              "growth_Y6_Y7": "V106"
+            }
+          }
+        ],
+        "Radiology-USD": [
+          {
+            "id": "None",
+            "product": "Ultrasound Whole Abdomen",
+            "qty_formula": "=4*30*H7",
+            "qty_note": "4*30*B  (B = no. of branches)",
+            "price_inr": 1500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H108",
+              "price": "J108",
+              "growth_Y2_monthly": "L108",
+              "growth_Y2_Y3": "N108",
+              "growth_Y3_Y4": "P108",
+              "growth_Y4_Y5": "R108",
+              "growth_Y5_Y6": "T108",
+              "growth_Y6_Y7": "V108"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasoundscanning Folicular Study-1 Sitting",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H109",
+              "price": "J109",
+              "growth_Y2_monthly": "L109",
+              "growth_Y2_Y3": "N109",
+              "growth_Y3_Y4": "P109",
+              "growth_Y4_Y5": "R109",
+              "growth_Y5_Y6": "T109",
+              "growth_Y6_Y7": "V109"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasoundscanning Folicular Study-3 Sitting",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H110",
+              "price": "J110",
+              "growth_Y2_monthly": "L110",
+              "growth_Y2_Y3": "N110",
+              "growth_Y3_Y4": "P110",
+              "growth_Y4_Y5": "R110",
+              "growth_Y5_Y6": "T110",
+              "growth_Y6_Y7": "V110"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Pelvis",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H111",
+              "price": "J111",
+              "growth_Y2_monthly": "L111",
+              "growth_Y2_Y3": "N111",
+              "growth_Y3_Y4": "P111",
+              "growth_Y4_Y5": "R111",
+              "growth_Y5_Y6": "T111",
+              "growth_Y6_Y7": "V111"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Small Parts",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H112",
+              "price": "J112",
+              "growth_Y2_monthly": "L112",
+              "growth_Y2_Y3": "N112",
+              "growth_Y3_Y4": "P112",
+              "growth_Y4_Y5": "R112",
+              "growth_Y5_Y6": "T112",
+              "growth_Y6_Y7": "V112"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Neck",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H113",
+              "price": "J113",
+              "growth_Y2_monthly": "L113",
+              "growth_Y2_Y3": "N113",
+              "growth_Y3_Y4": "P113",
+              "growth_Y4_Y5": "R113",
+              "growth_Y5_Y6": "T113",
+              "growth_Y6_Y7": "V113"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound NT Scan",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H114",
+              "price": "J114",
+              "growth_Y2_monthly": "L114",
+              "growth_Y2_Y3": "N114",
+              "growth_Y3_Y4": "P114",
+              "growth_Y4_Y5": "R114",
+              "growth_Y5_Y6": "T114",
+              "growth_Y6_Y7": "V114"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Early Preganancy",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H115",
+              "price": "J115",
+              "growth_Y2_monthly": "L115",
+              "growth_Y2_Y3": "N115",
+              "growth_Y3_Y4": "P115",
+              "growth_Y4_Y5": "R115",
+              "growth_Y5_Y6": "T115",
+              "growth_Y6_Y7": "V115"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Upper Abdomen",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H116",
+              "price": "J116",
+              "growth_Y2_monthly": "L116",
+              "growth_Y2_Y3": "N116",
+              "growth_Y3_Y4": "P116",
+              "growth_Y4_Y5": "R116",
+              "growth_Y5_Y6": "T116",
+              "growth_Y6_Y7": "V116"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Doppler Antenantal",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H117",
+              "price": "J117",
+              "growth_Y2_monthly": "L117",
+              "growth_Y2_Y3": "N117",
+              "growth_Y3_Y4": "P117",
+              "growth_Y4_Y5": "R117",
+              "growth_Y5_Y6": "T117",
+              "growth_Y6_Y7": "V117"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Doppler Carotid",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H118",
+              "price": "J118",
+              "growth_Y2_monthly": "L118",
+              "growth_Y2_Y3": "N118",
+              "growth_Y3_Y4": "P118",
+              "growth_Y4_Y5": "R118",
+              "growth_Y5_Y6": "T118",
+              "growth_Y6_Y7": "V118"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Doppler peripheral arterial (Unilateral)",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H119",
+              "price": "J119",
+              "growth_Y2_monthly": "L119",
+              "growth_Y2_Y3": "N119",
+              "growth_Y3_Y4": "P119",
+              "growth_Y4_Y5": "R119",
+              "growth_Y5_Y6": "T119",
+              "growth_Y6_Y7": "V119"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Peripheral Venous Doppler (Bilateral)",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H120",
+              "price": "J120",
+              "growth_Y2_monthly": "L120",
+              "growth_Y2_Y3": "N120",
+              "growth_Y3_Y4": "P120",
+              "growth_Y4_Y5": "R120",
+              "growth_Y5_Y6": "T120",
+              "growth_Y6_Y7": "V120"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound of Breast",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H121",
+              "price": "J121",
+              "growth_Y2_monthly": "L121",
+              "growth_Y2_Y3": "N121",
+              "growth_Y3_Y4": "P121",
+              "growth_Y4_Y5": "R121",
+              "growth_Y5_Y6": "T121",
+              "growth_Y6_Y7": "V121"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Antenantal",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H122",
+              "price": "J122",
+              "growth_Y2_monthly": "L122",
+              "growth_Y2_Y3": "N122",
+              "growth_Y3_Y4": "P122",
+              "growth_Y4_Y5": "R122",
+              "growth_Y5_Y6": "T122",
+              "growth_Y6_Y7": "V122"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound-Trans Vaginal Scan",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H123",
+              "price": "J123",
+              "growth_Y2_monthly": "L123",
+              "growth_Y2_Y3": "N123",
+              "growth_Y3_Y4": "P123",
+              "growth_Y4_Y5": "R123",
+              "growth_Y5_Y6": "T123",
+              "growth_Y6_Y7": "V123"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Soft Parts",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H124",
+              "price": "J124",
+              "growth_Y2_monthly": "L124",
+              "growth_Y2_Y3": "N124",
+              "growth_Y3_Y4": "P124",
+              "growth_Y4_Y5": "R124",
+              "growth_Y5_Y6": "T124",
+              "growth_Y6_Y7": "V124"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Scrotal",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H125",
+              "price": "J125",
+              "growth_Y2_monthly": "L125",
+              "growth_Y2_Y3": "N125",
+              "growth_Y3_Y4": "P125",
+              "growth_Y4_Y5": "R125",
+              "growth_Y5_Y6": "T125",
+              "growth_Y6_Y7": "V125"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Neuro Sonography",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H126",
+              "price": "J126",
+              "growth_Y2_monthly": "L126",
+              "growth_Y2_Y3": "N126",
+              "growth_Y3_Y4": "P126",
+              "growth_Y4_Y5": "R126",
+              "growth_Y5_Y6": "T126",
+              "growth_Y6_Y7": "V126"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Chest",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H127",
+              "price": "J127",
+              "growth_Y2_monthly": "L127",
+              "growth_Y2_Y3": "N127",
+              "growth_Y3_Y4": "P127",
+              "growth_Y4_Y5": "R127",
+              "growth_Y5_Y6": "T127",
+              "growth_Y6_Y7": "V127"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Tiffa",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H128",
+              "price": "J128",
+              "growth_Y2_monthly": "L128",
+              "growth_Y2_Y3": "N128",
+              "growth_Y3_Y4": "P128",
+              "growth_Y4_Y5": "R128",
+              "growth_Y5_Y6": "T128",
+              "growth_Y6_Y7": "V128"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Ultrasound Kub",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H129",
+              "price": "J129",
+              "growth_Y2_monthly": "L129",
+              "growth_Y2_Y3": "N129",
+              "growth_Y3_Y4": "P129",
+              "growth_Y4_Y5": "R129",
+              "growth_Y5_Y6": "T129",
+              "growth_Y6_Y7": "V129"
+            }
+          }
+        ],
+        "Radiology-CT": [
+          {
+            "id": "None",
+            "product": "CT Brain Plain",
+            "qty_formula": "=4*H7",
+            "qty_note": "4*B  (B = no. of branches)",
+            "price_inr": 1000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H131",
+              "price": "J131",
+              "growth_Y2_monthly": "L131",
+              "growth_Y2_Y3": "N131",
+              "growth_Y3_Y4": "P131",
+              "growth_Y4_Y5": "R131",
+              "growth_Y5_Y6": "T131",
+              "growth_Y6_Y7": "V131"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Brain Plain (Emergency)",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H132",
+              "price": "J132",
+              "growth_Y2_monthly": "L132",
+              "growth_Y2_Y3": "N132",
+              "growth_Y3_Y4": "P132",
+              "growth_Y4_Y5": "R132",
+              "growth_Y5_Y6": "T132",
+              "growth_Y6_Y7": "V132"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Angio/DSA of Brain Vessels",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H133",
+              "price": "J133",
+              "growth_Y2_monthly": "L133",
+              "growth_Y2_Y3": "N133",
+              "growth_Y3_Y4": "P133",
+              "growth_Y4_Y5": "R133",
+              "growth_Y5_Y6": "T133",
+              "growth_Y6_Y7": "V133"
+            }
+          },
+          {
+            "id": "None",
+            "product": "3D Study Facial Bones",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H134",
+              "price": "J134",
+              "growth_Y2_monthly": "L134",
+              "growth_Y2_Y3": "N134",
+              "growth_Y3_Y4": "P134",
+              "growth_Y4_Y5": "R134",
+              "growth_Y5_Y6": "T134",
+              "growth_Y6_Y7": "V134"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Orbit",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H135",
+              "price": "J135",
+              "growth_Y2_monthly": "L135",
+              "growth_Y2_Y3": "N135",
+              "growth_Y3_Y4": "P135",
+              "growth_Y4_Y5": "R135",
+              "growth_Y5_Y6": "T135",
+              "growth_Y6_Y7": "V135"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT PNS",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H136",
+              "price": "J136",
+              "growth_Y2_monthly": "L136",
+              "growth_Y2_Y3": "N136",
+              "growth_Y3_Y4": "P136",
+              "growth_Y4_Y5": "R136",
+              "growth_Y5_Y6": "T136",
+              "growth_Y6_Y7": "V136"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT PNS Axial+Coronal",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H137",
+              "price": "J137",
+              "growth_Y2_monthly": "L137",
+              "growth_Y2_Y3": "N137",
+              "growth_Y3_Y4": "P137",
+              "growth_Y4_Y5": "R137",
+              "growth_Y5_Y6": "T137",
+              "growth_Y6_Y7": "V137"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Temporal Bone",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H138",
+              "price": "J138",
+              "growth_Y2_monthly": "L138",
+              "growth_Y2_Y3": "N138",
+              "growth_Y3_Y4": "P138",
+              "growth_Y4_Y5": "R138",
+              "growth_Y5_Y6": "T138",
+              "growth_Y6_Y7": "V138"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Mastoids",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H139",
+              "price": "J139",
+              "growth_Y2_monthly": "L139",
+              "growth_Y2_Y3": "N139",
+              "growth_Y3_Y4": "P139",
+              "growth_Y4_Y5": "R139",
+              "growth_Y5_Y6": "T139",
+              "growth_Y6_Y7": "V139"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Neck Pain",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H140",
+              "price": "J140",
+              "growth_Y2_monthly": "L140",
+              "growth_Y2_Y3": "N140",
+              "growth_Y3_Y4": "P140",
+              "growth_Y4_Y5": "R140",
+              "growth_Y5_Y6": "T140",
+              "growth_Y6_Y7": "V140"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Angio Neck & Brain Vessels",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H141",
+              "price": "J141",
+              "growth_Y2_monthly": "L141",
+              "growth_Y2_Y3": "N141",
+              "growth_Y3_Y4": "P141",
+              "growth_Y4_Y5": "R141",
+              "growth_Y5_Y6": "T141",
+              "growth_Y6_Y7": "V141"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Angio of Neck Vessels",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H142",
+              "price": "J142",
+              "growth_Y2_monthly": "L142",
+              "growth_Y2_Y3": "N142",
+              "growth_Y3_Y4": "P142",
+              "growth_Y4_Y5": "R142",
+              "growth_Y5_Y6": "T142",
+              "growth_Y6_Y7": "V142"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Chest Pain",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H143",
+              "price": "J143",
+              "growth_Y2_monthly": "L143",
+              "growth_Y2_Y3": "N143",
+              "growth_Y3_Y4": "P143",
+              "growth_Y4_Y5": "R143",
+              "growth_Y5_Y6": "T143",
+              "growth_Y6_Y7": "V143"
+            }
+          },
+          {
+            "id": "None",
+            "product": "H R CT Chest",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H144",
+              "price": "J144",
+              "growth_Y2_monthly": "L144",
+              "growth_Y2_Y3": "N144",
+              "growth_Y3_Y4": "P144",
+              "growth_Y4_Y5": "R144",
+              "growth_Y5_Y6": "T144",
+              "growth_Y6_Y7": "V144"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Pulmonary Angio",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H145",
+              "price": "J145",
+              "growth_Y2_monthly": "L145",
+              "growth_Y2_Y3": "N145",
+              "growth_Y3_Y4": "P145",
+              "growth_Y4_Y5": "R145",
+              "growth_Y5_Y6": "T145",
+              "growth_Y6_Y7": "V145"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Cardiac",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H146",
+              "price": "J146",
+              "growth_Y2_monthly": "L146",
+              "growth_Y2_Y3": "N146",
+              "growth_Y3_Y4": "P146",
+              "growth_Y4_Y5": "R146",
+              "growth_Y5_Y6": "T146",
+              "growth_Y6_Y7": "V146"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Coronary Angio(Special Contrast)",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H147",
+              "price": "J147",
+              "growth_Y2_monthly": "L147",
+              "growth_Y2_Y3": "N147",
+              "growth_Y3_Y4": "P147",
+              "growth_Y4_Y5": "R147",
+              "growth_Y5_Y6": "T147",
+              "growth_Y6_Y7": "V147"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Screening Cardiac CT(Calcium Score)",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H148",
+              "price": "J148",
+              "growth_Y2_monthly": "L148",
+              "growth_Y2_Y3": "N148",
+              "growth_Y3_Y4": "P148",
+              "growth_Y4_Y5": "R148",
+              "growth_Y5_Y6": "T148",
+              "growth_Y6_Y7": "V148"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Angio of Aorta and Coronaries",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H149",
+              "price": "J149",
+              "growth_Y2_monthly": "L149",
+              "growth_Y2_Y3": "N149",
+              "growth_Y3_Y4": "P149",
+              "growth_Y4_Y5": "R149",
+              "growth_Y5_Y6": "T149",
+              "growth_Y6_Y7": "V149"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Carotid Angio",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H150",
+              "price": "J150",
+              "growth_Y2_monthly": "L150",
+              "growth_Y2_Y3": "N150",
+              "growth_Y3_Y4": "P150",
+              "growth_Y4_Y5": "R150",
+              "growth_Y5_Y6": "T150",
+              "growth_Y6_Y7": "V150"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Whole Abdomen Plain",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H151",
+              "price": "J151",
+              "growth_Y2_monthly": "L151",
+              "growth_Y2_Y3": "N151",
+              "growth_Y3_Y4": "P151",
+              "growth_Y4_Y5": "R151",
+              "growth_Y5_Y6": "T151",
+              "growth_Y6_Y7": "V151"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Upper Abdomen Plain",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H152",
+              "price": "J152",
+              "growth_Y2_monthly": "L152",
+              "growth_Y2_Y3": "N152",
+              "growth_Y3_Y4": "P152",
+              "growth_Y4_Y5": "R152",
+              "growth_Y5_Y6": "T152",
+              "growth_Y6_Y7": "V152"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Abdomen Triphasic Study",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H153",
+              "price": "J153",
+              "growth_Y2_monthly": "L153",
+              "growth_Y2_Y3": "N153",
+              "growth_Y3_Y4": "P153",
+              "growth_Y4_Y5": "R153",
+              "growth_Y5_Y6": "T153",
+              "growth_Y6_Y7": "V153"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Angio Abdomen",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H154",
+              "price": "J154",
+              "growth_Y2_monthly": "L154",
+              "growth_Y2_Y3": "N154",
+              "growth_Y3_Y4": "P154",
+              "growth_Y4_Y5": "R154",
+              "growth_Y5_Y6": "T154",
+              "growth_Y6_Y7": "V154"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Peripheral Venogram",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H155",
+              "price": "J155",
+              "growth_Y2_monthly": "L155",
+              "growth_Y2_Y3": "N155",
+              "growth_Y3_Y4": "P155",
+              "growth_Y4_Y5": "R155",
+              "growth_Y5_Y6": "T155",
+              "growth_Y6_Y7": "V155"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Peripheral Angio",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H156",
+              "price": "J156",
+              "growth_Y2_monthly": "L156",
+              "growth_Y2_Y3": "N156",
+              "growth_Y3_Y4": "P156",
+              "growth_Y4_Y5": "R156",
+              "growth_Y5_Y6": "T156",
+              "growth_Y6_Y7": "V156"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Aortagram",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H157",
+              "price": "J157",
+              "growth_Y2_monthly": "L157",
+              "growth_Y2_Y3": "N157",
+              "growth_Y3_Y4": "P157",
+              "growth_Y4_Y5": "R157",
+              "growth_Y5_Y6": "T157",
+              "growth_Y6_Y7": "V157"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Kub Plan",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H158",
+              "price": "J158",
+              "growth_Y2_monthly": "L158",
+              "growth_Y2_Y3": "N158",
+              "growth_Y3_Y4": "P158",
+              "growth_Y4_Y5": "R158",
+              "growth_Y5_Y6": "T158",
+              "growth_Y6_Y7": "V158"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Renal Angio",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H159",
+              "price": "J159",
+              "growth_Y2_monthly": "L159",
+              "growth_Y2_Y3": "N159",
+              "growth_Y3_Y4": "P159",
+              "growth_Y4_Y5": "R159",
+              "growth_Y5_Y6": "T159",
+              "growth_Y6_Y7": "V159"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Pelvis",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H160",
+              "price": "J160",
+              "growth_Y2_monthly": "L160",
+              "growth_Y2_Y3": "N160",
+              "growth_Y3_Y4": "P160",
+              "growth_Y4_Y5": "R160",
+              "growth_Y5_Y6": "T160",
+              "growth_Y6_Y7": "V160"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT CVJ",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H161",
+              "price": "J161",
+              "growth_Y2_monthly": "L161",
+              "growth_Y2_Y3": "N161",
+              "growth_Y3_Y4": "P161",
+              "growth_Y4_Y5": "R161",
+              "growth_Y5_Y6": "T161",
+              "growth_Y6_Y7": "V161"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Spine Cervical",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H162",
+              "price": "J162",
+              "growth_Y2_monthly": "L162",
+              "growth_Y2_Y3": "N162",
+              "growth_Y3_Y4": "P162",
+              "growth_Y4_Y5": "R162",
+              "growth_Y5_Y6": "T162",
+              "growth_Y6_Y7": "V162"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Spine Dorsal",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H163",
+              "price": "J163",
+              "growth_Y2_monthly": "L163",
+              "growth_Y2_Y3": "N163",
+              "growth_Y3_Y4": "P163",
+              "growth_Y4_Y5": "R163",
+              "growth_Y5_Y6": "T163",
+              "growth_Y6_Y7": "V163"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Spine Lumbar",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H164",
+              "price": "J164",
+              "growth_Y2_monthly": "L164",
+              "growth_Y2_Y3": "N164",
+              "growth_Y3_Y4": "P164",
+              "growth_Y4_Y5": "R164",
+              "growth_Y5_Y6": "T164",
+              "growth_Y6_Y7": "V164"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Thoraco Lumbar Spine",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H165",
+              "price": "J165",
+              "growth_Y2_monthly": "L165",
+              "growth_Y2_Y3": "N165",
+              "growth_Y3_Y4": "P165",
+              "growth_Y4_Y5": "R165",
+              "growth_Y5_Y6": "T165",
+              "growth_Y6_Y7": "V165"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Joints (Knee, Shoulder and others) with 3D",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H166",
+              "price": "J166",
+              "growth_Y2_monthly": "L166",
+              "growth_Y2_Y3": "N166",
+              "growth_Y3_Y4": "P166",
+              "growth_Y4_Y5": "R166",
+              "growth_Y5_Y6": "T166",
+              "growth_Y6_Y7": "V166"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Guided Procedure",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H167",
+              "price": "J167",
+              "growth_Y2_monthly": "L167",
+              "growth_Y2_Y3": "N167",
+              "growth_Y3_Y4": "P167",
+              "growth_Y4_Y5": "R167",
+              "growth_Y5_Y6": "T167",
+              "growth_Y6_Y7": "V167"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Guided Biopsy",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H168",
+              "price": "J168",
+              "growth_Y2_monthly": "L168",
+              "growth_Y2_Y3": "N168",
+              "growth_Y3_Y4": "P168",
+              "growth_Y4_Y5": "R168",
+              "growth_Y5_Y6": "T168",
+              "growth_Y6_Y7": "V168"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Contrast(50 ML)",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H169",
+              "price": "J169",
+              "growth_Y2_monthly": "L169",
+              "growth_Y2_Y3": "N169",
+              "growth_Y3_Y4": "P169",
+              "growth_Y4_Y5": "R169",
+              "growth_Y5_Y6": "T169",
+              "growth_Y6_Y7": "V169"
+            }
+          },
+          {
+            "id": "None",
+            "product": "CT Contrast(100 ML)",
+            "qty_formula": "",
+            "qty_note": "",
+            "price_inr": null,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H170",
+              "price": "J170",
+              "growth_Y2_monthly": "L170",
+              "growth_Y2_Y3": "N170",
+              "growth_Y3_Y4": "P170",
+              "growth_Y4_Y5": "R170",
+              "growth_Y5_Y6": "T170",
+              "growth_Y6_Y7": "V170"
+            }
+          }
+        ]
+      },
+      "Workplace Wellness": {
+        "Biochemistry": [
+          {
+            "id": "4a",
+            "product": "Online/Offline Consultation",
+            "qty_formula": "=25000/12",
+            "qty_note": "25000/12  (B = no. of branches)",
+            "price_inr": 499.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H177",
+              "price": "J177",
+              "growth_Y2_monthly": "L177",
+              "growth_Y2_Y3": "N177",
+              "growth_Y3_Y4": "P177",
+              "growth_Y4_Y5": "R177",
+              "growth_Y5_Y6": "T177",
+              "growth_Y6_Y7": "V177"
+            }
+          },
+          {
+            "id": "4b",
+            "product": "Corporate Package",
+            "qty_formula": "=25000/12",
+            "qty_note": "25000/12  (B = no. of branches)",
+            "price_inr": 399.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H178",
+              "price": "J178",
+              "growth_Y2_monthly": "L178",
+              "growth_Y2_Y3": "N178",
+              "growth_Y3_Y4": "P178",
+              "growth_Y4_Y5": "R178",
+              "growth_Y5_Y6": "T178",
+              "growth_Y6_Y7": "V178"
+            }
+          },
+          {
+            "id": "4c",
+            "product": "Occupational Health Centers",
+            "qty_formula": "=12/12",
+            "qty_note": "12/12  (B = no. of branches)",
+            "price_inr": 150000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H179",
+              "price": "J179",
+              "growth_Y2_monthly": "L179",
+              "growth_Y2_Y3": "N179",
+              "growth_Y3_Y4": "P179",
+              "growth_Y4_Y5": "R179",
+              "growth_Y5_Y6": "T179",
+              "growth_Y6_Y7": "V179"
+            }
+          }
+        ]
+      },
+      "Other Services": {
+        "Biochemistry": [
+          {
+            "id": "5a",
+            "product": "Tele Consultation",
+            "qty_formula": "10",
+            "qty_note": "10",
+            "price_inr": 500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H183",
+              "price": "J183",
+              "growth_Y2_monthly": "L183",
+              "growth_Y2_Y3": "N183",
+              "growth_Y3_Y4": "P183",
+              "growth_Y4_Y5": "R183",
+              "growth_Y5_Y6": "T183",
+              "growth_Y6_Y7": "V183"
+            }
+          },
+          {
+            "id": "5b",
+            "product": "Subscriptions - Clinic Retail",
+            "qty_formula": "50",
+            "qty_note": "50",
+            "price_inr": 799.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H184",
+              "price": "J184",
+              "growth_Y2_monthly": "L184",
+              "growth_Y2_Y3": "N184",
+              "growth_Y3_Y4": "P184",
+              "growth_Y4_Y5": "R184",
+              "growth_Y5_Y6": "T184",
+              "growth_Y6_Y7": "V184"
+            }
+          },
+          {
+            "id": "5c",
+            "product": "Pharma Home Delivery",
+            "qty_formula": "=20*30",
+            "qty_note": "20*30  (B = no. of branches)",
+            "price_inr": 500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H185",
+              "price": "J185",
+              "growth_Y2_monthly": "L185",
+              "growth_Y2_Y3": "N185",
+              "growth_Y3_Y4": "P185",
+              "growth_Y4_Y5": "R185",
+              "growth_Y5_Y6": "T185",
+              "growth_Y6_Y7": "V185"
+            }
+          },
+          {
+            "id": "5d",
+            "product": "Lab Home Sample Collection",
+            "qty_formula": "=20*30",
+            "qty_note": "20*30  (B = no. of branches)",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H186",
+              "price": "J186",
+              "growth_Y2_monthly": "L186",
+              "growth_Y2_Y3": "N186",
+              "growth_Y3_Y4": "P186",
+              "growth_Y4_Y5": "R186",
+              "growth_Y5_Y6": "T186",
+              "growth_Y6_Y7": "V186"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Nursing Services-Home Visits",
+            "qty_formula": "=4*4",
+            "qty_note": "4*4  (B = no. of branches)",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H187",
+              "price": "J187",
+              "growth_Y2_monthly": "L187",
+              "growth_Y2_Y3": "N187",
+              "growth_Y3_Y4": "P187",
+              "growth_Y4_Y5": "R187",
+              "growth_Y5_Y6": "T187",
+              "growth_Y6_Y7": "V187"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Physiotherapy-Home Visits",
+            "qty_formula": "=5*4",
+            "qty_note": "5*4  (B = no. of branches)",
+            "price_inr": 700.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H188",
+              "price": "J188",
+              "growth_Y2_monthly": "L188",
+              "growth_Y2_Y3": "N188",
+              "growth_Y3_Y4": "P188",
+              "growth_Y4_Y5": "R188",
+              "growth_Y5_Y6": "T188",
+              "growth_Y6_Y7": "V188"
+            }
+          }
+        ]
+      },
+      "Marketplace": {
+        "Biochemistry": [
+          {
+            "id": "6a",
+            "product": "Doctors/Business Listing",
+            "qty_formula": "=10*30",
+            "qty_note": "10*30  (B = no. of branches)",
+            "price_inr": 120.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H192",
+              "price": "J192",
+              "growth_Y2_monthly": "L192",
+              "growth_Y2_Y3": "N192",
+              "growth_Y3_Y4": "P192",
+              "growth_Y4_Y5": "R192",
+              "growth_Y5_Y6": "T192",
+              "growth_Y6_Y7": "V192"
+            }
+          },
+          {
+            "id": "6b",
+            "product": "Pharmacy Delivery",
+            "qty_formula": "=20*30",
+            "qty_note": "20*30  (B = no. of branches)",
+            "price_inr": 1200.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H193",
+              "price": "J193",
+              "growth_Y2_monthly": "L193",
+              "growth_Y2_Y3": "N193",
+              "growth_Y3_Y4": "P193",
+              "growth_Y4_Y5": "R193",
+              "growth_Y5_Y6": "T193",
+              "growth_Y6_Y7": "V193"
+            }
+          },
+          {
+            "id": "6c",
+            "product": "Ambulance Listing",
+            "qty_formula": "10",
+            "qty_note": "10",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H194",
+              "price": "J194",
+              "growth_Y2_monthly": "L194",
+              "growth_Y2_Y3": "N194",
+              "growth_Y3_Y4": "P194",
+              "growth_Y4_Y5": "R194",
+              "growth_Y5_Y6": "T194",
+              "growth_Y6_Y7": "V194"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Lab Tests at Home",
+            "qty_formula": "=10*30",
+            "qty_note": "10*30  (B = no. of branches)",
+            "price_inr": 300.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H195",
+              "price": "J195",
+              "growth_Y2_monthly": "L195",
+              "growth_Y2_Y3": "N195",
+              "growth_Y3_Y4": "P195",
+              "growth_Y4_Y5": "R195",
+              "growth_Y5_Y6": "T195",
+              "growth_Y6_Y7": "V195"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Radiology Services",
+            "qty_formula": "=5*30",
+            "qty_note": "5*30  (B = no. of branches)",
+            "price_inr": 2000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H196",
+              "price": "J196",
+              "growth_Y2_monthly": "L196",
+              "growth_Y2_Y3": "N196",
+              "growth_Y3_Y4": "P196",
+              "growth_Y4_Y5": "R196",
+              "growth_Y5_Y6": "T196",
+              "growth_Y6_Y7": "V196"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Subscriptions Market Place",
+            "qty_formula": "=50",
+            "qty_note": "50  (B = no. of branches)",
+            "price_inr": 999.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H197",
+              "price": "J197",
+              "growth_Y2_monthly": "L197",
+              "growth_Y2_Y3": "N197",
+              "growth_Y3_Y4": "P197",
+              "growth_Y4_Y5": "R197",
+              "growth_Y5_Y6": "T197",
+              "growth_Y6_Y7": "V197"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Home & Elderly Care",
+            "qty_formula": "=2*30",
+            "qty_note": "2*30  (B = no. of branches)",
+            "price_inr": 500.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H198",
+              "price": "J198",
+              "growth_Y2_monthly": "L198",
+              "growth_Y2_Y3": "N198",
+              "growth_Y3_Y4": "P198",
+              "growth_Y4_Y5": "R198",
+              "growth_Y5_Y6": "T198",
+              "growth_Y6_Y7": "V198"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Gym Membership",
+            "qty_formula": "=5*30",
+            "qty_note": "5*30  (B = no. of branches)",
+            "price_inr": 999.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H199",
+              "price": "J199",
+              "growth_Y2_monthly": "L199",
+              "growth_Y2_Y3": "N199",
+              "growth_Y3_Y4": "P199",
+              "growth_Y4_Y5": "R199",
+              "growth_Y5_Y6": "T199",
+              "growth_Y6_Y7": "V199"
+            }
+          },
+          {
+            "id": "None",
+            "product": "Insurance",
+            "qty_formula": "=10*30",
+            "qty_note": "10*30  (B = no. of branches)",
+            "price_inr": 1000.0,
+            "growth_rates_pct": {
+              "Y2_monthly": 25.0,
+              "Y2_Y3": 20.0,
+              "Y3_Y4": 10.0,
+              "Y4_Y5": 10.0,
+              "Y5_Y6": 15.0,
+              "Y6_Y7": 1.0
+            },
+            "cell_refs": {
+              "qty": "H200",
+              "price": "J200",
+              "growth_Y2_monthly": "L200",
+              "growth_Y2_Y3": "N200",
+              "growth_Y3_Y4": "P200",
+              "growth_Y4_Y5": "R200",
+              "growth_Y5_Y6": "T200",
+              "growth_Y6_Y7": "V200"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "branch_rollout": {
+    "schema": "branch_rollout",
+    "description": "Monthly branch count and subscription volumes. Drives scale multipliers in all revenue/cost computations.",
+    "total_months": 71,
+    "branch_milestones": [
+      {
+        "month": 1,
+        "branches": 3
+      },
+      {
+        "month": 3,
+        "branches": 4
+      },
+      {
+        "month": 4,
+        "branches": 5
+      },
+      {
+        "month": 5,
+        "branches": 8
+      },
+      {
+        "month": 6,
+        "branches": 10
+      }
+    ],
+    "key_inputs": {
+      "branches_col": "E — Number of Branches (user enters)",
+      "growth_col": "F — Branch growth rate (user enters)",
+      "marketplace_subs_col": "J — Marketplace subscriptions (user enters from month 7)",
+      "retail_subs_col": "K — Retail subscriptions",
+      "corporate_subs_col": "L — Corporate subscriptions"
+    },
+    "monthly_data": [
+      {
+        "month": 1,
+        "branches": 3,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E4",
+          "growth": "F4",
+          "sub_marketplace": "J4",
+          "sub_retail": "K4",
+          "sub_corporate": "L4"
+        }
+      },
+      {
+        "month": 2,
+        "branches": 3,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E5",
+          "growth": "F5",
+          "sub_marketplace": "J5",
+          "sub_retail": "K5",
+          "sub_corporate": "L5"
+        }
+      },
+      {
+        "month": 3,
+        "branches": 4,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E6",
+          "growth": "F6",
+          "sub_marketplace": "J6",
+          "sub_retail": "K6",
+          "sub_corporate": "L6"
+        }
+      },
+      {
+        "month": 4,
+        "branches": 5,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E7",
+          "growth": "F7",
+          "sub_marketplace": "J7",
+          "sub_retail": "K7",
+          "sub_corporate": "L7"
+        },
+        "subscriptions": {
+          "marketplace": 50,
+          "retail": 130,
+          "corporate": 1000
+        }
+      },
+      {
+        "month": 5,
+        "branches": 8,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E8",
+          "growth": "F8",
+          "sub_marketplace": "J8",
+          "sub_retail": "K8",
+          "sub_corporate": "L8"
+        },
+        "subscriptions": {
+          "marketplace": 80,
+          "retail": 180,
+          "corporate": 1000
+        }
+      },
+      {
+        "month": 6,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E9",
+          "growth": "F9",
+          "sub_marketplace": "J9",
+          "sub_retail": "K9",
+          "sub_corporate": "L9"
+        },
+        "subscriptions": {
+          "marketplace": 100,
+          "retail": 230,
+          "corporate": 1000
+        }
+      },
+      {
+        "month": 7,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E10",
+          "growth": "F10",
+          "sub_marketplace": "J10",
+          "sub_retail": "K10",
+          "sub_corporate": "L10"
+        },
+        "subscriptions": {
+          "marketplace": 150,
+          "retail": 300,
+          "corporate": 1200
+        }
+      },
+      {
+        "month": 8,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E11",
+          "growth": "F11",
+          "sub_marketplace": "J11",
+          "sub_retail": "K11",
+          "sub_corporate": "L11"
+        },
+        "subscriptions": {
+          "marketplace": 200,
+          "retail": 340,
+          "corporate": 1200
+        }
+      },
+      {
+        "month": 9,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E12",
+          "growth": "F12",
+          "sub_marketplace": "J12",
+          "sub_retail": "K12",
+          "sub_corporate": "L12"
+        },
+        "subscriptions": {
+          "marketplace": 250,
+          "retail": 385,
+          "corporate": 1200
+        }
+      },
+      {
+        "month": 10,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E13",
+          "growth": "F13",
+          "sub_marketplace": "J13",
+          "sub_retail": "K13",
+          "sub_corporate": "L13"
+        },
+        "subscriptions": {
+          "marketplace": 300,
+          "retail": 420,
+          "corporate": 1500
+        }
+      },
+      {
+        "month": 11,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E14",
+          "growth": "F14",
+          "sub_marketplace": "J14",
+          "sub_retail": "K14",
+          "sub_corporate": "L14"
+        },
+        "subscriptions": {
+          "marketplace": 350,
+          "retail": 450,
+          "corporate": 1500
+        }
+      },
+      {
+        "month": 12,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E15",
+          "growth": "F15",
+          "sub_marketplace": "J15",
+          "sub_retail": "K15",
+          "sub_corporate": "L15"
+        },
+        "subscriptions": {
+          "marketplace": 400,
+          "retail": 500,
+          "corporate": 1500
+        }
+      },
+      {
+        "month": 13,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E16",
+          "growth": "F16",
+          "sub_marketplace": "J16",
+          "sub_retail": "K16",
+          "sub_corporate": "L16"
+        },
+        "subscriptions": {
+          "marketplace": 450,
+          "retail": 500,
+          "corporate": 1800
+        }
+      },
+      {
+        "month": 14,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E17",
+          "growth": "F17",
+          "sub_marketplace": "J17",
+          "sub_retail": "K17",
+          "sub_corporate": "L17"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 1800
+        }
+      },
+      {
+        "month": 15,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E18",
+          "growth": "F18",
+          "sub_marketplace": "J18",
+          "sub_retail": "K18",
+          "sub_corporate": "L18"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 1800
+        }
+      },
+      {
+        "month": 16,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E19",
+          "growth": "F19",
+          "sub_marketplace": "J19",
+          "sub_retail": "K19",
+          "sub_corporate": "L19"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 17,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E20",
+          "growth": "F20",
+          "sub_marketplace": "J20",
+          "sub_retail": "K20",
+          "sub_corporate": "L20"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 18,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E21",
+          "growth": "F21",
+          "sub_marketplace": "J21",
+          "sub_retail": "K21",
+          "sub_corporate": "L21"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 19,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E22",
+          "growth": "F22",
+          "sub_marketplace": "J22",
+          "sub_retail": "K22",
+          "sub_corporate": "L22"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 20,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E23",
+          "growth": "F23",
+          "sub_marketplace": "J23",
+          "sub_retail": "K23",
+          "sub_corporate": "L23"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 21,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E24",
+          "growth": "F24",
+          "sub_marketplace": "J24",
+          "sub_retail": "K24",
+          "sub_corporate": "L24"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 22,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E25",
+          "growth": "F25",
+          "sub_marketplace": "J25",
+          "sub_retail": "K25",
+          "sub_corporate": "L25"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 23,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E26",
+          "growth": "F26",
+          "sub_marketplace": "J26",
+          "sub_retail": "K26",
+          "sub_corporate": "L26"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 24,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E27",
+          "growth": "F27",
+          "sub_marketplace": "J27",
+          "sub_retail": "K27",
+          "sub_corporate": "L27"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 25,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E28",
+          "growth": "F28",
+          "sub_marketplace": "J28",
+          "sub_retail": "K28",
+          "sub_corporate": "L28"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 26,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E29",
+          "growth": "F29",
+          "sub_marketplace": "J29",
+          "sub_retail": "K29",
+          "sub_corporate": "L29"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 27,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E30",
+          "growth": "F30",
+          "sub_marketplace": "J30",
+          "sub_retail": "K30",
+          "sub_corporate": "L30"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 28,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E31",
+          "growth": "F31",
+          "sub_marketplace": "J31",
+          "sub_retail": "K31",
+          "sub_corporate": "L31"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 29,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E32",
+          "growth": "F32",
+          "sub_marketplace": "J32",
+          "sub_retail": "K32",
+          "sub_corporate": "L32"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 30,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E33",
+          "growth": "F33",
+          "sub_marketplace": "J33",
+          "sub_retail": "K33",
+          "sub_corporate": "L33"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 31,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E34",
+          "growth": "F34",
+          "sub_marketplace": "J34",
+          "sub_retail": "K34",
+          "sub_corporate": "L34"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 32,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E35",
+          "growth": "F35",
+          "sub_marketplace": "J35",
+          "sub_retail": "K35",
+          "sub_corporate": "L35"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 33,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E36",
+          "growth": "F36",
+          "sub_marketplace": "J36",
+          "sub_retail": "K36",
+          "sub_corporate": "L36"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 34,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E37",
+          "growth": "F37",
+          "sub_marketplace": "J37",
+          "sub_retail": "K37",
+          "sub_corporate": "L37"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 35,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E38",
+          "growth": "F38",
+          "sub_marketplace": "J38",
+          "sub_retail": "K38",
+          "sub_corporate": "L38"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 36,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E39",
+          "growth": "F39",
+          "sub_marketplace": "J39",
+          "sub_retail": "K39",
+          "sub_corporate": "L39"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 37,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E40",
+          "growth": "F40",
+          "sub_marketplace": "J40",
+          "sub_retail": "K40",
+          "sub_corporate": "L40"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 38,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E41",
+          "growth": "F41",
+          "sub_marketplace": "J41",
+          "sub_retail": "K41",
+          "sub_corporate": "L41"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 39,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E42",
+          "growth": "F42",
+          "sub_marketplace": "J42",
+          "sub_retail": "K42",
+          "sub_corporate": "L42"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 40,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E43",
+          "growth": "F43",
+          "sub_marketplace": "J43",
+          "sub_retail": "K43",
+          "sub_corporate": "L43"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 41,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E44",
+          "growth": "F44",
+          "sub_marketplace": "J44",
+          "sub_retail": "K44",
+          "sub_corporate": "L44"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 42,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E45",
+          "growth": "F45",
+          "sub_marketplace": "J45",
+          "sub_retail": "K45",
+          "sub_corporate": "L45"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 43,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E46",
+          "growth": "F46",
+          "sub_marketplace": "J46",
+          "sub_retail": "K46",
+          "sub_corporate": "L46"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 44,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E47",
+          "growth": "F47",
+          "sub_marketplace": "J47",
+          "sub_retail": "K47",
+          "sub_corporate": "L47"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 45,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E48",
+          "growth": "F48",
+          "sub_marketplace": "J48",
+          "sub_retail": "K48",
+          "sub_corporate": "L48"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 46,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E49",
+          "growth": "F49",
+          "sub_marketplace": "J49",
+          "sub_retail": "K49",
+          "sub_corporate": "L49"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 47,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E50",
+          "growth": "F50",
+          "sub_marketplace": "J50",
+          "sub_retail": "K50",
+          "sub_corporate": "L50"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 48,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E51",
+          "growth": "F51",
+          "sub_marketplace": "J51",
+          "sub_retail": "K51",
+          "sub_corporate": "L51"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 49,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E52",
+          "growth": "F52",
+          "sub_marketplace": "J52",
+          "sub_retail": "K52",
+          "sub_corporate": "L52"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 50,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E53",
+          "growth": "F53",
+          "sub_marketplace": "J53",
+          "sub_retail": "K53",
+          "sub_corporate": "L53"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 51,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E54",
+          "growth": "F54",
+          "sub_marketplace": "J54",
+          "sub_retail": "K54",
+          "sub_corporate": "L54"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 52,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E55",
+          "growth": "F55",
+          "sub_marketplace": "J55",
+          "sub_retail": "K55",
+          "sub_corporate": "L55"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 53,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E56",
+          "growth": "F56",
+          "sub_marketplace": "J56",
+          "sub_retail": "K56",
+          "sub_corporate": "L56"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 54,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E57",
+          "growth": "F57",
+          "sub_marketplace": "J57",
+          "sub_retail": "K57",
+          "sub_corporate": "L57"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 55,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E58",
+          "growth": "F58",
+          "sub_marketplace": "J58",
+          "sub_retail": "K58",
+          "sub_corporate": "L58"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 56,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E59",
+          "growth": "F59",
+          "sub_marketplace": "J59",
+          "sub_retail": "K59",
+          "sub_corporate": "L59"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 57,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E60",
+          "growth": "F60",
+          "sub_marketplace": "J60",
+          "sub_retail": "K60",
+          "sub_corporate": "L60"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 58,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E61",
+          "growth": "F61",
+          "sub_marketplace": "J61",
+          "sub_retail": "K61",
+          "sub_corporate": "L61"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 59,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E62",
+          "growth": "F62",
+          "sub_marketplace": "J62",
+          "sub_retail": "K62",
+          "sub_corporate": "L62"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 60,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E63",
+          "growth": "F63",
+          "sub_marketplace": "J63",
+          "sub_retail": "K63",
+          "sub_corporate": "L63"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 61,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E64",
+          "growth": "F64",
+          "sub_marketplace": "J64",
+          "sub_retail": "K64",
+          "sub_corporate": "L64"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 62,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E65",
+          "growth": "F65",
+          "sub_marketplace": "J65",
+          "sub_retail": "K65",
+          "sub_corporate": "L65"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 63,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E66",
+          "growth": "F66",
+          "sub_marketplace": "J66",
+          "sub_retail": "K66",
+          "sub_corporate": "L66"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 64,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E67",
+          "growth": "F67",
+          "sub_marketplace": "J67",
+          "sub_retail": "K67",
+          "sub_corporate": "L67"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 65,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E68",
+          "growth": "F68",
+          "sub_marketplace": "J68",
+          "sub_retail": "K68",
+          "sub_corporate": "L68"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 66,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E69",
+          "growth": "F69",
+          "sub_marketplace": "J69",
+          "sub_retail": "K69",
+          "sub_corporate": "L69"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 67,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E70",
+          "growth": "F70",
+          "sub_marketplace": "J70",
+          "sub_retail": "K70",
+          "sub_corporate": "L70"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 68,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E71",
+          "growth": "F71",
+          "sub_marketplace": "J71",
+          "sub_retail": "K71",
+          "sub_corporate": "L71"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 69,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E72",
+          "growth": "F72",
+          "sub_marketplace": "J72",
+          "sub_retail": "K72",
+          "sub_corporate": "L72"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 70,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E73",
+          "growth": "F73",
+          "sub_marketplace": "J73",
+          "sub_retail": "K73",
+          "sub_corporate": "L73"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      },
+      {
+        "month": 71,
+        "branches": 10,
+        "branch_growth_rate": 15.0,
+        "cell_refs": {
+          "branches": "E74",
+          "growth": "F74",
+          "sub_marketplace": "J74",
+          "sub_retail": "K74",
+          "sub_corporate": "L74"
+        },
+        "subscriptions": {
+          "marketplace": 500,
+          "retail": 500,
+          "corporate": 2100
+        }
+      }
+    ]
+  },
+  "opex": {
+    "schema": "opex_assumptions",
+    "description": "Operating cost assumptions per cost category. Costs are per branch per month and scale with branch count.",
+    "total_line_items": 37,
+    "cost_structure_note": "All costs multiply by branch count. Scaling: cost × branches × growth_factor",
+    "categories": {
+      "Utilities": [
+        {
+          "id": "1a",
+          "sub_service": "Rent",
+          "cost_per_month_per_branch": "formula: =295000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I11",
+            "growth_Y1_monthly": "K11",
+            "growth_Y1_Y2": "M11",
+            "growth_Y2_Y3": "O11",
+            "growth_Y3_Y4": "Q11",
+            "growth_Y4_Y5": "S11",
+            "growth_Y5_Y6": "U11"
+          }
+        },
+        {
+          "id": "1b",
+          "sub_service": "Electricity",
+          "cost_per_month_per_branch": 40000.0,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I12",
+            "growth_Y1_monthly": "K12",
+            "growth_Y1_Y2": "M12",
+            "growth_Y2_Y3": "O12",
+            "growth_Y3_Y4": "Q12",
+            "growth_Y4_Y5": "S12",
+            "growth_Y5_Y6": "U12"
+          }
+        },
+        {
+          "id": "1c",
+          "sub_service": "Internet & Telephone",
+          "cost_per_month_per_branch": 4000.0,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I13",
+            "growth_Y1_monthly": "K13",
+            "growth_Y1_Y2": "M13",
+            "growth_Y2_Y3": "O13",
+            "growth_Y3_Y4": "Q13",
+            "growth_Y4_Y5": "S13",
+            "growth_Y5_Y6": "U13"
+          }
+        },
+        {
+          "id": "1d",
+          "sub_service": "Maintenance & Repairs",
+          "cost_per_month_per_branch": 10000.0,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I14",
+            "growth_Y1_monthly": "K14",
+            "growth_Y1_Y2": "M14",
+            "growth_Y2_Y3": "O14",
+            "growth_Y3_Y4": "Q14",
+            "growth_Y4_Y5": "S14",
+            "growth_Y5_Y6": "U14"
+          }
+        },
+        {
+          "id": "1e",
+          "sub_service": "Petty cash expense",
+          "cost_per_month_per_branch": 10000.0,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I15",
+            "growth_Y1_monthly": "K15",
+            "growth_Y1_Y2": "M15",
+            "growth_Y2_Y3": "O15",
+            "growth_Y3_Y4": "Q15",
+            "growth_Y4_Y5": "S15",
+            "growth_Y5_Y6": "U15"
+          }
+        }
+      ],
+      "Salaries": [
+        {
+          "id": "2a",
+          "sub_service": "Management",
+          "cost_per_month_per_branch": "formula: =200000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I22",
+            "growth_Y1_monthly": "K22",
+            "growth_Y1_Y2": "M22",
+            "growth_Y2_Y3": "O22",
+            "growth_Y3_Y4": "Q22",
+            "growth_Y4_Y5": "S22",
+            "growth_Y5_Y6": "U22"
+          }
+        },
+        {
+          "id": "2b",
+          "sub_service": "Doctors",
+          "cost_per_month_per_branch": "formula: =150000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I23",
+            "growth_Y1_monthly": "K23",
+            "growth_Y1_Y2": "M23",
+            "growth_Y2_Y3": "O23",
+            "growth_Y3_Y4": "Q23",
+            "growth_Y4_Y5": "S23",
+            "growth_Y5_Y6": "U23"
+          }
+        },
+        {
+          "id": "2c",
+          "sub_service": "Clinical Staff",
+          "cost_per_month_per_branch": 125000.0,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I24",
+            "growth_Y1_monthly": "K24",
+            "growth_Y1_Y2": "M24",
+            "growth_Y2_Y3": "O24",
+            "growth_Y3_Y4": "Q24",
+            "growth_Y4_Y5": "S24",
+            "growth_Y5_Y6": "U24"
+          }
+        },
+        {
+          "id": "None",
+          "sub_service": "Admin & Accounting",
+          "cost_per_month_per_branch": 50000.0,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I25",
+            "growth_Y1_monthly": "K25",
+            "growth_Y1_Y2": "M25",
+            "growth_Y2_Y3": "O25",
+            "growth_Y3_Y4": "Q25",
+            "growth_Y4_Y5": "S25",
+            "growth_Y5_Y6": "U25"
+          }
+        },
+        {
+          "id": "None",
+          "sub_service": "Other Salaries",
+          "cost_per_month_per_branch": 50000.0,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I26",
+            "growth_Y1_monthly": "K26",
+            "growth_Y1_Y2": "M26",
+            "growth_Y2_Y3": "O26",
+            "growth_Y3_Y4": "Q26",
+            "growth_Y4_Y5": "S26",
+            "growth_Y5_Y6": "U26"
+          }
+        }
+      ],
+      "Vendor Payments": [
+        {
+          "id": "3a",
+          "sub_service": "Housekeeping",
+          "cost_per_month_per_branch": "formula: =30000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I31",
+            "growth_Y1_monthly": "K31",
+            "growth_Y1_Y2": "M31",
+            "growth_Y2_Y3": "O31",
+            "growth_Y3_Y4": "Q31",
+            "growth_Y4_Y5": "S31",
+            "growth_Y5_Y6": "U31"
+          }
+        },
+        {
+          "id": "3b",
+          "sub_service": "Pest Control",
+          "cost_per_month_per_branch": "formula: =10000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I32",
+            "growth_Y1_monthly": "K32",
+            "growth_Y1_Y2": "M32",
+            "growth_Y2_Y3": "O32",
+            "growth_Y3_Y4": "Q32",
+            "growth_Y4_Y5": "S32",
+            "growth_Y5_Y6": "U32"
+          }
+        },
+        {
+          "id": "3c",
+          "sub_service": "Biomedical Waste Disposal",
+          "cost_per_month_per_branch": "formula: =20000/12*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I33",
+            "growth_Y1_monthly": "K33",
+            "growth_Y1_Y2": "M33",
+            "growth_Y2_Y3": "O33",
+            "growth_Y3_Y4": "Q33",
+            "growth_Y4_Y5": "S33",
+            "growth_Y5_Y6": "U33"
+          }
+        },
+        {
+          "id": "3d",
+          "sub_service": "Lab Aggregators",
+          "cost_per_month_per_branch": "formula: =200000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I34",
+            "growth_Y1_monthly": "K34",
+            "growth_Y1_Y2": "M34",
+            "growth_Y2_Y3": "O34",
+            "growth_Y3_Y4": "Q34",
+            "growth_Y4_Y5": "S34",
+            "growth_Y5_Y6": "U34"
+          }
+        }
+      ],
+      "Supplies": [
+        {
+          "id": "4a",
+          "sub_service": "Housekeeping",
+          "cost_per_month_per_branch": "formula: =10000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I41",
+            "growth_Y1_monthly": "K41",
+            "growth_Y1_Y2": "M41",
+            "growth_Y2_Y3": "O41",
+            "growth_Y3_Y4": "Q41",
+            "growth_Y4_Y5": "S41",
+            "growth_Y5_Y6": "U41"
+          }
+        },
+        {
+          "id": "4b",
+          "sub_service": "Clinical",
+          "cost_per_month_per_branch": "formula: =50000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I42",
+            "growth_Y1_monthly": "K42",
+            "growth_Y1_Y2": "M42",
+            "growth_Y2_Y3": "O42",
+            "growth_Y3_Y4": "Q42",
+            "growth_Y4_Y5": "S42",
+            "growth_Y5_Y6": "U42"
+          }
+        },
+        {
+          "id": "4c",
+          "sub_service": "Pantry",
+          "cost_per_month_per_branch": "formula: =10000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I43",
+            "growth_Y1_monthly": "K43",
+            "growth_Y1_Y2": "M43",
+            "growth_Y2_Y3": "O43",
+            "growth_Y3_Y4": "Q43",
+            "growth_Y4_Y5": "S43",
+            "growth_Y5_Y6": "U43"
+          }
+        },
+        {
+          "id": "4d",
+          "sub_service": "Admin & Office",
+          "cost_per_month_per_branch": "formula: =5000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I44",
+            "growth_Y1_monthly": "K44",
+            "growth_Y1_Y2": "M44",
+            "growth_Y2_Y3": "O44",
+            "growth_Y3_Y4": "Q44",
+            "growth_Y4_Y5": "S44",
+            "growth_Y5_Y6": "U44"
+          }
+        },
+        {
+          "id": "8a",
+          "sub_service": "Pharmacy",
+          "cost_per_month_per_branch": null,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I80",
+            "growth_Y1_monthly": "K80",
+            "growth_Y1_Y2": "M80",
+            "growth_Y2_Y3": "O80",
+            "growth_Y3_Y4": "Q80",
+            "growth_Y4_Y5": "S80",
+            "growth_Y5_Y6": "U80"
+          }
+        },
+        {
+          "id": "8b",
+          "sub_service": "Clinical Surgicals",
+          "cost_per_month_per_branch": null,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I81",
+            "growth_Y1_monthly": "K81",
+            "growth_Y1_Y2": "M81",
+            "growth_Y2_Y3": "O81",
+            "growth_Y3_Y4": "Q81",
+            "growth_Y4_Y5": "S81",
+            "growth_Y5_Y6": "U81"
+          }
+        },
+        {
+          "id": "8c",
+          "sub_service": "Housekeeping",
+          "cost_per_month_per_branch": null,
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I82",
+            "growth_Y1_monthly": "K82",
+            "growth_Y1_Y2": "M82",
+            "growth_Y2_Y3": "O82",
+            "growth_Y3_Y4": "Q82",
+            "growth_Y4_Y5": "S82",
+            "growth_Y5_Y6": "U82"
+          }
+        }
+      ],
+      "Payouts": [
+        {
+          "id": "5a",
+          "sub_service": "Management Fee",
+          "cost_per_month_per_branch": "formula: =200000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I50",
+            "growth_Y1_monthly": "K50",
+            "growth_Y1_Y2": "M50",
+            "growth_Y2_Y3": "O50",
+            "growth_Y3_Y4": "Q50",
+            "growth_Y4_Y5": "S50",
+            "growth_Y5_Y6": "U50"
+          }
+        },
+        {
+          "id": "5b",
+          "sub_service": "Franchisee Payout",
+          "cost_per_month_per_branch": "formula: =250000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I51",
+            "growth_Y1_monthly": "K51",
+            "growth_Y1_Y2": "M51",
+            "growth_Y2_Y3": "O51",
+            "growth_Y3_Y4": "Q51",
+            "growth_Y4_Y5": "S51",
+            "growth_Y5_Y6": "U51"
+          }
+        },
+        {
+          "id": "5c",
+          "sub_service": "Consulting Doctors",
+          "cost_per_month_per_branch": "formula: =144000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 1.0,
+            "Y3_Y4": 1.0,
+            "Y4_Y5": 1.0,
+            "Y5_Y6": 1.0
+          },
+          "cell_refs": {
+            "cost": "I52",
+            "growth_Y1_monthly": "K52",
+            "growth_Y1_Y2": "M52",
+            "growth_Y2_Y3": "O52",
+            "growth_Y3_Y4": "Q52",
+            "growth_Y4_Y5": "S52",
+            "growth_Y5_Y6": "U52"
+          }
+        }
+      ],
+      "Marketing & Promotions": [
+        {
+          "id": "6a",
+          "sub_service": "Leaflet Distribution",
+          "cost_per_month_per_branch": "formula: =25000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I58",
+            "growth_Y1_monthly": "K58",
+            "growth_Y1_Y2": "M58",
+            "growth_Y2_Y3": "O58",
+            "growth_Y3_Y4": "Q58",
+            "growth_Y4_Y5": "S58",
+            "growth_Y5_Y6": "U58"
+          }
+        },
+        {
+          "id": "6b",
+          "sub_service": "Camps/Events",
+          "cost_per_month_per_branch": "formula: =80000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I59",
+            "growth_Y1_monthly": "K59",
+            "growth_Y1_Y2": "M59",
+            "growth_Y2_Y3": "O59",
+            "growth_Y3_Y4": "Q59",
+            "growth_Y4_Y5": "S59",
+            "growth_Y5_Y6": "U59"
+          }
+        },
+        {
+          "id": "6c",
+          "sub_service": "Promotions",
+          "cost_per_month_per_branch": "formula: =20000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I60",
+            "growth_Y1_monthly": "K60",
+            "growth_Y1_Y2": "M60",
+            "growth_Y2_Y3": "O60",
+            "growth_Y3_Y4": "Q60",
+            "growth_Y4_Y5": "S60",
+            "growth_Y5_Y6": "U60"
+          }
+        },
+        {
+          "id": "6d",
+          "sub_service": "Other Media",
+          "cost_per_month_per_branch": "formula: =25000*I8",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 1.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I61",
+            "growth_Y1_monthly": "K61",
+            "growth_Y1_Y2": "M61",
+            "growth_Y2_Y3": "O61",
+            "growth_Y3_Y4": "Q61",
+            "growth_Y4_Y5": "S61",
+            "growth_Y5_Y6": "U61"
+          }
+        }
+      ],
+      "Licenses and Registration": [
+        {
+          "id": "7a",
+          "sub_service": "Lease Deed Registration",
+          "cost_per_month_per_branch": "formula: =130000/12",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I66",
+            "growth_Y1_monthly": "K66",
+            "growth_Y1_Y2": "M66",
+            "growth_Y2_Y3": "O66",
+            "growth_Y3_Y4": "Q66",
+            "growth_Y4_Y5": "S66",
+            "growth_Y5_Y6": "U66"
+          }
+        },
+        {
+          "id": "7b",
+          "sub_service": "Drug Licenses",
+          "cost_per_month_per_branch": "formula: =145000/12/5",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I67",
+            "growth_Y1_monthly": "K67",
+            "growth_Y1_Y2": "M67",
+            "growth_Y2_Y3": "O67",
+            "growth_Y3_Y4": "Q67",
+            "growth_Y4_Y5": "S67",
+            "growth_Y5_Y6": "U67"
+          }
+        },
+        {
+          "id": "7c",
+          "sub_service": "Clinical Establishment Licenses",
+          "cost_per_month_per_branch": "formula: =135000/12/5",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I68",
+            "growth_Y1_monthly": "K68",
+            "growth_Y1_Y2": "M68",
+            "growth_Y2_Y3": "O68",
+            "growth_Y3_Y4": "Q68",
+            "growth_Y4_Y5": "S68",
+            "growth_Y5_Y6": "U68"
+          }
+        },
+        {
+          "id": "None",
+          "sub_service": "Trade License",
+          "cost_per_month_per_branch": "formula: =20000/12",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I69",
+            "growth_Y1_monthly": "K69",
+            "growth_Y1_Y2": "M69",
+            "growth_Y2_Y3": "O69",
+            "growth_Y3_Y4": "Q69",
+            "growth_Y4_Y5": "S69",
+            "growth_Y5_Y6": "U69"
+          }
+        },
+        {
+          "id": "None",
+          "sub_service": "Labour License",
+          "cost_per_month_per_branch": "formula: =15000/12",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I70",
+            "growth_Y1_monthly": "K70",
+            "growth_Y1_Y2": "M70",
+            "growth_Y2_Y3": "O70",
+            "growth_Y3_Y4": "Q70",
+            "growth_Y4_Y5": "S70",
+            "growth_Y5_Y6": "U70"
+          }
+        },
+        {
+          "id": "None",
+          "sub_service": "FSSAI License",
+          "cost_per_month_per_branch": "formula: =13000/12",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I71",
+            "growth_Y1_monthly": "K71",
+            "growth_Y1_Y2": "M71",
+            "growth_Y2_Y3": "O71",
+            "growth_Y3_Y4": "Q71",
+            "growth_Y4_Y5": "S71",
+            "growth_Y5_Y6": "U71"
+          }
+        },
+        {
+          "id": "None",
+          "sub_service": "Biomedical Waste Certificate",
+          "cost_per_month_per_branch": "formula: =20000/12",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I72",
+            "growth_Y1_monthly": "K72",
+            "growth_Y1_Y2": "M72",
+            "growth_Y2_Y3": "O72",
+            "growth_Y3_Y4": "Q72",
+            "growth_Y4_Y5": "S72",
+            "growth_Y5_Y6": "U72"
+          }
+        },
+        {
+          "id": "None",
+          "sub_service": "PCB Certificate",
+          "cost_per_month_per_branch": "formula: =5000/12",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I73",
+            "growth_Y1_monthly": "K73",
+            "growth_Y1_Y2": "M73",
+            "growth_Y2_Y3": "O73",
+            "growth_Y3_Y4": "Q73",
+            "growth_Y4_Y5": "S73",
+            "growth_Y5_Y6": "U73"
+          }
+        },
+        {
+          "id": "None",
+          "sub_service": "Firesafety Certificate",
+          "cost_per_month_per_branch": "formula: =5000/12",
+          "growth_rates_pct": {
+            "Y1_monthly": 100.0,
+            "Y1_Y2": 75.0,
+            "Y2_Y3": 45.0,
+            "Y3_Y4": 40.0,
+            "Y4_Y5": 25.0,
+            "Y5_Y6": 15.0
+          },
+          "cell_refs": {
+            "cost": "I74",
+            "growth_Y1_monthly": "K74",
+            "growth_Y1_Y2": "M74",
+            "growth_Y2_Y3": "O74",
+            "growth_Y3_Y4": "Q74",
+            "growth_Y4_Y5": "S74",
+            "growth_Y5_Y6": "U74"
+          }
+        }
+      ]
+    }
+  }
+}

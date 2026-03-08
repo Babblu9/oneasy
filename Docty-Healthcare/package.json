@@ -1,0 +1,17 @@
+{
+    "name": "docty-financial-engine",
+    "version": "1.0.0",
+    "description": "Modular financial projection engine for Docty Healthcare",
+    "main": "engine/index.js",
+    "scripts": {
+        "dev": "next dev",
+        "test": "node engine/test.js"
+    },
+    "dependencies": {
+        "exceljs": "^4.4.0",
+        "lucide-react": "latest",
+        "next": "latest",
+        "react": "latest",
+        "react-dom": "latest"
+    }
+}
