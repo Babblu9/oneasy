@@ -49,13 +49,17 @@ const MONTHS_Y1_DATES = ["2026-04-30", "2026-05-31", "2026-06-30", "2026-07-31",
 
 const extractDataTags = (text) => {
   const out = [];
+  // More flexible regex to handle various formats
   const re = /\[DATA:\s*(\{[\s\S]*?\})\]/g;
   let m;
   while ((m = re.exec(String(text || ""))) !== null) {
     try {
-      out.push(JSON.parse(m[1]));
-    } catch {
-      // ignore malformed tag
+      let jsonStr = m[1];
+      // Handle escaped quotes
+      jsonStr = jsonStr.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+      out.push(JSON.parse(jsonStr));
+    } catch (e) {
+      console.log("[DEBUG] Failed to parse DATA tag:", m[1]?.substring(0, 100));
     }
   }
   return out;
@@ -1343,15 +1347,21 @@ export default function DoctyModel() {
 
   const writePatchesToExcel = async (patches) => {
     const safe = Array.isArray(patches) ? patches.filter(p => p && p.sheet && p.cell) : [];
-    if (!safe.length) return;
+    console.log("[DEBUG] writePatchesToExcel received:", safe);
+    if (!safe.length) {
+      console.log("[DEBUG] No valid patches to write");
+      return;
+    }
     try {
-      await fetch("/api/excel-fill", {
+      const res = await fetch("/api/excel-fill", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ patches: safe }),
       });
-    } catch {
-      // non-blocking for UI state
+      const result = await res.json();
+      console.log("[DEBUG] excel-fill response:", result);
+    } catch (e) {
+      console.log("[DEBUG] excel-fill error:", e);
     }
   };
 
@@ -1454,14 +1464,26 @@ export default function DoctyModel() {
     }
 
     if (t === "addRevenueStream") {
+      console.log("[DEBUG] addRevenueStream action:", action);
+      const patches = dataActionToPatches({ type: "addRevenueStream", ...action });
+      console.log("[DEBUG] Revenue patches:", patches);
       setD(prev => applyRevenueAction(prev, action));
-      await writePatchesToExcel(dataActionToPatches({ type: "addRevenueStream", ...action }));
+      await writePatchesToExcel(patches);
       return;
     }
 
     if (t === "addOpex") {
+      console.log("[DEBUG] addOpex action:", action);
+      const patches = dataActionToPatches({ type: "addOpex", ...action });
+      console.log("[DEBUG] OPEX patches:", patches);
       setD(prev => applyOpexAction(prev, action));
-      await writePatchesToExcel(dataActionToPatches({ type: "addOpex", ...action }));
+      await writePatchesToExcel(patches);
+    }
+    if (t === "setFunding") {
+      console.log("[DEBUG] setFunding action:", action);
+      const patches = dataActionToPatches({ type: "setFunding", ...action });
+      console.log("[DEBUG] Funding patches:", patches);
+      await writePatchesToExcel(patches);
     }
   };
 
@@ -1689,9 +1711,12 @@ export default function DoctyModel() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "LLM request failed");
       const raw = data?.text || "{}";
+      console.log("[DEBUG] Raw LLM response:", raw.substring(0, 500));
       const tags = extractDataTags(raw);
+      console.log("[DEBUG] Extracted tags:", tags);
       if (tags.length) {
         for (const tag of tags) {
+          console.log("[DEBUG] Applying action:", tag);
           // eslint-disable-next-line no-await-in-loop
           await applyDataAction(tag);
         }

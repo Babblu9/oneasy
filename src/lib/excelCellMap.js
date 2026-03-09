@@ -176,6 +176,10 @@ export function dataActionToPatches(action) {
         }
 
         case 'setFunding': {
+            // Handle generic 'amount' field - map to initialInvestment
+            if (action.amount != null) {
+                patches.push({ sheet: SHEET.BASICS, cell: 'D36', value: Number(action.amount) });
+            }
             Object.entries(FUNDING_CELLS).forEach(([field, loc]) => {
                 if (action[field] != null) {
                     patches.push({ sheet: loc.sheet, cell: loc.cell, value: Number(action[field]) });
