@@ -4,8 +4,8 @@ import ExcelJS from 'exceljs';
 import { BUSINESS_INFO_CELLS, FUNDING_CELLS, ASSUMPTION_CELLS } from '../../../lib/excelCellMap.js';
 import { revenueCatalog, opexCatalog } from '../../../lib/modelCatalog.js';
 
-const WORK_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
-const SOURCE_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'Docty Healthcare - Business Plan.xlsx');
+const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'Docty Healthcare - Business Plan.xlsx');
 
 /**
  * POST /api/excel-reset
@@ -15,7 +15,7 @@ const SOURCE_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'Docty Healthc
  */
 export async function POST() {
     try {
-        const WORK_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
+        const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
 
         if (!fs.existsSync(WORK_EXCEL)) {
             return Response.json({ error: `Working Excel not found: ${WORK_EXCEL}` }, { status: 404 });

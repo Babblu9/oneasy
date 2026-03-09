@@ -22,7 +22,7 @@ export async function POST(req) {
     try {
         const { updates = [] } = await req.json();
 
-        const workbookPath = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
+        const workbookPath = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
         if (!fs.existsSync(workbookPath)) {
             return NextResponse.json({ error: 'Working workbook not found. Select template first.' }, { status: 404 });
         }

@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import ExcelJS from 'exceljs';
 
-const WORK_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
-const SOURCE_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'Docty Healthcare - Business Plan.xlsx');
+const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'Docty Healthcare - Business Plan.xlsx');
 
 export async function GET() {
     const EXCEL_PATH = fs.existsSync(WORK_EXCEL) ? WORK_EXCEL : SOURCE_EXCEL;

@@ -165,7 +165,7 @@ export async function POST(req) {
       );
     }
 
-    let templatePath = path.join(process.cwd(), 'Docty-Healthcare', template);
+    let templatePath = path.join(process.cwd(), 'excel-templates', template);
     if (!fs.existsSync(templatePath)) {
       const alt = path.join(process.cwd(), 'templates', template);
       if (fs.existsSync(alt)) templatePath = alt;

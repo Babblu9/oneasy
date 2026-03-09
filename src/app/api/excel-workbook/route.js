@@ -4,9 +4,9 @@ import ExcelJS from 'exceljs';
 import { buildHyperFormulaFromWorkbook, getHfCellValue } from '@/lib/hyperFormulaEngine';
 import { resolveWorksheet } from '@/lib/templateGuards';
 
-const WORK_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
+const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
 // Fallback if active_working doesn't exist yet
-const SOURCE_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'Docty Healthcare - Business Plan.xlsx');
+const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'Docty Healthcare - Business Plan.xlsx');
 const TEMPLATE_FALLBACKS = [
     path.join(process.cwd(), 'templates', 'healthcare_master.xlsx'),
     path.join(process.cwd(), 'templates', 'saas_master.xlsx'),

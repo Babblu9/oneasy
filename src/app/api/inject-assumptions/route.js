@@ -49,7 +49,7 @@ export async function POST(req) {
             );
         }
 
-        const workingFile = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
+        const workingFile = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
         if (!fs.existsSync(workingFile)) {
             // Initialize a session-scoped working file from selected template source
             fs.copyFileSync(sourceFile, workingFile);

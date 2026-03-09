@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import { isAllowedSheet, isFormulaCell, isValidCellAddress, normalizeInputValue, normalizeSheetName, resolveWorksheet } from '@/lib/templateGuards';
 import { detectOpexColumnsFromExcelJs, detectRevenueColumnsFromExcelJs } from '@/lib/streamInjection';
 
-const WORK_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
+const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
 
 /**
  * POST /api/excel-fill

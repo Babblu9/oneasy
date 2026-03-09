@@ -31,13 +31,12 @@ export async function POST(req) {
                 success: false,
                 templateId,
                 templateName: template.name,
-                warning: `Template file "${template.file}" not found. Please upload the template first.`,
-                questions: template.questions
+                warning: `Template file "${template.file}" not found. Please upload the template first.`
             });
         }
 
         // Copy selected template to the active working location for the viewer
-        const workingFile = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
+        const workingFile = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
 
         fs.copyFileSync(sourceFile, workingFile);
 
@@ -52,7 +51,6 @@ export async function POST(req) {
             templateId,
             templateName: template.name,
             icon: template.icon,
-            questions: template.questions,
             sheets,
             message: `✅ ${template.name} template loaded`
         });

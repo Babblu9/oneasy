@@ -17,14 +17,14 @@ export async function POST(req) {
         const generatorPath = path.join(process.cwd(), 'templates', 'finance-model-final.xlsx');
 
         // Path 2: The source excel used by the live Spreadsheet Viewer
-        const viewerPath = path.join(process.cwd(), 'Docty-Healthcare', 'Docty Healthcare - Business Plan.xlsx');
+        const viewerPath = path.join(process.cwd(), 'excel-templates', 'Docty Healthcare - Business Plan.xlsx');
 
         // Write the fresh file to both locations to keep the entire engine in sync
         fs.writeFileSync(generatorPath, buffer);
         fs.writeFileSync(viewerPath, buffer);
 
         // Discard the working copy so the viewer is forced to render the new source template
-        const workExcelPath = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
+        const workExcelPath = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
         if (fs.existsSync(workExcelPath)) {
             fs.unlinkSync(workExcelPath);
         }

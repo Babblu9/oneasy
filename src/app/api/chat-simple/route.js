@@ -12,7 +12,8 @@ export const maxDuration = 60;
 export async function POST(req) {
     try {
         const body = await req.json();
-        const  = String(body?.system || '').trim();
+        const system = String(body?.system || '').trim();
+        console.log("[API] Chat request received. Mode: LLM (generateText)");
         const prompt = String(body?.prompt || '').trim();
         const messages = Array.isArray(body?.messages) ? body.messages : [];
 

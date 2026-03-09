@@ -22,7 +22,7 @@ export async function POST(req) {
             );
         }
 
-        const workingFile = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
+        const workingFile = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
         if (!fs.existsSync(workingFile)) {
             return NextResponse.json({ error: 'Working workbook not found. Select a template first.' }, { status: 404 });
         }

@@ -61,7 +61,20 @@ const extractDataTags = (text) => {
   return out;
 };
 
-const cleanForDisplay = (text) => String(text || "").replace(/\[DATA:\s*\{[\s\S]*?\}\]/g, "").trim();
+const cleanForDisplay = (text) => String(text || "").replace(/\[DATA:\s*\{[\s\S]*?\}\]/g, "").replace(/\[SUGGESTIONS:\s*\[[\s\S]*?\]\]/g, "").trim();
+
+const extractSuggestions = (text) => {
+  const re = /\[SUGGESTIONS:\s*(\[[\s\S]*?\])\]/g;
+  const match = re.exec(String(text || ""));
+  if (match) {
+    try {
+      return JSON.parse(match[1].replace(/"/g, '"').replace(/'/g, '"'));
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
 
 // ─── INITIAL DATA ─────────────────────────────────────────────────────────────
 const INIT = {
@@ -378,7 +391,7 @@ function calcFA(assets) {
 }
 
 // ─── EDITABLE CELL ────────────────────────────────────────────────────────────
-function EC({ v, onChange, type = "num", style = {} }) {
+function EC({ v, onChange, type = "num", style = {}, onFocus = null }) {
   const [ed, setEd] = useState(false);
   const [val, setVal] = useState("");
   const commit = () => {
@@ -387,12 +400,12 @@ function EC({ v, onChange, type = "num", style = {} }) {
     onChange(type === "pct" ? n / 100 : n);
   };
   const display = type === "pct" ? fmtPct(v) : type === "currency" ? fmtINR(v, true) : fmtNum(v);
-  if (ed) return <input autoFocus value={val} onChange={e => setVal(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEd(false); }} style={{ background: "#0A2040", border: `1px solid ${C.teal}`, borderRadius: 3, color: C.inputBlue, fontSize: 11, fontFamily: "monospace", padding: "2px 6px", textAlign: "right", width: "100%", outline: "none", boxSizing: "border-box", ...style }} />;
-  return <div onClick={() => { setEd(true); setVal(type === "pct" ? ((v || 0) * 100).toFixed(1) : String(v || 0)); }} title="Click to edit" style={{ color: C.inputBlue, fontSize: 11, fontFamily: "monospace", textAlign: "right", cursor: "pointer", padding: "2px 6px", borderRadius: 3, border: "1px solid transparent", ...style }}>{display}</div>;
+  if (ed) return <input autoFocus value={val} onChange={e => setVal(e.target.value)} onBlur={commit} onFocus={() => onFocus && onFocus()} onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEd(false); }} style={{ background: "#0A2040", border: `1px solid ${C.teal}`, borderRadius: 3, color: C.inputBlue, fontSize: 11, fontFamily: "monospace", padding: "2px 6px", textAlign: "right", width: "100%", outline: "none", boxSizing: "border-box", ...style }} />;
+  return <div onClick={() => { setEd(true); setVal(type === "pct" ? ((v || 0) * 100).toFixed(1) : String(v || 0)); if (onFocus) onFocus(); }} title="Click to edit" style={{ color: C.inputBlue, fontSize: 11, fontFamily: "monospace", textAlign: "right", cursor: "pointer", padding: "2px 6px", borderRadius: 3, border: "1px solid transparent", ...style }}>{display}</div>;
 }
 
-function TI({ v, onChange, placeholder = "", style = {} }) {
-  return <input value={v || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ background: "transparent", border: "none", outline: "none", color: C.inputBlue, fontSize: 11, fontFamily: "sans-serif", width: "100%", ...style }} />;
+function TI({ v, onChange, placeholder = "", style = {}, onFocus = null }) {
+  return <input value={v || ""} onChange={e => onChange(e.target.value)} onFocus={() => onFocus && onFocus()} placeholder={placeholder} style={{ background: "transparent", border: "none", outline: "none", color: C.inputBlue, fontSize: 11, fontFamily: "sans-serif", width: "100%", ...style }} />;
 }
 
 // ─── SHARED TABLE STYLES ──────────────────────────────────────────────────────
@@ -400,7 +413,7 @@ const th = (extra = {}) => ({ padding: "7px 10px", fontSize: 10, color: C.gold, 
 const td0 = (extra = {}) => ({ padding: "5px 10px", fontSize: 11, borderBottom: `1px solid ${C.border}`, ...extra });
 
 // ─── SHEET: 1. BASICS ────────────────────────────────────────────────────────
-function Basics({ d, setD }) {
+function Basics({ d, setD, onFocus }) {
   const fields = [
     ["1", "Legal Name of the Business", "legalName"],
     ["2", "Trade Name of the Business", "tradeName"],
@@ -424,7 +437,13 @@ function Basics({ d, setD }) {
               <td style={{ ...td0(), width: 50, color: C.gold, fontFamily: "monospace", fontWeight: 700, borderRight: `1px solid ${C.border}` }}>{no}</td>
               <td style={{ ...td0(), width: 300, color: C.text1, borderRight: `1px solid ${C.border}` }}>{label}</td>
               <td style={td0()}>
-                <TI v={d[key]} onChange={v => setD(p => ({ ...p, [key]: v }))} placeholder={`Enter ${label.toLowerCase()}...`} style={{ color: C.inputBlue, fontSize: 12, padding: "2px 4px" }} />
+                <TI
+                  v={d[key]}
+                  onChange={v => setD(p => ({ ...p, [key]: v }))}
+                  onFocus={() => onFocus && onFocus("Basics", label, key, d[key])}
+                  placeholder={`Enter ${label.toLowerCase()}...`}
+                  style={{ color: C.inputBlue, fontSize: 12, padding: "2px 4px" }}
+                />
               </td>
             </tr>
           ))}
@@ -467,7 +486,7 @@ function DataNeeded({ setSheet }) {
 }
 
 // ─── SHEET: REVENUE STREAMS ──────────────────────────────────────────────────
-function RevStreams({ groups, setGroups, phase, perDay = false }) {
+function RevStreams({ groups, setGroups, phase, perDay = false, onFocus }) {
   const computed = calcRevYearly(groups, perDay);
   const gKeys = ["gY1", "gY2", "gY3", "gY4", "gY5"];
   const gLabels = ["Monthly Growth Y1", "Yearly Growth Y2→Y3", "Growth Y3→Y4", "Growth Y4→Y5", "Growth Y5→Y6"];
@@ -498,11 +517,42 @@ function RevStreams({ groups, setGroups, phase, perDay = false }) {
               <tr key={`${gi}-${ii}`} style={{ background: ii % 2 === 0 ? C.bg1 : C.bg0 }}>
                 <td style={{ ...td0(), color: C.text2, fontFamily: "monospace", fontSize: 10 }}>{it.id}</td>
                 <td style={td0()} />
-                <td style={td0()}><TI v={it.sub} onChange={v => upd(gi, ii, "sub", v)} placeholder="Sub service..." style={{ color: C.text1 }} /></td>
-                <td style={td0()}><EC v={perDay ? it.qtyDay : it.qty} type="num" onChange={v => upd(gi, ii, perDay ? "qtyDay" : "qty", v)} /></td>
-                <td style={td0()}><EC v={it.price} type="num" onChange={v => upd(gi, ii, "price", v)} /></td>
+                <td style={td0()}>
+                  <TI
+                    v={it.sub}
+                    onChange={v => upd(gi, ii, "sub", v)}
+                    onFocus={() => onFocus && onFocus(phase, it.sub, "Sub Service", it.sub)}
+                    placeholder="Sub service..."
+                    style={{ color: C.text1 }}
+                  />
+                </td>
+                <td style={td0()}>
+                  <EC
+                    v={perDay ? it.qtyDay : it.qty}
+                    type="num"
+                    onChange={v => upd(gi, ii, perDay ? "qtyDay" : "qty", v)}
+                    onFocus={() => onFocus && onFocus(phase, it.sub, perDay ? "Qty/Day" : "Qty/Month", perDay ? it.qtyDay : it.qty)}
+                  />
+                </td>
+                <td style={td0()}>
+                  <EC
+                    v={it.price}
+                    type="num"
+                    onChange={v => upd(gi, ii, "price", v)}
+                    onFocus={() => onFocus && onFocus(phase, it.sub, "Price", it.price)}
+                  />
+                </td>
                 {YEARS.map((_, yi) => <td key={yi} style={{ ...td0(), color: it.yearlyTotals[yi] > 0 ? C.text0 : C.text2, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(it.yearlyTotals[yi], true)}</td>)}
-                {gKeys.map((k, i) => <td key={i} style={td0()}><EC v={it[k]} type="pct" onChange={v => upd(gi, ii, k, v)} /></td>)}
+                {gKeys.map((k, i) => (
+                  <td key={i} style={td0()}>
+                    <EC
+                      v={it[k]}
+                      type="pct"
+                      onChange={v => upd(gi, ii, k, v)}
+                      onFocus={() => onFocus && onFocus(phase, it.sub, gLabels[i], it[k])}
+                    />
+                  </td>
+                ))}
               </tr>
             )),
             <tr key={`gt${gi}`} style={{ background: C.totalBg }}>
@@ -525,7 +575,7 @@ function RevStreams({ groups, setGroups, phase, perDay = false }) {
 }
 
 // ─── SHEET: OPEX ─────────────────────────────────────────────────────────────
-function OpexSheet({ groups, setGroups }) {
+function OpexSheet({ groups, setGroups, onFocus }) {
   const computed = calcOpexYearly(groups);
   const gKeys = ["gY1", "gY2", "gY3", "gY4", "gY5"];
   const gLabels = ["Growth Y1", "Growth Y2", "Growth Y3", "Growth Y4", "Growth Y5"];
@@ -556,11 +606,42 @@ function OpexSheet({ groups, setGroups }) {
               <tr key={`${gi}-${ii}`} style={{ background: ii % 2 === 0 ? C.bg1 : C.bg0 }}>
                 <td style={{ ...td0(), color: C.text2, fontFamily: "monospace", fontSize: 10 }}>{it.id}</td>
                 <td style={td0()} />
-                <td style={td0()}><TI v={it.sub} onChange={v => upd(gi, ii, "sub", v)} placeholder="Sub service..." style={{ color: C.text1 }} /></td>
-                <td style={td0()}><EC v={it.qty} type="num" onChange={v => upd(gi, ii, "qty", v)} /></td>
-                <td style={td0()}><EC v={it.cost} type="num" onChange={v => upd(gi, ii, "cost", v)} /></td>
+                <td style={td0()}>
+                  <TI
+                    v={it.sub}
+                    onChange={v => upd(gi, ii, "sub", v)}
+                    onFocus={() => onFocus && onFocus("OPEX", it.sub, "Sub Service", it.sub)}
+                    placeholder="Sub service..."
+                    style={{ color: C.text1 }}
+                  />
+                </td>
+                <td style={td0()}>
+                  <EC
+                    v={it.qty}
+                    type="num"
+                    onChange={v => upd(gi, ii, "qty", v)}
+                    onFocus={() => onFocus && onFocus("OPEX", it.sub, "Quantity", it.qty)}
+                  />
+                </td>
+                <td style={td0()}>
+                  <EC
+                    v={it.cost}
+                    type="num"
+                    onChange={v => upd(gi, ii, "cost", v)}
+                    onFocus={() => onFocus && onFocus("OPEX", it.sub, "Cost/Month", it.cost)}
+                  />
+                </td>
                 {YEARS.map((_, yi) => <td key={yi} style={{ ...td0(), color: it.yearlyTotals[yi] > 0 ? "#E87878" : C.text2, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(it.yearlyTotals[yi], true)}</td>)}
-                {gKeys.map((k, i) => <td key={i} style={td0()}><EC v={it[k]} type="pct" onChange={v => upd(gi, ii, k, v)} /></td>)}
+                {gKeys.map((k, i) => (
+                  <td key={i} style={td0()}>
+                    <EC
+                      v={it[k]}
+                      type="pct"
+                      onChange={v => upd(gi, ii, k, v)}
+                      onFocus={() => onFocus && onFocus("OPEX", it.sub, gLabels[i], it[k])}
+                    />
+                  </td>
+                ))}
               </tr>
             )),
             <tr key={`gt${gi}`} style={{ background: C.totalBg }}>
@@ -583,7 +664,7 @@ function OpexSheet({ groups, setGroups }) {
 }
 
 // ─── SHEET: CAPEX ─────────────────────────────────────────────────────────────
-function Capex({ data, setData }) {
+function Capex({ data, setData, onFocus }) {
   const updItem = (ci, ii, k, v) => setData(p => p.map((cat, ci2) => ci2 !== ci ? cat : { ...cat, items: cat.items.map((it, ii2) => ii2 !== ii ? it : { ...it, [k]: v }) }));
   const updCat = (ci, k, v) => setData(p => p.map((cat, ci2) => ci2 !== ci ? cat : { ...cat, [k]: v }));
   const yLabels = ["Year 1 (31/03/2027)", "Year 2 (31/03/2028)", "Year 3 (31/03/2029)", "Year 4 (31/03/2030)", "Year 5 (31/03/2031)"];
@@ -609,9 +690,9 @@ function Capex({ data, setData }) {
             ...cat.items.map((it, ii) => (
               <tr key={`${ci}-${ii}`} style={{ background: ii % 2 === 0 ? C.bg1 : C.bg0 }}>
                 <td style={{ ...td0(), color: C.text2, fontSize: 10 }} />
-                <td style={{ ...td0(), paddingLeft: 24 }}><TI v={it.name} onChange={v => updItem(ci, ii, "name", v)} placeholder="Asset name..." style={{ color: C.text1 }} /></td>
-                <td style={td0()}><EC v={it.total} type="num" onChange={v => updItem(ci, ii, "total", v)} /></td>
-                {["y1", "y2", "y3", "y4", "y5"].map(k => <td key={k} style={td0()}><EC v={it[k]} type="num" onChange={v => updItem(ci, ii, k, v)} /></td>)}
+                <td style={{ ...td0(), paddingLeft: 24 }}><TI v={it.name} onChange={v => updItem(ci, ii, "name", v)} onFocus={() => onFocus && onFocus("CAPEX", it.name, "Asset Name", it.name)} placeholder="Asset name..." style={{ color: C.text1 }} /></td>
+                <td style={td0()}><EC v={it.total} type="num" onChange={v => updItem(ci, ii, "total", v)} onFocus={() => onFocus && onFocus("CAPEX", it.name, "Total Amount", it.total)} /></td>
+                {["y1", "y2", "y3", "y4", "y5"].map(k => <td key={k} style={td0()}><EC v={it[k]} type="num" onChange={v => updItem(ci, ii, k, v)} onFocus={() => onFocus && onFocus("CAPEX", it.name, `Year ${k.slice(1)}`, it[k])} /></td>)}
               </tr>
             )),
             <tr key={`sp${ci}`}><td colSpan={8} style={{ height: 8 }} /></tr>
@@ -691,7 +772,7 @@ function SalesSheet({ groups, phase }) {
 }
 
 // ─── SHEET: TOTAL PROJECT COST ────────────────────────────────────────────────
-function TotalProjectCost({ data, setData }) {
+function TotalProjectCost({ data, setData, onFocus }) {
   const { total, promoterContrib, termLoan, wcLoan } = data;
   return (
     <div>
@@ -707,7 +788,7 @@ function TotalProjectCost({ data, setData }) {
           ].map(([label, key], i) => (
             <tr key={key} style={{ background: i % 2 === 0 ? C.bg2 : C.bg1 }}>
               <td style={{ ...td0(), color: i === 0 ? C.text0 : C.text1, fontWeight: i === 0 ? 700 : 400 }}>{label}</td>
-              <td style={td0()}><EC v={data[key]} type="num" onChange={v => setData(p => ({ ...p, [key]: v }))} /></td>
+              <td style={td0()}><EC v={data[key]} type="num" onChange={v => setData(p => ({ ...p, [key]: v }))} onFocus={() => onFocus && onFocus("Project Cost", label, key, data[key])} /></td>
             </tr>
           ))}
           <tr style={{ background: C.totalBg }}>
@@ -981,7 +1062,7 @@ function DSCR({ revP1, opexP1 }) {
 }
 
 // ─── SHEET: REPAYMENT SCHEDULE ────────────────────────────────────────────────
-function RepaymentSchedule({ loan1, loan2 }) {
+function RepaymentSchedule({ loan1, loan2, onFocus }) {
   const l1 = calcLoan(loan1.amount, loan1.duration, loan1.rate, loan1.startDate);
   const l2 = calcLoan(loan2.amount, loan2.duration, loan2.rate, loan2.startDate);
   const [active, setActive] = useState(1);
@@ -1028,7 +1109,7 @@ function RepaymentSchedule({ loan1, loan2 }) {
 }
 
 // ─── SHEET: FA SCHEDULE ───────────────────────────────────────────────────────
-function FASchedule({ assets, setAssets }) {
+function FASchedule({ assets, setAssets, onFocus }) {
   const computed = calcFA(assets);
   const updAsset = (i, k, v) => setAssets(p => p.map((a, ai) => ai !== i ? a : { ...a, [k]: v }));
   return (
@@ -1045,11 +1126,11 @@ function FASchedule({ assets, setAssets }) {
         <tbody>
           {computed.map((a, i) => (
             <tr key={i} style={{ background: i % 2 === 0 ? C.bg1 : C.bg0 }}>
-              <td style={td0()}><TI v={a.name} onChange={v => updAsset(i, "name", v)} placeholder="Asset name..." style={{ color: C.text1 }} /></td>
-              <td style={td0()}><EC v={a.rate} type="pct" onChange={v => updAsset(i, "rate", v)} /></td>
-              <td style={td0()}><EC v={a.opening} type="num" onChange={v => updAsset(i, "opening", v)} /></td>
-              <td style={td0()}><EC v={a.addAbove} type="num" onChange={v => updAsset(i, "addAbove", v)} /></td>
-              <td style={td0()}><EC v={a.addBelow} type="num" onChange={v => updAsset(i, "addBelow", v)} /></td>
+              <td style={td0()}><TI v={a.name} onChange={v => updAsset(i, "name", v)} onFocus={() => onFocus && onFocus("FA Schedule", a.name, "Asset Name", a.name)} placeholder="Asset name..." style={{ color: C.text1 }} /></td>
+              <td style={td0()}><EC v={a.rate} type="pct" onChange={v => updAsset(i, "rate", v)} onFocus={() => onFocus && onFocus("FA Schedule", a.name, "Rate", a.rate)} /></td>
+              <td style={td0()}><EC v={a.opening} type="num" onChange={v => updAsset(i, "opening", v)} onFocus={() => onFocus && onFocus("FA Schedule", a.name, "Opening WDV", a.opening)} /></td>
+              <td style={td0()}><EC v={a.addAbove} type="num" onChange={v => updAsset(i, "addAbove", v)} onFocus={() => onFocus && onFocus("FA Schedule", a.name, "Addition >180d", a.addAbove)} /></td>
+              <td style={td0()}><EC v={a.addBelow} type="num" onChange={v => updAsset(i, "addBelow", v)} onFocus={() => onFocus && onFocus("FA Schedule", a.name, "Addition <180d", a.addBelow)} /></td>
               <td style={{ ...td0(), color: C.redL, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(a.dep1, true)}</td>
               <td style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(a.closing1, true)}</td>
               <td style={{ ...td0(), color: C.inputBlue, fontFamily: "monospace", textAlign: "right" }}>—</td>
@@ -1072,7 +1153,7 @@ function FASchedule({ assets, setAssets }) {
 }
 
 // ─── SHEET: 3B CAPITAL COSTING ────────────────────────────────────────────────
-function CapitalCosting({ data, setData }) {
+function CapitalCosting({ data, setData, onFocus }) {
   const updItem = (ci, ii, k, v) => setData(p => p.map((cat, ci2) => ci2 !== ci ? cat : { ...cat, items: cat.items.map((it, ii2) => ii2 !== ii ? it : { ...it, [k]: v }) }));
   const yLabels = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"];
   return (
@@ -1097,9 +1178,9 @@ function CapitalCosting({ data, setData }) {
             ...cat.items.map((it, ii) => (
               <tr key={`${ci}-${ii}`} style={{ background: ii % 2 === 0 ? C.bg1 : C.bg0 }}>
                 <td style={{ ...td0(), color: C.text2, fontSize: 10 }} />
-                <td style={{ ...td0(), paddingLeft: 20 }}><TI v={it.name} onChange={v => updItem(ci, ii, "name", v)} style={{ color: C.text1 }} /></td>
-                <td style={td0()}><EC v={it.total} type="num" onChange={v => updItem(ci, ii, "total", v)} /></td>
-                {["y1", "y2", "y3", "y4", "y5"].map(k => <td key={k} style={td0()}><EC v={it[k]} type="num" onChange={v => updItem(ci, ii, k, v)} /></td>)}
+                <td style={{ ...td0(), paddingLeft: 20 }}><TI v={it.name} onChange={v => updItem(ci, ii, "name", v)} onFocus={() => onFocus && onFocus("Capital Costing", it.name, "Asset Name", it.name)} style={{ color: C.text1 }} /></td>
+                <td style={td0()}><EC v={it.total} type="num" onChange={v => updItem(ci, ii, "total", v)} onFocus={() => onFocus && onFocus("Capital Costing", it.name, "Total Amount", it.total)} /></td>
+                {["y1", "y2", "y3", "y4", "y5"].map(k => <td key={k} style={td0()}><EC v={it[k]} type="num" onChange={v => updItem(ci, ii, k, v)} onFocus={() => onFocus && onFocus("Capital Costing", it.name, `Year ${k.slice(1)}`, it[k])} /></td>)}
               </tr>
             )),
             <tr key={`sp${ci}`}><td colSpan={8} style={{ height: 8 }} /></tr>
@@ -1138,38 +1219,35 @@ function SheetHeader({ title, sub, readOnly }) {
 }
 
 // ─── AI SYSTEM PROMPT ────────────────────────────────────────────────────────
-const AI_SYSTEM = `You are the OnEasy Financial Strategist, a high-level agentic AI specialized in building investor-grade financial models. 
+const AI_SYSTEM = `You are the OnEasy Financial Strategist, a professional AI assistant specialized in building investor-grade financial models.
 
-### YOUR PERSONA
-- You are not just a data entry tool; you are a strategic partner.
-- Your tone is professional, insightful, and proactive.
-- You understand business models (SaaS, EdTech, Healthcare, etc.) and suggest industry-standard benchmarks.
+### CRITICAL: YOU MUST OUTPUT [DATA] TAGS
+Every time the user confirms data (revenue, costs, funding), you MUST emit [DATA] tags to update the model. Never just say "I've added it" - you MUST include the data tag.
 
-### OPERATION MODES
-1. **Discovery (New Model):** Guide the user through a logical sequence (Company -> Model Type -> Revenue -> Costs -> Growth -> Funding). Ask clarifying questions if the business model is unique.
-2. **Analysis & Refinement:** When data exists, analyze it. If a margin is too low or growth is unrealistic, point it out and propose a fix.
-3. **Execution:** When the user asks for changes, respond with clear explanations and the required [DATA] changes.
+### REQUIRED DATA TAGS
+When user confirms revenue:
+[DATA: {"type":"addRevenueStream","streamName":"Subscription","productName":"SaaS Subscription","units":25,"price":30}]
 
-### DATA MANIPULATION RULES
-Respond with valid JSON:
-{
-  "message": "Direct response to the user. Explain YOUR STRATEGIC REASONING here.",
-  "changes": {
-    "basics": { "legalName": "...", "tradeName": "...", "description": "...", "startDateP1": "YYYY-MM-DD" },
-    "revP1": [ { "header": "...", "items": [{ "sub": "...", "qty": 0, "price": 0, "gY1": 0.1 }] } ],
-    "opexP1": [ { "header": "...", "items": [{ "sub": "...", "qty": 0, "cost": 0, "gY1": 0.1 }] } ],
-    "capex": [ { "category": "...", "items": [{ "name": "...", "total": 0 }] } ],
-    "totalProjectCost": { "promoterContrib": 0, "termLoan": 0 },
-    "loan1": { "amount": 0, "duration": 36, "rate": 12 },
-    "fixedAssets": [ { "name": "...", "rate": 0.15, "opening": 0 } ]
-  }
-}
+When user confirms costs:
+[DATA: {"type":"addOpex","category":"Team Salaries","subCategory":"Salaries","units":4,"cost":4000}]
 
-### CRITICAL GUIDELINES
-- **Proactivity:** If a user adds a revenue stream but forgets the associated COGS/OPEX, suggest adding them.
-- **Consistency:** Ensure growth rates and start dates are consistent across the model.
-- **Integrity:** Never hallucinate data. If unsure about a specific industry cost, ask or provide a range based on common knowledge.
-- **Feedback Loop:** Always summarize what you changed and why it helps the model's accuracy or investor appeal.`;
+When user confirms funding:
+[DATA: {"type":"setFunding","amount":175000}]
+
+When you need to ask questions:
+[SUGGESTIONS: ["option1", "option2", "option3"]]
+
+### RULES
+- ALWAYS include [DATA] tags when user confirms any data
+- Ask short questions (under 15 words)
+- End responses with [SUGGESTIONS] tag
+
+### DISCOVERY FLOW
+1. Business type → 2. Revenue model → 3. Price → 4. Volume → 5. Costs → 6. Funding
+
+### STYLE
+- Short, crisp responses
+- When user says "Yes, add it" or confirms data → MUST emit [DATA] tag`;
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function DoctyModel() {
@@ -1221,55 +1299,19 @@ export default function DoctyModel() {
     }
   };
 
-  const detectModel = (text) => {
-    const t = String(text || "").toLowerCase();
-    if (t.includes("edtech") || t.includes("education") || t.includes("course")) return "edtech";
-    if (t.includes("saas") || t.includes("software")) return "saas";
-    if (t.includes("health")) return "healthcare";
-    if (t.includes("consult")) return "consulting";
-    if (t.includes("ecom") || t.includes("retail") || t.includes("store")) return "ecommerce";
-    return "consulting";
-  };
-
-  const getQuestionText = (step, modelKey) => {
-    const m = MODEL_DB[modelKey] || MODEL_DB.consulting;
-    if (step === 0) return "Let’s start with your company name or brand name.";
-    if (step === 1) return "What type of business are you building? I’ll use this to suggest relevant streams and costs.";
-    if (step === 2) return `For your ${m.label} model, what are your main revenue streams?`;
-    if (step === 3) return "Great. Now share substreams under each main stream (example: Stream A: sub1, sub2 | Stream B: sub1, sub2).";
-    if (step === 4) return "Who are your target customers?";
-    if (step === 5) return "How do you price these offerings? Share pricing model and base prices.";
-    if (step === 6) return "What monthly volumes do you expect in Year 1?";
-    if (step === 7) return "What are your major monthly operating expenses for this business?";
-    if (step === 8) return "What growth assumptions should we use? (Volume %, Price %, OPEX %)";
-    return "Finally, what is your launch timeline and starting funding?";
-  };
-
-  const getSuggestionsForStep = (step, modelKey) => {
-    const m = MODEL_DB[modelKey] || MODEL_DB.consulting;
-    if (step === 1) return ["EdTech", "SaaS", "Healthcare", "Consulting", "E-commerce"];
-    if (step === 2) return m.streams || m.products;
-    if (step === 3) return m.substreams || m.products;
-    if (step === 4) return m.audience;
-    if (step === 5) return m.pricing;
-    if (step === 7) return m.opex;
-    return [];
-  };
 
   const [d, setD] = useState(buildEmptyState());
   const [sheet, setSheet] = useState("1. Basics");
   const CONTEXT_QUESTIONS = [];
+  const [contextStep, setContextStep] = useState(0);
   const [businessModel, setBusinessModel] = useState("consulting");
-  const [mainStreams, setMainStreams] = useState([]);
   const [msgs, setMsgs] = useState([{
     role: "assistant",
-    text:
-      "👋 Welcome to the **OnEasy Financial Model**.\n\n" +
-      "I’m here to help you build your financial model step by step. We'll start with some basics and then dive into the details.\n\n" +
-      getQuestionText(0, "consulting")
+    text: "Hi! I'm your **Financial Strategist**. Tell me about your business - what do you do and who are your customers?"
   }]);
-  const [contextStep, setContextStep] = useState(0);
+  const [cellSuggestion, setCellSuggestion] = useState(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState("");
+  const [llmSuggestions, setLlmSuggestions] = useState(["Healthcare Clinic", "EdTech Platform", "SaaS Startup", "E-commerce Store", "Consulting Agency", "Pharmacy", "Manufacturing"]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -1567,169 +1609,30 @@ export default function DoctyModel() {
     });
   }, []);
 
-  const applyContextAnswer = async (step, answer) => {
-    const text = String(answer || "").trim();
-    if (!text) return;
-
-    if (step === 0) {
-      setD(prev => ({ ...prev, basics: { ...prev.basics, legalName: text, tradeName: text } }));
-      await writePatchesToExcel(dataActionToPatches({ type: "setBusinessInfo", legalName: text, tradeName: text }));
-      setSheet("1. Basics");
-      return;
-    }
-
-    if (step === 1) {
-      const mk = detectModel(text);
-      setBusinessModel(mk);
-      setMainStreams([]);
-      setD(prev => ({
-        ...prev,
-        basics: { ...prev.basics, description: `Business Type: ${text}` },
-        revP1: buildRevenueFromStreams((MODEL_DB[mk] || MODEL_DB.consulting).streams || []),
-        opexP1: buildCleanOpexState(mk),
-      }));
-      await writePatchesToExcel(dataActionToPatches({ type: "setBusinessInfo", description: `Business Type: ${text}` }));
-      setSheet("1. Basics");
-      return;
-    }
-
-    if (step === 2) {
-      const streams = parseList(text);
-      const selected = streams.length ? streams : getSuggestionsForStep(2, businessModel);
-      setMainStreams(selected);
-      setD(prev => ({ ...prev, revP1: buildRevenueFromStreams(selected) }));
-      setSheet("A.I Revenue Streams - P1");
-      return;
-    }
-
-    if (step === 3) {
-      const streams = mainStreams.length ? mainStreams : getSuggestionsForStep(2, businessModel).slice(0, 5);
-      const subMap = parseSubstreamMap(text, streams);
-      setD(prev => ({ ...prev, revP1: buildRevenueWithSubstreams(streams, subMap) }));
-      for (const streamName of streams) {
-        const subs = (subMap[String(streamName || "").toLowerCase()] || []).slice(0, 5);
-        for (const sub of subs) {
-          // eslint-disable-next-line no-await-in-loop
-          await writePatchesToExcel(dataActionToPatches({
-            type: "addRevenueStream",
-            streamName,
-            subName: sub,
-            productName: sub,
-            units: 1,
-            price: 1000,
-          }));
-        }
-      }
-      setSheet("A.I Revenue Streams - P1");
-      return;
-    }
-
-    if (step === 4) {
-      setD(prev => ({ ...prev, basics: { ...prev.basics, burningDesire: `Target Customers: ${text}` } }));
-      setSheet("1. Basics");
-      return;
-    }
-
-    if (step === 5) {
-      const nums = parseNumbers(text);
-      setD(prev => ({ ...prev, basics: { ...prev.basics, pitchDeck: `Pricing: ${text}` } }));
-      if (nums.length) {
-        setD(prev => {
-          const next = { ...prev, revP1: prev.revP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
-          const items = next.revP1.flatMap(g => g.items).filter(it => String(it.sub || "").trim());
-          items.forEach((it, i) => { if (nums[i] != null) it.price = nums[i]; });
-          return next;
-        });
-      }
-      setSheet("A.I Revenue Streams - P1");
-      return;
-    }
-
-    if (step === 6) {
-      const nums = parseNumbers(text);
-      if (nums.length) {
-        setD(prev => {
-          const next = { ...prev, revP1: prev.revP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
-          const items = next.revP1.flatMap(g => g.items).filter(it => String(it.sub || "").trim());
-          items.forEach((it, i) => { if (nums[i] != null) it.qty = nums[i]; });
-          return next;
-        });
-      }
-      setSheet("A.I Revenue Streams - P1");
-      return;
-    }
-
-    if (step === 7) {
-      const costs = parseNumbers(text);
-      const names = parseList(text);
-      const lines = names.length ? names : ["Operations", "Salaries", "Marketing"];
-      setD(prev => ({ ...prev, opexP1: buildCleanOpexState(businessModel, lines) }));
-      for (let i = 0; i < lines.length; i++) {
-        const name = lines[i];
-        const cost = costs[i] || 10000;
-        // eslint-disable-next-line no-await-in-loop
-        await writePatchesToExcel(dataActionToPatches({
-          type: "addOpex",
-          category: "Operating Expense",
-          subCategory: name,
-          units: 1,
-          price: cost
-        }));
-      }
-      setSheet("A.IIOPEX");
-      return;
-    }
-
-    if (step === 8) {
-      const [volumeGrowth = 10, priceGrowth = 5, opexGrowth = 8] = parsePercentages(text);
-      setD(prev => {
-        const next = {
-          ...prev,
-          revP1: prev.revP1.map(g => ({
-            ...g,
-            items: g.items.map(it => ({
-              ...it,
-              gY1: (volumeGrowth || 0) / 100,
-              gY2: (priceGrowth || 0) / 100,
-            })),
-          })),
-          opexP1: prev.opexP1.map(g => ({
-            ...g,
-            items: g.items.map(it => ({
-              ...it,
-              gY1: (opexGrowth || 0) / 100,
-            })),
-          })),
-        };
-        return next;
+  const handleCellFocus = async (sheetName, rowLabel, fieldName, currentValue) => {
+    if (loading) return;
+    setCellSuggestion({ sheet: sheetName, row: rowLabel, field: fieldName, loading: true });
+    try {
+      console.log("[AGENT] Action: Cell input suggestion (LLM)");
+      const res = await fetch("/api/chat-simple", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: AI_SYSTEM,
+          messages: [{ role: "user", text: `Suggest a realistic, industry-standard value for the following cell in a ${businessModel} financial model:\nSheet: ${sheetName}\nRow/Item: ${rowLabel}\nField: ${fieldName}\nCurrent Value: ${currentValue}\n\nRespond ONLY with a JSON object: {"suggestion": "value", "reason": "1-sentence explanation"}` }],
+        })
       });
-      await writePatchesToExcel(dataActionToPatches({
-        type: "setAssumptions",
-        revenueGrowthRate: (volumeGrowth || 0) / 100,
-        priceGrowthRate: (priceGrowth || 0) / 100,
-        opexGrowthRate: (opexGrowth || 0) / 100,
-      }));
-      setSheet("A.I Revenue Streams - P1");
-      return;
-    }
-
-    if (step === 9) {
-      const nums = parseNumbers(text);
-      const funding = nums[0] || 0;
-      const launchDate = parseLaunchDate(text);
-      setD(prev => ({
-        ...prev,
-        basics: { ...prev.basics, startDateP1: launchDate || text },
-        totalProjectCost: {
-          ...prev.totalProjectCost,
-          total: funding,
-          promoterContrib: Math.round(funding * 0.2),
-          termLoan: Math.max(0, funding - Math.round(funding * 0.2)),
-        }
-      }));
-      await writePatchesToExcel(dataActionToPatches({ type: "setFunding", loanAmount: Math.max(0, funding - Math.round(funding * 0.2)) }));
-      setSheet("2.Total Project Cost");
-      return;
+      const data = await res.json();
+      if (!res.ok) throw new Error("Suggestion failed");
+      let parsed;
+      try {
+        parsed = JSON.parse(data.text.replace(/```json|```/g, "").trim());
+      } catch {
+        parsed = { suggestion: data.text, reason: "" };
+      }
+      setCellSuggestion({ sheet: sheetName, row: rowLabel, field: fieldName, suggestion: parsed.suggestion, reason: parsed.reason, loading: false });
+    } catch {
+      setCellSuggestion(null);
     }
   };
 
@@ -1764,29 +1667,16 @@ export default function DoctyModel() {
     const nextMsgs = [...msgs, { role: "user", text }];
     setMsgs(nextMsgs);
     if (/start fresh|new data|reset/i.test(text)) {
-      setContextStep(0);
       setBusinessModel("consulting");
-      setMainStreams([]);
       setD(buildEmptyState());
       setSheet("1. Basics");
-      setMsgs(p => [...p, { role: "assistant", text: `Sure. ${getQuestionText(0, "consulting")}` }]);
-      setLoading(false);
-      return;
-    }
-    if (contextStep >= 0 && contextStep <= 9) {
-      await applyContextAnswer(contextStep, text);
-      const nextStep = contextStep + 1;
-      setContextStep(nextStep);
-      const nextModel = contextStep === 1 ? detectModel(text) : businessModel;
-      if (nextStep <= 9) {
-        setMsgs(p => [...p, { role: "assistant", text: getQuestionText(nextStep, nextModel) }]);
-      } else {
-        setMsgs(p => [...p, { role: "assistant", text: "Perfect. Context captured. I have updated the sheet progressively with your data. Now tell me what you want to refine first: Revenue, OPEX, Project Cost, or P&L." }]);
-      }
+      console.log("[AGENT] Action: Reset flow (Static)");
+      setMsgs(p => [...p, { role: "assistant", text: "Of course! Let's start with a clean slate. Tell me about your business vision, and we'll build the model together from scratch." }]);
       setLoading(false);
       return;
     }
     try {
+      console.log("[AGENT] Action: Model refinement (LLM)");
       const res = await fetch("/api/chat-simple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1806,6 +1696,10 @@ export default function DoctyModel() {
           await applyDataAction(tag);
         }
       }
+      const suggestions = extractSuggestions(raw);
+      if (suggestions && Array.isArray(suggestions) && suggestions.length > 0) {
+        setLlmSuggestions(suggestions);
+      }
       let parsed;
       try { parsed = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch { parsed = { message: raw, changes: null }; }
       if (parsed.changes) {
@@ -1823,34 +1717,33 @@ export default function DoctyModel() {
       }
       setMsgs(p => [...p, { role: "assistant", text: cleanForDisplay(parsed.message || raw || "Done!") }]);
     } catch (e) {
-      setMsgs(p => [...p, { role: "assistant", text: `⚠️ Error. ${(e && e.message) ? e.message : "Please try again."}` }]);
+      setMsgs(p => [...p, { role: "assistant", text: `I'm sorry, I hit a small snag while processing that: ${(e && e.message) ? e.message : "something went wrong on my end."} Should we try again, or perhaps look at another part of the model?` }]);
     }
     setLoading(false);
   };
 
   const renderSheet = () => {
-    const props = { d, setD };
     switch (sheet) {
-      case "1. Basics": return <Basics d={d.basics} setD={v => setD(p => ({ ...p, basics: v(p.basics) }))} />;
+      case "1. Basics": return <Basics d={d.basics} setD={v => setD(p => ({ ...p, basics: v(p.basics) }))} onFocus={handleCellFocus} />;
       case "A. Data Needed": return <DataNeeded setSheet={setSheet} />;
-      case "A.I Revenue Streams - P1": return <RevStreams groups={d.revP1} setGroups={v => setD(p => ({ ...p, revP1: typeof v === "function" ? v(p.revP1) : v }))} phase="Phase 1" />;
-      case "A.I Revenue Streams - P2": return <RevStreams groups={d.revP2} setGroups={v => setD(p => ({ ...p, revP2: typeof v === "function" ? v(p.revP2) : v }))} phase="Phase 2" perDay />;
-      case "A.IIOPEX": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} />;
-      case "A.III CAPEX": return <Capex data={d.capex} setData={v => setD(p => ({ ...p, capex: typeof v === "function" ? v(p.capex) : v }))} />;
+      case "A.I Revenue Streams - P1": return <RevStreams groups={d.revP1} setGroups={v => setD(p => ({ ...p, revP1: typeof v === "function" ? v(p.revP1) : v }))} phase="Phase 1" onFocus={handleCellFocus} />;
+      case "A.I Revenue Streams - P2": return <RevStreams groups={d.revP2} setGroups={v => setD(p => ({ ...p, revP2: typeof v === "function" ? v(p.revP2) : v }))} phase="Phase 2" perDay onFocus={handleCellFocus} />;
+      case "A.IIOPEX": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} onFocus={handleCellFocus} />;
+      case "A.III CAPEX": return <Capex data={d.capex} setData={v => setD(p => ({ ...p, capex: typeof v === "function" ? v(p.capex) : v }))} onFocus={handleCellFocus} />;
       case "B.I Sales - P1": return <SalesSheet groups={d.revP1} phase="Phase 1" />;
       case "B.I Sales - P2": return <SalesSheet groups={d.revP2} phase="Phase 2" />;
-      case "B.II - OPEX": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} />;
-      case "2.Total Project Cost": return <TotalProjectCost data={d.totalProjectCost} setData={v => setD(p => ({ ...p, totalProjectCost: typeof v === "function" ? v(p.totalProjectCost) : v }))} />;
-      case "B.II OPEX - P1": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} />;
+      case "B.II - OPEX": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} onFocus={handleCellFocus} />;
+      case "2.Total Project Cost": return <TotalProjectCost data={d.totalProjectCost} setData={v => setD(p => ({ ...p, totalProjectCost: typeof v === "function" ? v(p.totalProjectCost) : v }))} onFocus={handleCellFocus} />;
+      case "B.II OPEX - P1": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} onFocus={handleCellFocus} />;
       case "4. P&L": return <PL revP1={d.revP1} opexP1={d.opexP1} />;
-      case "3b. Costing - (Capital Exp)": return <CapitalCosting data={d.capex} setData={v => setD(p => ({ ...p, capex: typeof v === "function" ? v(p.capex) : v }))} />;
+      case "3b. Costing - (Capital Exp)": return <CapitalCosting data={d.capex} setData={v => setD(p => ({ ...p, capex: typeof v === "function" ? v(p.capex) : v }))} onFocus={handleCellFocus} />;
       case "5. Balance sheet": return <BalanceSheet revP1={d.revP1} opexP1={d.opexP1} />;
       case "6. Ratios": return <Ratios revP1={d.revP1} opexP1={d.opexP1} />;
       case "DSCR": return <DSCR revP1={d.revP1} opexP1={d.opexP1} />;
-      case "Repayment schedule": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} />;
-      case "FA Schedule": return <FASchedule assets={d.fixedAssets} setAssets={v => setD(p => ({ ...p, fixedAssets: typeof v === "function" ? v(p.fixedAssets) : v }))} />;
-      case "Phase 1": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} />;
-      case "Phase 2": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} />;
+      case "Repayment schedule": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} onFocus={handleCellFocus} />;
+      case "FA Schedule": return <FASchedule assets={d.fixedAssets} setAssets={v => setD(p => ({ ...p, fixedAssets: typeof v === "function" ? v(p.fixedAssets) : v }))} onFocus={handleCellFocus} />;
+      case "Phase 1": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} onFocus={handleCellFocus} />;
+      case "Phase 2": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} onFocus={handleCellFocus} />;
       case "Costing": return <EmptySheet title="Costing" sub="Referenced from other sheets — no direct data entry" />;
       default: return <EmptySheet title={sheet} sub="Sheet content" />;
     }
@@ -1955,32 +1848,45 @@ export default function DoctyModel() {
             <div ref={endRef} />
           </div>
           <div style={{ padding: "4px 8px 6px", display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {getSuggestionsForStep(contextStep, businessModel).length > 0 && (
-              <div style={{ display: "flex", width: "100%", gap: 6, marginBottom: 4 }}>
-                <select
-                  value={selectedSuggestion}
-                  onChange={(e) => setSelectedSuggestion(e.target.value)}
-                  style={{ flex: 1, background: C.bg0, color: C.text0, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px", fontSize: 11 }}
-                >
-                  <option value="">Suggestions (optional)</option>
-                  {getSuggestionsForStep(contextStep, businessModel).map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-                <button
-                  onClick={() => {
-                    if (!selectedSuggestion) return;
-                    setInput(prev => prev ? `${prev}, ${selectedSuggestion}` : selectedSuggestion);
-                  }}
-                  style={{ padding: "0 10px", fontSize: 11, background: C.navB, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text1, cursor: "pointer" }}
-                >
-                  Use
-                </button>
-              </div>
-            )}
-            {["Set Doctor qty to 50,000", "Add Pharmacy revenue", "Change App Dev cost", "Show P&L summary"].map(s => (
+            <div style={{ display: "flex", width: "100%", gap: 6, marginBottom: 4 }}>
+              <select
+                value={selectedSuggestion}
+                onChange={(e) => {
+                  setSelectedSuggestion(e.target.value);
+                  if (e.target.value) setInput(e.target.value);
+                }}
+                style={{ flex: 1, background: C.bg0, color: C.text0, border: `1px solid ${C.teal}`, borderRadius: 8, padding: "6px 8px", fontSize: 11 }}
+              >
+                <option value="">💡 AI Suggestions...</option>
+                {llmSuggestions.map((s, i) => (
+                  <option key={i} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            {["Show P&L", "Show Revenue", "Show Costs"].map(s => (
               <button key={s} onClick={() => setInput(s)} style={{ padding: "2px 8px", fontSize: 10, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text2, cursor: "pointer" }}>{s}</button>
             ))}
           </div>
           <div style={{ padding: "8px 10px", borderTop: `1px solid ${C.border}` }}>
+            {cellSuggestion && (
+              <div style={{ marginBottom: 10, padding: 10, background: "#0D1E38", border: `1px solid ${C.teal}`, borderRadius: 8 }}>
+                <div style={{ fontSize: 10, color: C.teal, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>AI Suggestion for: {cellSuggestion.field}</div>
+                {cellSuggestion.loading ? (
+                  <div style={{ fontSize: 11, color: C.text2 }}>Analyzing industry benchmarks...</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13, color: C.gold, fontWeight: 700, marginBottom: 2 }}>{cellSuggestion.suggestion}</div>
+                    <div style={{ fontSize: 10, color: C.text1, lineHeight: 1.4, marginBottom: 8 }}>{cellSuggestion.reason}</div>
+                    <button
+                      onClick={() => setInput(String(cellSuggestion.suggestion))}
+                      style={{ padding: "4px 10px", fontSize: 10, background: C.teal, border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontWeight: 700 }}
+                    >
+                      Use Suggestion
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             <div style={{ display: "flex", gap: 6, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px 6px 10px", alignItems: "flex-end" }}>
               <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Edit model or ask a question..." rows={2} style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 11, lineHeight: 1.5, fontFamily: "Inter,sans-serif", maxHeight: 70, overflowY: "auto" }} />
               <button onClick={send} disabled={loading || !input.trim()} style={{ width: 28, height: 28, borderRadius: 7, background: loading || !input.trim() ? C.border : "linear-gradient(135deg,#1a4db5,#3b78d4)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
