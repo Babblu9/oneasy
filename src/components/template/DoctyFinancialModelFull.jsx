@@ -1317,6 +1317,7 @@ export default function DoctyModel() {
   const [selectedSuggestion, setSelectedSuggestion] = useState("");
   const [llmSuggestions, setLlmSuggestions] = useState(["Healthcare Clinic", "EdTech Platform", "SaaS Startup", "E-commerce Store", "Consulting Agency", "Pharmacy", "Manufacturing"]);
   const [input, setInput] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [chatOpen, setChatOpen] = useState(true);
@@ -1360,6 +1361,9 @@ export default function DoctyModel() {
       });
       const result = await res.json();
       console.log("[DEBUG] excel-fill response:", result);
+      if (result.success) {
+        setRefreshKey(k => k + 1);
+      }
     } catch (e) {
       console.log("[DEBUG] excel-fill error:", e);
     }
@@ -1372,19 +1376,33 @@ export default function DoctyModel() {
     const qty = Math.max(0, Number(action.units) || 0);
     const price = Math.max(0, Number(action.price ?? action.value) || 0);
 
+    console.log("[DEBUG] applyRevenueAction:", { streamName, productName, qty, price });
+
     const next = { ...prev, revP1: prev.revP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
+    
+    // Try to find existing group or empty group
     let targetGroup = next.revP1.find(g => String(g.header || "").toLowerCase() === streamName.toLowerCase());
     if (!targetGroup) targetGroup = next.revP1.find(g => !String(g.header || "").trim());
-    if (!targetGroup) targetGroup = next.revP1[0];
+    if (!targetGroup && next.revP1.length > 0) targetGroup = next.revP1[0];
+    
+    // If still no group, create new one
+    if (!targetGroup) {
+      targetGroup = { id: String(next.revP1.length + 1), header: streamName, items: Array(5).fill(null).map((_, i) => ({ id: `${next.revP1.length + 1}${String.fromCharCode(97+i)}`, sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 })) };
+      next.revP1.push(targetGroup);
+    }
+    
     if (!targetGroup.header) targetGroup.header = streamName;
 
-    let targetItem = targetGroup.items.find(it => String(it.sub || "").toLowerCase() === productName.toLowerCase());
-    if (!targetItem) targetItem = targetGroup.items.find(it => !String(it.sub || "").trim());
+    // Find empty item slot
+    let targetItem = targetGroup.items.find(it => !String(it.sub || "").trim());
     if (!targetItem) targetItem = targetGroup.items[0];
 
-    targetItem.sub = productName || subName;
-    targetItem.qty = qty;
-    targetItem.price = price;
+    if (targetItem) {
+      targetItem.sub = productName || subName;
+      targetItem.qty = qty;
+      targetItem.price = price;
+    }
+    console.log("[DEBUG] Updated revP1:", JSON.stringify(next.revP1).substring(0, 200));
     return next;
   };
 
@@ -1394,19 +1412,30 @@ export default function DoctyModel() {
     const units = Math.max(0, Number(action.units) || 1);
     const cost = Math.max(0, Number(action.price ?? action.value) || 0);
 
+    console.log("[DEBUG] applyOpexAction:", { cat, sub, units, cost });
+
     const next = { ...prev, opexP1: prev.opexP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
+    
     let targetGroup = next.opexP1.find(g => String(g.header || "").toLowerCase() === cat.toLowerCase());
     if (!targetGroup) targetGroup = next.opexP1.find(g => !String(g.header || "").trim());
-    if (!targetGroup) targetGroup = next.opexP1[0];
+    if (!targetGroup && next.opexP1.length > 0) targetGroup = next.opexP1[0];
+    
+    if (!targetGroup) {
+      targetGroup = { id: String(next.opexP1.length + 1), header: cat, items: Array(5).fill(null).map((_, i) => ({ id: `${next.opexP1.length + 1}${String.fromCharCode(97+i)}`, sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })) };
+      next.opexP1.push(targetGroup);
+    }
+    
     if (!targetGroup.header) targetGroup.header = cat;
 
-    let targetItem = targetGroup.items.find(it => String(it.sub || "").toLowerCase() === sub.toLowerCase());
-    if (!targetItem) targetItem = targetGroup.items.find(it => !String(it.sub || "").trim());
+    let targetItem = targetGroup.items.find(it => !String(it.sub || "").trim());
     if (!targetItem) targetItem = targetGroup.items[0];
 
-    targetItem.sub = sub;
-    targetItem.qty = units;
-    targetItem.cost = cost;
+    if (targetItem) {
+      targetItem.sub = sub;
+      targetItem.qty = units;
+      targetItem.cost = cost;
+    }
+    console.log("[DEBUG] Updated opexP1:", JSON.stringify(next.opexP1).substring(0, 200));
     return next;
   };
 
@@ -1469,6 +1498,7 @@ export default function DoctyModel() {
       console.log("[DEBUG] Revenue patches:", patches);
       setD(prev => applyRevenueAction(prev, action));
       await writePatchesToExcel(patches);
+      setSheet("A.I Revenue Streams - P1");
       return;
     }
 
@@ -1478,12 +1508,14 @@ export default function DoctyModel() {
       console.log("[DEBUG] OPEX patches:", patches);
       setD(prev => applyOpexAction(prev, action));
       await writePatchesToExcel(patches);
+      setSheet("A.IIOPEX");
     }
     if (t === "setFunding") {
       console.log("[DEBUG] setFunding action:", action);
       const patches = dataActionToPatches({ type: "setFunding", ...action });
       console.log("[DEBUG] Funding patches:", patches);
       await writePatchesToExcel(patches);
+      setSheet("1. Basics");
     }
   };
 
