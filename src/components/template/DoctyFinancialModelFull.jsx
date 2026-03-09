@@ -1,0 +1,1995 @@
+'use client';
+
+import { useState, useRef, useEffect } from "react";
+import { dataActionToPatches } from "@/lib/excelCellMap.js";
+
+// ─── THEME ────────────────────────────────────────────────────────────────────
+const C = {
+  bg0: "#05091A", bg1: "#0A1020", bg2: "#0E1628", bg3: "#121E34",
+  nav: "#0C1426", navB: "#162040",
+  border: "#1A2B48", borderLight: "#243550",
+  gold: "#C4972A", goldL: "#E8C96B", goldD: "#8A6A1A",
+  teal: "#2A9E9E", tealL: "#3DBDBD",
+  green: "#2EA870", greenL: "#3DCA87",
+  red: "#C84040", redL: "#E85555",
+  blue: "#3B78D4", blueL: "#5B9CF6",
+  purple: "#7B52D4",
+  text0: "#E0EAF8", text1: "#8AAAC8", text2: "#4A6888", text3: "#2A3D58",
+  inputBlue: "#5B9CF6",
+  sectionBg: "#0C1830", totalBg: "#091422", headerBg: "#101E38",
+};
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+const fmtINR = (v, compact = false) => {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "string") return v;
+  if (v === 0) return "—";
+  const abs = Math.abs(v);
+  const neg = v < 0;
+  let s;
+  if (compact) {
+    if (abs >= 10000000) s = `₹${(abs / 10000000).toFixed(2)}Cr`;
+    else if (abs >= 100000) s = `₹${(abs / 100000).toFixed(2)}L`;
+    else if (abs >= 1000) s = `₹${(abs / 1000).toFixed(1)}K`;
+    else s = `₹${abs.toLocaleString("en-IN")}`;
+  } else {
+    s = `₹${abs.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  }
+  return neg ? `(${s})` : s;
+};
+const fmtPct = (v) => v == null ? "—" : `${(v * 100).toFixed(1)}%`;
+const fmtNum = (v) => v == null ? "—" : v === 0 ? "—" : v.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+const fmtDate = (d) => { try { return new Date(d).toLocaleDateString("en-IN"); } catch { return d || "—"; } };
+
+const YEARS = ["2026-27", "2027-28", "2028-29", "2029-30", "2030-31"];
+const GROWTH_KEYS_REV = ["gY1", "gY2", "gY3", "gY4", "gY5"];
+const GROWTH_KEYS_OPEX = ["gY1", "gY2", "gY3", "gY4", "gY5"];
+const MONTHS_Y1 = ["Apr '26", "May '26", "Jun '26", "Jul '26", "Aug '26", "Sep '26", "Oct '26", "Nov '26", "Dec '26", "Jan '27", "Feb '27", "Mar '27"];
+const MONTHS_Y1_DATES = ["2026-04-30", "2026-05-31", "2026-06-30", "2026-07-31", "2026-08-31", "2026-09-30", "2026-10-31", "2026-11-30", "2026-12-31", "2027-01-31", "2027-02-28", "2027-03-31"];
+
+const extractDataTags = (text) => {
+  const out = [];
+  const re = /\[DATA:\s*(\{[\s\S]*?\})\]/g;
+  let m;
+  while ((m = re.exec(String(text || ""))) !== null) {
+    try {
+      out.push(JSON.parse(m[1]));
+    } catch {
+      // ignore malformed tag
+    }
+  }
+  return out;
+};
+
+const cleanForDisplay = (text) => String(text || "").replace(/\[DATA:\s*\{[\s\S]*?\}\]/g, "").trim();
+
+// ─── INITIAL DATA ─────────────────────────────────────────────────────────────
+const INIT = {
+  basics: {
+    legalName: "OnEasy Financial Services", tradeName: "OnEasy",
+    address: "6-1-19 and 6-1-19/A, old no 108/3, Flat no 206, Musheerabad, Hyderabad - 500020, Telangana",
+    email: "Karimsavenue@gmail.com", contact: "", promoters: "4",
+    startDateP1: "2026-03-31", startDateP2: "",
+    description: "", pitchDeck: "", burningDesire: "",
+  },
+  revP1: [
+    {
+      id: "1", header: "Doctor Consultations", items: [
+        { id: "1a", sub: "Platform Access Fees", qty: 28000, price: 30, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
+        { id: "1b", sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
+        { id: "1c", sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
+        { id: "1d", sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
+        { id: "1e", sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
+      ]
+    },
+    {
+      id: "2", header: "Advertisement", items: [
+        { id: "2a", sub: "Advertisement", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "2b", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "2c", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "2d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "2e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+      ]
+    },
+    {
+      id: "3", header: "", items: [
+        { id: "3a", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "3b", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "3c", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "3d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "3e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+      ]
+    },
+    {
+      id: "4", header: "", items: [
+        { id: "4a", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "4b", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "4c", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "4d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "4e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+      ]
+    },
+    {
+      id: "5", header: "", items: [
+        { id: "5a", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "5b", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "5c", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "5d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "5e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+      ]
+    },
+  ],
+  revP2: [
+    {
+      id: "1", header: "Cakes", items: [
+        { id: "1a", sub: "Cup Cakes", qtyDay: 5, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+        { id: "1b", sub: "Customised Cakes", qtyDay: 4, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+        { id: "1c", sub: "Standard Cake", qtyDay: 3, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+        { id: "1d", sub: "Cake Slices", qtyDay: 2, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+        { id: "1e", sub: "", qtyDay: 1, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+      ]
+    },
+    {
+      id: "2", header: "Confectionary", items: [
+        { id: "2a", sub: "Burgers", qtyDay: 5, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+        { id: "2b", sub: "Pizza", qtyDay: 4, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+        { id: "2c", sub: "Puffs", qtyDay: 3, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+        { id: "2d", sub: "Other 1", qtyDay: 2, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+        { id: "2e", sub: "", qtyDay: 1, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+      ]
+    },
+  ],
+  opexP1: [
+    {
+      id: "1", header: "Technology & Product Development", items: [
+        { id: "1a", sub: "App Development", qty: 2, cost: 83333, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+        { id: "1b", sub: "App maintenance", qty: 3, cost: 250000, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+        { id: "1c", sub: "", qty: 2, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+        { id: "1d", sub: "", qty: 1, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+        { id: "1e", sub: "", qty: 2, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+        { id: "1f", sub: "", qty: 5, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+        { id: "1g", sub: "", qty: 0, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+      ]
+    },
+    {
+      id: "2", header: "Legal, Compliance & Professional Charges", items: [
+        { id: "2a", sub: "Professional Charges", qty: 1, cost: 50000, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+        { id: "2b", sub: "", qty: 2, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+        { id: "2c", sub: "", qty: 2, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+        { id: "2d", sub: "", qty: 1, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+        { id: "2e", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+        { id: "2f", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+        { id: "2g", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+      ]
+    },
+    {
+      id: "3", header: "Utilities", items: [
+        { id: "3a", sub: "Office Maintenance", qty: 1, cost: 100000, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+        { id: "3b", sub: "Rent", qty: 1, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+        { id: "3c", sub: "Power/ Electricity", qty: 0, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+        { id: "3d", sub: "Miscellaneous", qty: 1, cost: 125000, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+        { id: "3e", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+        { id: "3f", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+        { id: "3g", sub: "", qty: 5, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+        { id: "3h", sub: "", qty: 5, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+        { id: "3i", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+      ]
+    },
+    {
+      id: "4", header: "Support Team", items: [
+        { id: "4a", sub: "Salaries – Tech & Ops", qty: 0, cost: 400000, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
+        { id: "4b", sub: "Customer Support Team", qty: 0, cost: 120000, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
+        { id: "4c", sub: "Field Agents", qty: 0, cost: 120000, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
+        { id: "4d", sub: "", qty: 0, cost: 0, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
+        { id: "4e", sub: "", qty: 0, cost: 0, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
+        { id: "4f", sub: "", qty: 0, cost: 0, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
+      ]
+    },
+    {
+      id: "5", header: "Marketing & Sales", items: [
+        { id: "5a", sub: "Digital Marketing", qty: 0, cost: 50000, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
+        { id: "5b", sub: "Branding", qty: 0, cost: 25000, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
+        { id: "5c", sub: "", qty: 0, cost: 0, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
+        { id: "5d", sub: "", qty: 0, cost: 0, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
+        { id: "5e", sub: "", qty: 0, cost: 0, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
+      ]
+    },
+  ],
+  capex: [
+    {
+      sno: 1, category: "Office Expenses", items: [
+        { name: "Laptop", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "Mobile", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "Monitor", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "Tab", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "Printer", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+      ]
+    },
+    {
+      sno: 2, category: "Technology Infrastructure", items: [
+        { name: "Servers", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "Network Equipment", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+      ]
+    },
+    {
+      sno: 3, category: "Medical Equipment", items: [
+        { name: "", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+      ]
+    },
+    {
+      sno: 4, category: "Furniture & Fixtures", items: [
+        { name: "", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+      ]
+    },
+  ],
+  totalProjectCost: { total: 0, promoterContrib: 0, termLoan: 0, wcLoan: 0 },
+  loan1: { amount: 400000000, duration: 84, rate: 9, startDate: "2026-10-01" },
+  loan2: { amount: 430000000, duration: 84, rate: 9, startDate: "2027-04-01" },
+  fixedAssets: [
+    { name: "Office Equipment", rate: 0.15, opening: 500000, addAbove: 0, addBelow: 0 },
+    { name: "", rate: 0.15, opening: 0, addAbove: 0, addBelow: 0 },
+    { name: "", rate: 0.15, opening: 0, addAbove: 0, addBelow: 0 },
+    { name: "", rate: 0.25, opening: 0, addAbove: 0, addBelow: 0 },
+    { name: "", rate: 0.25, opening: 0, addAbove: 0, addBelow: 0 },
+  ],
+};
+
+const zeroGroupItems = (groups, isOpex = false, perDay = false) =>
+  (groups || []).map((g) => ({
+    ...g,
+    header: "",
+    items: (g.items || []).map((it) => ({
+      ...it,
+      sub: "",
+      qty: isOpex ? 0 : 0,
+      qtyDay: perDay ? 0 : it.qtyDay,
+      price: 0,
+      cost: 0,
+      gY1: 0,
+      gY2: 0,
+      gY3: 0,
+      gY4: 0,
+      gY5: 0,
+    })),
+  }));
+
+const buildEmptyState = () => ({
+  ...INIT,
+  basics: {
+    ...INIT.basics,
+    legalName: "",
+    tradeName: "",
+    address: "",
+    email: "",
+    contact: "",
+    promoters: "",
+    startDateP1: "",
+    startDateP2: "",
+    description: "",
+    pitchDeck: "",
+    burningDesire: "",
+  },
+  revP1: zeroGroupItems(INIT.revP1, false, false),
+  revP2: zeroGroupItems(INIT.revP2, false, true),
+  opexP1: zeroGroupItems(INIT.opexP1, true, false),
+  capex: (INIT.capex || []).map((c) => ({
+    ...c,
+    items: (c.items || []).map((it) => ({
+      ...it,
+      name: "",
+      total: 0,
+      y1: 0,
+      y2: 0,
+      y3: 0,
+      y4: 0,
+      y5: 0,
+    })),
+  })),
+  totalProjectCost: { total: 0, promoterContrib: 0, termLoan: 0, wcLoan: 0 },
+  loan1: { ...INIT.loan1, amount: 0, duration: 0, rate: 0, startDate: "" },
+  loan2: { ...INIT.loan2, amount: 0, duration: 0, rate: 0, startDate: "" },
+  fixedAssets: (INIT.fixedAssets || []).map((fa) => ({
+    ...fa,
+    name: "",
+    opening: 0,
+    addAbove: 0,
+    addBelow: 0,
+    rate: 0,
+  })),
+});
+
+// ─── CALCULATIONS ─────────────────────────────────────────────────────────────
+function calcRevYearly(groups, perDay = false) {
+  return groups.map(g => ({
+    ...g,
+    yearlyTotals: YEARS.map((_, yi) => {
+      return g.items.reduce((sum, item) => {
+        const base = perDay ? (item.qtyDay || 0) * (item.price || 0) * 30 * 12 : (item.qty || 0) * (item.price || 0) * 12;
+        if (!base) return sum;
+        let v = base;
+        for (let i = 0; i < yi; i++) v *= (1 + (item[GROWTH_KEYS_REV[i]] || 0));
+        return sum + v;
+      }, 0);
+    }),
+    items: g.items.map(item => ({
+      ...item,
+      yearlyTotals: YEARS.map((_, yi) => {
+        const base = perDay ? (item.qtyDay || 0) * (item.price || 0) * 30 * 12 : (item.qty || 0) * (item.price || 0) * 12;
+        if (!base) return 0;
+        let v = base;
+        for (let i = 0; i < yi; i++) v *= (1 + (item[GROWTH_KEYS_REV[i]] || 0));
+        return v;
+      })
+    }))
+  }));
+}
+
+function calcOpexYearly(groups) {
+  return groups.map(g => ({
+    ...g,
+    yearlyTotals: YEARS.map((_, yi) => {
+      return g.items.reduce((sum, item) => {
+        const base = (item.qty || 1) * (item.cost || 0) * 12;
+        if (!base) return sum;
+        let v = base;
+        for (let i = 0; i < yi; i++) v *= (1 + (item[GROWTH_KEYS_OPEX[i]] || 0));
+        return sum + v;
+      }, 0);
+    }),
+    items: g.items.map(item => ({
+      ...item,
+      yearlyTotals: YEARS.map((_, yi) => {
+        const base = (item.qty || 1) * (item.cost || 0) * 12;
+        if (!base) return 0;
+        let v = base;
+        for (let i = 0; i < yi; i++) v *= (1 + (item[GROWTH_KEYS_OPEX[i]] || 0));
+        return v;
+      })
+    }))
+  }));
+}
+
+function calcLoan(amount, durationMonths, ratePA, startDate) {
+  const monthly = ratePA / 12 / 100;
+  const emi = amount * monthly * Math.pow(1 + monthly, durationMonths) / (Math.pow(1 + monthly, durationMonths) - 1);
+  const rows = [];
+  let bal = amount;
+  const sd = new Date(startDate);
+  for (let i = 0; i < durationMonths; i++) {
+    const date = new Date(sd.getFullYear(), sd.getMonth() + i + 1, 1);
+    const interest = bal * monthly;
+    const principal = emi - interest;
+    const closing = bal - principal;
+    rows.push({ no: i + 1, date: date.toLocaleDateString("en-IN"), opening: bal, principal, interest, closing: Math.max(0, closing), emi });
+    bal = Math.max(0, closing);
+  }
+  return { emi, totalInterest: emi * durationMonths - amount, rows };
+}
+
+function calcFA(assets) {
+  return assets.map(a => {
+    const dep1 = (a.opening + a.addAbove + a.addBelow * 0.5) * a.rate;
+    const closing1 = a.opening + a.addAbove + a.addBelow - dep1;
+    const dep2 = closing1 * a.rate;
+    const closing2 = closing1 - dep2;
+    return { ...a, dep1, closing1, dep2, closing2 };
+  });
+}
+
+// ─── EDITABLE CELL ────────────────────────────────────────────────────────────
+function EC({ v, onChange, type = "num", style = {} }) {
+  const [ed, setEd] = useState(false);
+  const [val, setVal] = useState("");
+  const commit = () => {
+    setEd(false);
+    const n = parseFloat(val.replace(/[₹,%()CrLK]/g, "").replace(/,/g, "")) || 0;
+    onChange(type === "pct" ? n / 100 : n);
+  };
+  const display = type === "pct" ? fmtPct(v) : type === "currency" ? fmtINR(v, true) : fmtNum(v);
+  if (ed) return <input autoFocus value={val} onChange={e => setVal(e.target.value)} onBlur={commit} onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEd(false); }} style={{ background: "#0A2040", border: `1px solid ${C.teal}`, borderRadius: 3, color: C.inputBlue, fontSize: 11, fontFamily: "monospace", padding: "2px 6px", textAlign: "right", width: "100%", outline: "none", boxSizing: "border-box", ...style }} />;
+  return <div onClick={() => { setEd(true); setVal(type === "pct" ? ((v || 0) * 100).toFixed(1) : String(v || 0)); }} title="Click to edit" style={{ color: C.inputBlue, fontSize: 11, fontFamily: "monospace", textAlign: "right", cursor: "pointer", padding: "2px 6px", borderRadius: 3, border: "1px solid transparent", ...style }}>{display}</div>;
+}
+
+function TI({ v, onChange, placeholder = "", style = {} }) {
+  return <input value={v || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ background: "transparent", border: "none", outline: "none", color: C.inputBlue, fontSize: 11, fontFamily: "sans-serif", width: "100%", ...style }} />;
+}
+
+// ─── SHARED TABLE STYLES ──────────────────────────────────────────────────────
+const th = (extra = {}) => ({ padding: "7px 10px", fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", borderBottom: `2px solid ${C.goldD}`, background: C.headerBg, whiteSpace: "nowrap", ...extra });
+const td0 = (extra = {}) => ({ padding: "5px 10px", fontSize: 11, borderBottom: `1px solid ${C.border}`, ...extra });
+
+// ─── SHEET: 1. BASICS ────────────────────────────────────────────────────────
+function Basics({ d, setD }) {
+  const fields = [
+    ["1", "Legal Name of the Business", "legalName"],
+    ["2", "Trade Name of the Business", "tradeName"],
+    ["3", "Registered Office Address", "address"],
+    ["4", "Official Email Id", "email"],
+    ["5", "Official Contact Number", "contact"],
+    ["6.a", "Total number of Promoters", "promoters"],
+    ["7", "Tentative Start Date of Phase 1", "startDateP1"],
+    ["8", "Company Description", "description"],
+    ["9", "Link to Company Pitch Deck", "pitchDeck"],
+    ["10", "Burning Desire of the company", "burningDesire"],
+    ["11", "Tentative Start Date of Phase 2", "startDateP2"],
+  ];
+  return (
+    <div>
+      <SheetHeader title="1. Basic Information — OnEasy Financial Model" sub="Company Details & Project Basics" />
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <tbody>
+          {fields.map(([no, label, key], i) => (
+            <tr key={key} style={{ background: i % 2 === 0 ? C.bg2 : C.bg1 }}>
+              <td style={{ ...td0(), width: 50, color: C.gold, fontFamily: "monospace", fontWeight: 700, borderRight: `1px solid ${C.border}` }}>{no}</td>
+              <td style={{ ...td0(), width: 300, color: C.text1, borderRight: `1px solid ${C.border}` }}>{label}</td>
+              <td style={td0()}>
+                <TI v={d[key]} onChange={v => setD(p => ({ ...p, [key]: v }))} placeholder={`Enter ${label.toLowerCase()}...`} style={{ color: C.inputBlue, fontSize: 12, padding: "2px 4px" }} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: A. DATA NEEDED ───────────────────────────────────────────────────
+function DataNeeded({ setSheet }) {
+  const items = [
+    ["I", "Revenue Streams", "Define all revenue streams with qty, price, growth rates", "A.I Revenue Streams - P1"],
+    ["II", "Sales Price per Revenue Streams", "Set pricing for each sub-service", "A.I Revenue Streams - P1"],
+    ["III", "Costing headers (OPEX)", "List all operating expense categories and costs", "A.IIOPEX"],
+    ["IIV", "Capex Information", "Define capital expenditure by category and year", "A.III CAPEX"],
+  ];
+  return (
+    <div>
+      <SheetHeader title="A. Data Needed" sub="Major heads of data required for the business plan" />
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr><th style={th()}>No.</th><th style={th({ textAlign: "left" })}>Data Category</th><th style={th({ textAlign: "left" })}>Description</th><th style={th()}>Go To Sheet</th></tr>
+        </thead>
+        <tbody>
+          {items.map(([no, cat, desc, link], i) => (
+            <tr key={no} style={{ background: i % 2 === 0 ? C.bg2 : C.bg1 }}>
+              <td style={{ ...td0(), color: C.gold, fontFamily: "monospace", fontWeight: 700, textAlign: "center" }}>{no}</td>
+              <td style={{ ...td0(), color: C.text0, fontWeight: 600 }}>{cat}</td>
+              <td style={{ ...td0(), color: C.text1 }}>{desc}</td>
+              <td style={{ ...td0(), textAlign: "center" }}>
+                <button onClick={() => setSheet(link)} style={{ padding: "3px 12px", background: C.navB, border: `1px solid ${C.border}`, borderRadius: 4, color: C.teal, cursor: "pointer", fontSize: 11 }}>Open →</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: REVENUE STREAMS ──────────────────────────────────────────────────
+function RevStreams({ groups, setGroups, phase, perDay = false }) {
+  const computed = calcRevYearly(groups, perDay);
+  const gKeys = ["gY1", "gY2", "gY3", "gY4", "gY5"];
+  const gLabels = ["Monthly Growth Y1", "Yearly Growth Y2→Y3", "Growth Y3→Y4", "Growth Y4→Y5", "Growth Y5→Y6"];
+  const upd = (gi, ii, k, v) => setGroups(p => p.map((g, gi2) => gi2 !== gi ? g : { ...g, items: g.items.map((it, ii2) => ii2 !== ii ? it : { ...it, [k]: v }) }));
+  const updG = (gi, k, v) => setGroups(p => p.map((g, gi2) => gi2 !== gi ? g : { ...g, [k]: v }));
+  const grandTotals = YEARS.map((_, yi) => computed.reduce((s, g) => s + g.yearlyTotals[yi], 0));
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title={`A.I Revenue Streams — ${phase}`} sub={`This sheet assists in getting data related to Sales (${perDay ? "qty per day" : "qty per month"})`} />
+      <table style={{ borderCollapse: "collapse", minWidth: 1200 }}>
+        <thead>
+          <tr>
+            {["#", "Major Header", "Sub Service", perDay ? "Qty/Day" : "Qty/Month", "Price (₹)", ...YEARS, ...gLabels].map((h, i) => (
+              <th key={i} style={th({ textAlign: i >= 3 ? "right" : "left", minWidth: i === 0 ? 40 : i <= 2 ? 150 : 90 })}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {computed.map((g, gi) => [
+            <tr key={`h${gi}`} style={{ background: C.sectionBg }}>
+              <td style={{ ...td0(), color: C.gold, fontFamily: "monospace", fontWeight: 700, borderRight: `1px solid ${C.border}` }}>{g.id}</td>
+              <td colSpan={2} style={td0()}><TI v={g.header} onChange={v => updG(gi, "header", v)} placeholder="Category name..." style={{ color: C.text0, fontWeight: 700, fontSize: 12 }} /></td>
+              {YEARS.map((_, yi) => <td key={yi} style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(g.yearlyTotals[yi], true)}</td>)}
+              {gLabels.map((_, i) => <td key={i} style={td0()} />)}
+            </tr>,
+            ...g.items.map((it, ii) => (
+              <tr key={`${gi}-${ii}`} style={{ background: ii % 2 === 0 ? C.bg1 : C.bg0 }}>
+                <td style={{ ...td0(), color: C.text2, fontFamily: "monospace", fontSize: 10 }}>{it.id}</td>
+                <td style={td0()} />
+                <td style={td0()}><TI v={it.sub} onChange={v => upd(gi, ii, "sub", v)} placeholder="Sub service..." style={{ color: C.text1 }} /></td>
+                <td style={td0()}><EC v={perDay ? it.qtyDay : it.qty} type="num" onChange={v => upd(gi, ii, perDay ? "qtyDay" : "qty", v)} /></td>
+                <td style={td0()}><EC v={it.price} type="num" onChange={v => upd(gi, ii, "price", v)} /></td>
+                {YEARS.map((_, yi) => <td key={yi} style={{ ...td0(), color: it.yearlyTotals[yi] > 0 ? C.text0 : C.text2, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(it.yearlyTotals[yi], true)}</td>)}
+                {gKeys.map((k, i) => <td key={i} style={td0()}><EC v={it[k]} type="pct" onChange={v => upd(gi, ii, k, v)} /></td>)}
+              </tr>
+            )),
+            <tr key={`gt${gi}`} style={{ background: C.totalBg }}>
+              <td colSpan={3} style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontWeight: 700, fontSize: 10, letterSpacing: "0.04em" }}>GRAND TOTAL</td>
+              <td colSpan={2} style={{ borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.borderLight}` }} />
+              {YEARS.map((_, yi) => <td key={yi} style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(g.yearlyTotals[yi], true)}</td>)}
+              {gLabels.map((_, i) => <td key={i} style={{ borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.borderLight}` }} />)}
+            </tr>,
+            <tr key={`sp${gi}`}><td colSpan={20} style={{ height: 8 }} /></tr>
+          ])}
+          <tr style={{ background: "#07101E" }}>
+            <td colSpan={5} style={{ padding: "8px 10px", color: C.goldL, fontWeight: 700, fontSize: 12, borderTop: `2px solid ${C.gold}`, borderBottom: `2px solid ${C.gold}` }}>TOTAL REVENUE (Annual)</td>
+            {grandTotals.map((t, yi) => <td key={yi} style={{ padding: "8px 10px", color: C.goldL, fontFamily: "monospace", textAlign: "right", fontWeight: 700, fontSize: 12, borderTop: `2px solid ${C.gold}`, borderBottom: `2px solid ${C.gold}` }}>{fmtINR(t, true)}</td>)}
+            {gLabels.map((_, i) => <td key={i} style={{ borderTop: `2px solid ${C.gold}`, borderBottom: `2px solid ${C.gold}` }} />)}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: OPEX ─────────────────────────────────────────────────────────────
+function OpexSheet({ groups, setGroups }) {
+  const computed = calcOpexYearly(groups);
+  const gKeys = ["gY1", "gY2", "gY3", "gY4", "gY5"];
+  const gLabels = ["Growth Y1", "Growth Y2", "Growth Y3", "Growth Y4", "Growth Y5"];
+  const upd = (gi, ii, k, v) => setGroups(p => p.map((g, gi2) => gi2 !== gi ? g : { ...g, items: g.items.map((it, ii2) => ii2 !== ii ? it : { ...it, [k]: v }) }));
+  const updG = (gi, k, v) => setGroups(p => p.map((g, gi2) => gi2 !== gi ? g : { ...g, [k]: v }));
+  const totals = YEARS.map((_, yi) => computed.reduce((s, g) => s + g.yearlyTotals[yi], 0));
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title="A.II OPEX — Operating Expenses" sub="Write down all major and minor headers for costing — quantity and price beside each header" />
+      <table style={{ borderCollapse: "collapse", minWidth: 1200 }}>
+        <thead>
+          <tr>
+            {["#", "Major Head", "Sub Service", "Qty", "Cost/Month (₹)", ...YEARS, ...gLabels].map((h, i) => (
+              <th key={i} style={th({ textAlign: i >= 3 ? "right" : "left", minWidth: i === 0 ? 40 : i <= 2 ? 180 : 90 })}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {computed.map((g, gi) => [
+            <tr key={`h${gi}`} style={{ background: C.sectionBg }}>
+              <td style={{ ...td0(), color: C.gold, fontFamily: "monospace", fontWeight: 700 }}>{g.id}</td>
+              <td colSpan={2} style={td0()}><TI v={g.header} onChange={v => updG(gi, "header", v)} placeholder="Category name..." style={{ color: C.text0, fontWeight: 700, fontSize: 12 }} /></td>
+              {YEARS.map((_, yi) => <td key={yi} style={{ ...td0(), color: C.redL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(g.yearlyTotals[yi], true)}</td>)}
+              {gLabels.map((_, i) => <td key={i} style={td0()} />)}
+            </tr>,
+            ...g.items.map((it, ii) => (
+              <tr key={`${gi}-${ii}`} style={{ background: ii % 2 === 0 ? C.bg1 : C.bg0 }}>
+                <td style={{ ...td0(), color: C.text2, fontFamily: "monospace", fontSize: 10 }}>{it.id}</td>
+                <td style={td0()} />
+                <td style={td0()}><TI v={it.sub} onChange={v => upd(gi, ii, "sub", v)} placeholder="Sub service..." style={{ color: C.text1 }} /></td>
+                <td style={td0()}><EC v={it.qty} type="num" onChange={v => upd(gi, ii, "qty", v)} /></td>
+                <td style={td0()}><EC v={it.cost} type="num" onChange={v => upd(gi, ii, "cost", v)} /></td>
+                {YEARS.map((_, yi) => <td key={yi} style={{ ...td0(), color: it.yearlyTotals[yi] > 0 ? "#E87878" : C.text2, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(it.yearlyTotals[yi], true)}</td>)}
+                {gKeys.map((k, i) => <td key={i} style={td0()}><EC v={it[k]} type="pct" onChange={v => upd(gi, ii, k, v)} /></td>)}
+              </tr>
+            )),
+            <tr key={`gt${gi}`} style={{ background: C.totalBg }}>
+              <td colSpan={3} style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontWeight: 700, fontSize: 10 }}>GRAND TOTAL</td>
+              <td colSpan={2} style={{ borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.borderLight}` }} />
+              {YEARS.map((_, yi) => <td key={yi} style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(g.yearlyTotals[yi], true)}</td>)}
+              {gLabels.map((_, i) => <td key={i} style={{ borderBottom: `1px solid ${C.border}`, borderTop: `1px solid ${C.borderLight}` }} />)}
+            </tr>,
+            <tr key={`sp${gi}`}><td colSpan={20} style={{ height: 8 }} /></tr>
+          ])}
+          <tr style={{ background: "#150808" }}>
+            <td colSpan={5} style={{ padding: "8px 10px", color: "#FF9999", fontWeight: 700, fontSize: 12, borderTop: `2px solid ${C.red}`, borderBottom: `2px solid ${C.red}` }}>TOTAL OPEX (Annual)</td>
+            {totals.map((t, yi) => <td key={yi} style={{ padding: "8px 10px", color: "#FF9999", fontFamily: "monospace", textAlign: "right", fontWeight: 700, fontSize: 12, borderTop: `2px solid ${C.red}`, borderBottom: `2px solid ${C.red}` }}>{fmtINR(t, true)}</td>)}
+            {gLabels.map((_, i) => <td key={i} style={{ borderTop: `2px solid ${C.red}`, borderBottom: `2px solid ${C.red}` }} />)}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: CAPEX ─────────────────────────────────────────────────────────────
+function Capex({ data, setData }) {
+  const updItem = (ci, ii, k, v) => setData(p => p.map((cat, ci2) => ci2 !== ci ? cat : { ...cat, items: cat.items.map((it, ii2) => ii2 !== ii ? it : { ...it, [k]: v }) }));
+  const updCat = (ci, k, v) => setData(p => p.map((cat, ci2) => ci2 !== ci ? cat : { ...cat, [k]: v }));
+  const yLabels = ["Year 1 (31/03/2027)", "Year 2 (31/03/2028)", "Year 3 (31/03/2029)", "Year 4 (31/03/2030)", "Year 5 (31/03/2031)"];
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title="A.III CAPEX — Capital Expenditure" sub="Cost for each period ending — define by equipment category" />
+      <table style={{ borderCollapse: "collapse", minWidth: 900 }}>
+        <thead>
+          <tr>
+            {["S.No", "Nature of Expense", "Total Amount (₹)", ...yLabels].map((h, i) => (
+              <th key={i} style={th({ textAlign: i >= 2 ? "right" : "left", minWidth: i === 1 ? 200 : 90 })}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((cat, ci) => [
+            <tr key={`c${ci}`} style={{ background: C.sectionBg }}>
+              <td style={{ ...td0(), color: C.gold, fontFamily: "monospace", fontWeight: 700 }}>{cat.sno}</td>
+              <td style={td0()}><TI v={cat.category} onChange={v => updCat(ci, "category", v)} placeholder="Category..." style={{ color: C.text0, fontWeight: 700, fontSize: 12 }} /></td>
+              <td style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(cat.items.reduce((s, it) => s + (it.total || 0), 0), true)}</td>
+              {["y1", "y2", "y3", "y4", "y5"].map(k => <td key={k} style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(cat.items.reduce((s, it) => s + (it[k] || 0), 0), true)}</td>)}
+            </tr>,
+            ...cat.items.map((it, ii) => (
+              <tr key={`${ci}-${ii}`} style={{ background: ii % 2 === 0 ? C.bg1 : C.bg0 }}>
+                <td style={{ ...td0(), color: C.text2, fontSize: 10 }} />
+                <td style={{ ...td0(), paddingLeft: 24 }}><TI v={it.name} onChange={v => updItem(ci, ii, "name", v)} placeholder="Asset name..." style={{ color: C.text1 }} /></td>
+                <td style={td0()}><EC v={it.total} type="num" onChange={v => updItem(ci, ii, "total", v)} /></td>
+                {["y1", "y2", "y3", "y4", "y5"].map(k => <td key={k} style={td0()}><EC v={it[k]} type="num" onChange={v => updItem(ci, ii, k, v)} /></td>)}
+              </tr>
+            )),
+            <tr key={`sp${ci}`}><td colSpan={8} style={{ height: 8 }} /></tr>
+          ])}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: B.I SALES (monthly view) ─────────────────────────────────────────
+function SalesSheet({ groups, phase }) {
+  const computed = calcRevYearly(groups, false);
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title={`B.I Sales — ${phase} Monthly View (Year 1: 2026-27)`} sub="Do not enter any data in this sheet — calculated from Revenue Streams assumptions" readOnly />
+      <table style={{ borderCollapse: "collapse", minWidth: 1400 }}>
+        <thead>
+          <tr style={{ background: C.headerBg }}>
+            <th style={th({ minWidth: 40 })}>#</th>
+            <th style={th({ textAlign: "left", minWidth: 160 })}>Services</th>
+            <th style={th({ textAlign: "left", minWidth: 150 })}>Sub Services</th>
+            {MONTHS_Y1.map(m => <th key={m} style={th({ minWidth: 90 })}>{m}</th>)}
+            <th style={{ ...th({ minWidth: 110 }), borderLeft: `2px solid ${C.gold}` }}>Annual</th>
+          </tr>
+          <tr style={{ background: C.headerBg }}>
+            <td colSpan={3} style={{ padding: "4px 10px", fontSize: 10, color: C.text2 }}>Phase-I Revenues</td>
+            {MONTHS_Y1_DATES.map((d, i) => <td key={i} style={{ padding: "3px 8px", fontSize: 9, color: C.text2, textAlign: "right" }}>{d}</td>)}
+            <td style={{ borderLeft: `2px solid ${C.gold}` }} />
+          </tr>
+        </thead>
+        <tbody>
+          {computed.map((g, gi) => {
+            const annualTotal = g.yearlyTotals[0];
+            const monthlyBase = annualTotal / 12;
+            return [
+              <tr key={`h${gi}`} style={{ background: C.sectionBg }}>
+                <td style={{ ...td0(), color: C.gold, fontFamily: "monospace", fontWeight: 700 }}>{g.id}</td>
+                <td style={{ ...td0(), color: C.text0, fontWeight: 700 }} colSpan={2}>{g.header || `Service ${g.id}`}</td>
+                {MONTHS_Y1.map((_, mi) => <td key={mi} style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(monthlyBase * (1 + mi * 0.01), true)}</td>)}
+                <td style={{ ...td0({ borderLeft: `2px solid ${C.gold}` }), color: C.tealL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(annualTotal, true)}</td>
+              </tr>,
+              ...g.items.filter(it => it.sub || it.qty > 0).map((it, ii) => (
+                <tr key={`${gi}-${ii}`} style={{ background: ii % 2 === 0 ? C.bg1 : C.bg0 }}>
+                  <td style={{ ...td0(), color: C.text2, fontSize: 10, fontFamily: "monospace" }}>{it.id}</td>
+                  <td style={td0()} />
+                  <td style={{ ...td0(), color: C.text1 }}>{it.sub || "—"}</td>
+                  {MONTHS_Y1.map((_, mi) => {
+                    const mv = it.yearlyTotals[0] / 12 * (1 + mi * 0.01);
+                    return <td key={mi} style={{ ...td0(), color: it.qty > 0 ? C.text0 : C.text2, fontFamily: "monospace", textAlign: "right" }}>{it.qty > 0 ? fmtINR(mv, true) : "—"}</td>;
+                  })}
+                  <td style={{ ...td0({ borderLeft: `2px solid ${C.gold}` }), color: C.text0, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(it.yearlyTotals[0], true)}</td>
+                </tr>
+              )),
+              <tr key={`gt${gi}`} style={{ background: C.totalBg }}>
+                <td colSpan={3} style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontWeight: 700, fontSize: 10 }}>Grand Total</td>
+                {MONTHS_Y1.map((_, mi) => <td key={mi} style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(monthlyBase * (1 + mi * 0.01), true)}</td>)}
+                <td style={{ ...td0({ borderTop: `1px solid ${C.borderLight}`, borderLeft: `2px solid ${C.gold}` }), color: C.gold, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(annualTotal, true)}</td>
+              </tr>,
+              <tr key={`sp${gi}`}><td colSpan={20} style={{ height: 8 }} /></tr>
+            ];
+          })}
+          <tr style={{ background: "#07101E" }}>
+            <td colSpan={3} style={{ padding: "8px 10px", color: C.goldL, fontWeight: 700, fontSize: 12, borderTop: `2px solid ${C.gold}`, borderBottom: `2px solid ${C.gold}` }}>Yearly Grand Total</td>
+            {MONTHS_Y1.map((_, mi) => {
+              const t = computed.reduce((s, g) => s + g.yearlyTotals[0] / 12 * (1 + mi * 0.01), 0);
+              return <td key={mi} style={{ padding: "8px 10px", color: C.goldL, fontFamily: "monospace", textAlign: "right", fontWeight: 700, borderTop: `2px solid ${C.gold}`, borderBottom: `2px solid ${C.gold}` }}>{fmtINR(t, true)}</td>;
+            })}
+            <td style={{ padding: "8px 10px", color: C.goldL, fontFamily: "monospace", textAlign: "right", fontWeight: 700, borderTop: `2px solid ${C.gold}`, borderBottom: `2px solid ${C.gold}`, borderLeft: `2px solid ${C.gold}` }}>
+              {fmtINR(computed.reduce((s, g) => s + g.yearlyTotals[0], 0), true)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: TOTAL PROJECT COST ────────────────────────────────────────────────
+function TotalProjectCost({ data, setData }) {
+  const { total, promoterContrib, termLoan, wcLoan } = data;
+  return (
+    <div>
+      <SheetHeader title="2. Statement of Total Project Cost" sub="OnEasy Financial Model" />
+      <table style={{ borderCollapse: "collapse", width: 600 }}>
+        <thead>
+          <tr><th style={th({ textAlign: "left", minWidth: 300 })}>Description</th><th style={th({ minWidth: 160 })}>Amount (₹)</th></tr>
+        </thead>
+        <tbody>
+          {[
+            ["Total", "total"], ["Less: 20% Promoter Contribution", "promoterContrib"],
+            ["Balance Term Loan Application", "termLoan"], ["Working Capital Loan", "wcLoan"]
+          ].map(([label, key], i) => (
+            <tr key={key} style={{ background: i % 2 === 0 ? C.bg2 : C.bg1 }}>
+              <td style={{ ...td0(), color: i === 0 ? C.text0 : C.text1, fontWeight: i === 0 ? 700 : 400 }}>{label}</td>
+              <td style={td0()}><EC v={data[key]} type="num" onChange={v => setData(p => ({ ...p, [key]: v }))} /></td>
+            </tr>
+          ))}
+          <tr style={{ background: C.totalBg }}>
+            <td style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontWeight: 700 }}>Total Loan from Bank</td>
+            <td style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(termLoan + wcLoan)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: P&L ──────────────────────────────────────────────────────────────
+function PL({ revP1, opexP1 }) {
+  const revByYear = YEARS.map((_, yi) => calcRevYearly(revP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+  const opexByYear = YEARS.map((_, yi) => calcOpexYearly(opexP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+  const grossProfit = YEARS.map((_, yi) => revByYear[yi] - opexByYear[yi] * 0.3);
+  const ebitda = YEARS.map((_, yi) => revByYear[yi] - opexByYear[yi]);
+  const deprn = YEARS.map(() => 75000 * 12);
+  const ebit = YEARS.map((_, yi) => ebitda[yi] - deprn[yi]);
+  const interest = YEARS.map((_, yi) => [0, 3000000 * 12, 5775000 * 12, 0, 0][yi] || 0);
+  const pbt = YEARS.map((_, yi) => ebit[yi] - interest[yi]);
+  const tax = YEARS.map((_, yi) => Math.max(0, pbt[yi] * 0.25));
+  const pat = YEARS.map((_, yi) => pbt[yi] - tax[yi]);
+
+  const rows = [
+    { label: "REVENUE", type: "header" },
+    { label: "Total Revenue", vals: revByYear, type: "total", color: C.tealL },
+    { type: "spacer" },
+    { label: "EXPENSES", type: "header" },
+    { label: "Direct Costs (30% of OPEX)", vals: YEARS.map((_, yi) => -opexByYear[yi] * 0.3), type: "data" },
+    { label: "Gross Profit", vals: grossProfit, type: "subtotal" },
+    { label: "Gross Margin %", vals: YEARS.map((_, yi) => revByYear[yi] > 0 ? grossProfit[yi] / revByYear[yi] : 0), type: "pct" },
+    { type: "spacer" },
+    { label: "OPERATING EXPENSES", type: "header" },
+    { label: "Total OPEX", vals: YEARS.map((_, yi) => -opexByYear[yi]), type: "data" },
+    { label: "EBITDA", vals: ebitda, type: "subtotal" },
+    { label: "EBITDA Margin %", vals: YEARS.map((_, yi) => revByYear[yi] > 0 ? ebitda[yi] / revByYear[yi] : 0), type: "pct" },
+    { type: "spacer" },
+    { label: "Depreciation & Amortisation", vals: YEARS.map(() => -75000 * 12), type: "data" },
+    { label: "EBIT", vals: ebit, type: "subtotal" },
+    { type: "spacer" },
+    { label: "Interest & Finance Charges", vals: interest.map(v => -v), type: "data" },
+    { label: "Profit Before Tax (PBT)", vals: pbt, type: "subtotal" },
+    { type: "spacer" },
+    { label: "Tax (25%)", vals: tax.map(v => -v), type: "data" },
+    { label: "NET PROFIT AFTER TAX (PAT)", vals: pat, type: "total", color: null },
+    { label: "PAT Margin %", vals: YEARS.map((_, yi) => revByYear[yi] > 0 ? pat[yi] / revByYear[yi] : 0), type: "pct" },
+  ];
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title="4. Profit & Loss Statement" sub="OnEasy — Projected Annual P&L" readOnly />
+      <table style={{ borderCollapse: "collapse", minWidth: 800 }}>
+        <thead>
+          <tr>
+            <th style={th({ textAlign: "left", minWidth: 280 })}>Particulars</th>
+            {YEARS.map(y => <th key={y} style={th({ minWidth: 130 })}>{y}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => {
+            if (row.type === "spacer") return <tr key={i}><td colSpan={6} style={{ height: 8 }} /></tr>;
+            if (row.type === "header") return (
+              <tr key={i} style={{ background: C.sectionBg }}>
+                <td colSpan={6} style={{ padding: "7px 10px", color: C.gold, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{row.label}</td>
+              </tr>
+            );
+            if (row.type === "pct") return (
+              <tr key={i} style={{ background: C.bg0 }}>
+                <td style={{ ...td0({ paddingLeft: 24 }), color: C.text2, fontSize: 11, fontStyle: "italic" }}>{row.label}</td>
+                {row.vals.map((v, yi) => <td key={yi} style={{ ...td0(), color: v >= 0 ? C.greenL : C.redL, fontFamily: "monospace", textAlign: "right", fontSize: 11 }}>{fmtPct(v)}</td>)}
+              </tr>
+            );
+            const isTotal = row.type === "total" || row.type === "subtotal";
+            return (
+              <tr key={i} style={{ background: isTotal ? C.totalBg : i % 2 === 0 ? C.bg1 : C.bg0 }}>
+                <td style={{ ...td0(isTotal ? { borderTop: `1px solid ${C.borderLight}` } : {}), color: isTotal ? C.text0 : C.text1, fontWeight: isTotal ? 700 : 400, paddingLeft: isTotal ? 10 : 22 }}>{row.label}</td>
+                {row.vals.map((v, yi) => {
+                  const col = row.color || (v < 0 ? C.redL : isTotal ? C.text0 : C.text1);
+                  if (!row.color && isTotal && row.label.includes("PAT")) {
+                    const col2 = v < 0 ? C.redL : C.greenL;
+                    return <td key={yi} style={{ ...td0(isTotal ? { borderTop: `1px solid ${C.borderLight}` } : {}), color: col2, fontFamily: "monospace", textAlign: "right", fontWeight: isTotal ? 700 : 400 }}>{fmtINR(v, true)}</td>;
+                  }
+                  return <td key={yi} style={{ ...td0(isTotal ? { borderTop: `1px solid ${C.borderLight}` } : {}), color: col, fontFamily: "monospace", textAlign: "right", fontWeight: isTotal ? 700 : 400 }}>{fmtINR(v, true)}</td>;
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: BALANCE SHEET ────────────────────────────────────────────────────
+function BalanceSheet({ revP1, opexP1 }) {
+  const revByYear = YEARS.map((_, yi) => calcRevYearly(revP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+  const opexByYear = YEARS.map((_, yi) => calcOpexYearly(opexP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+  const pat = YEARS.map((_, yi) => {
+    const ebitda = revByYear[yi] - opexByYear[yi];
+    const ebit = ebitda - 75000 * 12;
+    const pbt = ebit;
+    return pbt - Math.max(0, pbt * 0.25);
+  });
+  const retainedEarnings = YEARS.map((_, yi) => pat.slice(0, yi + 1).reduce((s, v) => s + v, 0));
+  const otherCL = [3509865, 4211838, 5054205, 6065046, 7278056];
+  const fixedAsset = [425000, 403750, 339521, 453865, 466535];
+  const investments = [4100000, 4300000, 5700000, 5800000, 6300000];
+  const secDep = [1500000, 1500000, 1500000, 1500000, 1500000];
+  const curAdv = [965000, 1302750, 1758712, 1934583, 2176406];
+  const otherCA = [1805430, 4262000, 4773440, 4964377, 5460815];
+
+  const sections = [
+    { label: "LIABILITIES", type: "header" },
+    { label: "Shareholder Funds", type: "section" },
+    { label: "Capital Account", vals: YEARS.map(() => 0) },
+    { label: "Add: Net Profit / Retained Earnings", vals: retainedEarnings, color: v => v < 0 ? C.redL : C.greenL },
+    { label: "Shareholder Funds", vals: retainedEarnings, type: "subtotal" },
+    { type: "spacer" },
+    { label: "Loans Liability", type: "section" },
+    { label: "Term Loan", vals: YEARS.map(() => 0) },
+    { type: "spacer" },
+    { label: "Current Liabilities", type: "section" },
+    { label: "Sundry Creditors", vals: YEARS.map(() => 0) },
+    { label: "Other Current Liabilities", vals: otherCL },
+    { label: "Total Liabilities", vals: YEARS.map((_, yi) => retainedEarnings[yi] + otherCL[yi]), type: "total" },
+    { type: "spacer" },
+    { label: "ASSETS", type: "header" },
+    { label: "Fixed Assets", type: "section" },
+    { label: "Net Fixed Assets", vals: fixedAsset },
+    { type: "spacer" },
+    { label: "Investments", vals: investments },
+    { type: "spacer" },
+    { label: "Current Assets", type: "section" },
+    { label: "Security Deposits", vals: secDep },
+    { label: "Current Advances", vals: curAdv },
+    { label: "Sundry Debtors", vals: YEARS.map(() => 0) },
+    { label: "Other Current Assets", vals: otherCA },
+    { label: "Cash & Bank Balance", vals: YEARS.map((_, yi) => Math.max(0, retainedEarnings[yi] + otherCL[yi] - fixedAsset[yi] - investments[yi] - secDep[yi] - curAdv[yi] - otherCA[yi])) },
+    { label: "Total Assets", vals: YEARS.map((_, yi) => fixedAsset[yi] + investments[yi] + secDep[yi] + curAdv[yi] + otherCA[yi]), type: "total" },
+  ];
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title="5. Balance Sheet" sub="M/S AIROC Hospitals Pvt Ltd — Projected Balance Sheet" readOnly />
+      <table style={{ borderCollapse: "collapse", minWidth: 800 }}>
+        <thead>
+          <tr>
+            <th style={th({ textAlign: "left", minWidth: 280 })}>Particulars</th>
+            {YEARS.map((_, yi) => <th key={yi} style={th({ minWidth: 130 })}>31st Mar {2026 + yi}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {sections.map((row, i) => {
+            if (row.type === "spacer") return <tr key={i}><td colSpan={6} style={{ height: 8 }} /></tr>;
+            if (row.type === "header") return <tr key={i} style={{ background: C.sectionBg }}><td colSpan={6} style={{ padding: "7px 10px", color: C.gold, fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em" }}>{row.label}</td></tr>;
+            if (row.type === "section") return <tr key={i} style={{ background: "#0A1528" }}><td colSpan={6} style={{ padding: "6px 10px 4px 18px", color: C.text1, fontWeight: 600, fontSize: 11, fontStyle: "italic" }}>{row.label}</td></tr>;
+            const isTotal = row.type === "total" || row.type === "subtotal";
+            return (
+              <tr key={i} style={{ background: isTotal ? C.totalBg : i % 2 === 0 ? C.bg1 : C.bg0 }}>
+                <td style={{ ...td0(isTotal ? { borderTop: `1px solid ${C.borderLight}` } : {}), color: isTotal ? C.text0 : C.text1, fontWeight: isTotal ? 700 : 400, paddingLeft: isTotal ? 10 : 24 }}>{row.label}</td>
+                {row.vals.map((v, yi) => {
+                  const col = row.color ? row.color(v) : (v < 0 ? C.redL : isTotal ? C.text0 : C.text1);
+                  return <td key={yi} style={{ ...td0(isTotal ? { borderTop: `1px solid ${C.borderLight}` } : {}), color: col, fontFamily: "monospace", textAlign: "right", fontWeight: isTotal ? 700 : 400 }}>{fmtINR(v, true)}</td>;
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: RATIOS ────────────────────────────────────────────────────────────
+function Ratios({ revP1, opexP1 }) {
+  const revByYear = YEARS.map((_, yi) => calcRevYearly(revP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+  const opexByYear = YEARS.map((_, yi) => calcOpexYearly(opexP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+  const pat = YEARS.map((_, yi) => { const e = revByYear[yi] - opexByYear[yi] - 75000 * 12; return e - Math.max(0, e * 0.25); });
+  const fixedAssets = [425000, 403750, 339521, 453865, 466535];
+  const ratioRows = [
+    { label: "Gross Receipts", vals: revByYear, type: "currency" },
+    { label: "Net Profit After Depreciation Before Tax", vals: YEARS.map((_, yi) => revByYear[yi] - opexByYear[yi] - 75000 * 12), type: "currency" },
+    { label: "Fixed Assets", vals: fixedAssets, type: "currency" },
+    { type: "spacer" },
+    { label: "Net Profit Ratio", vals: YEARS.map((_, yi) => revByYear[yi] > 0 ? pat[yi] / revByYear[yi] : 0), type: "pct" },
+    { label: "Net Sales / Fixed Assets", vals: YEARS.map((_, yi) => fixedAssets[yi] > 0 ? revByYear[yi] / fixedAssets[yi] : 0), type: "multiple" },
+    { label: "Optimum Coverage Ratio", vals: YEARS.map(() => 0.75), type: "num" },
+  ];
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title="6. Analysis of Ratios" sub="M/S TREATMENT RANGE HOSPITAL PRIVATE LIMITED" readOnly />
+      <table style={{ borderCollapse: "collapse", minWidth: 800 }}>
+        <thead>
+          <tr>
+            <th style={th({ textAlign: "left", minWidth: 280 })}>Particulars</th>
+            {YEARS.map(y => <th key={y} style={th({ minWidth: 130 })}>{y}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {ratioRows.map((row, i) => {
+            if (row.type === "spacer") return <tr key={i}><td colSpan={6} style={{ height: 8 }} /></tr>;
+            return (
+              <tr key={i} style={{ background: i % 2 === 0 ? C.bg1 : C.bg0 }}>
+                <td style={{ ...td0(), color: C.text1 }}>{row.label}</td>
+                {row.vals.map((v, yi) => (
+                  <td key={yi} style={{ ...td0(), color: v < 0 ? C.redL : C.text0, fontFamily: "monospace", textAlign: "right" }}>
+                    {row.type === "pct" ? fmtPct(v) : row.type === "multiple" ? `${v.toFixed(2)}x` : row.type === "currency" ? fmtINR(v, true) : v.toFixed(2)}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: DSCR ─────────────────────────────────────────────────────────────
+function DSCR({ revP1, opexP1 }) {
+  const revByYear = YEARS.map((_, yi) => calcRevYearly(revP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+  const opexByYear = YEARS.map((_, yi) => calcOpexYearly(opexP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+  const deprn = YEARS.map(() => 75000 * 12);
+  const pat = YEARS.map((_, yi) => { const e = revByYear[yi] - opexByYear[yi] - deprn[yi]; return e - Math.max(0, e * 0.25); });
+  const rows = [
+    { label: "Profit After Tax", vals: pat },
+    { label: "Int on Term Loan", vals: YEARS.map(() => 0) },
+    { label: "Depreciation", vals: deprn },
+    { type: "spacer" },
+    { label: "Total (Numerator)", vals: YEARS.map((_, yi) => pat[yi] + deprn[yi]), type: "total" },
+    { type: "spacer" },
+    { label: "DEBT", type: "header" },
+    { label: "Int on Term Loan", vals: YEARS.map(() => 0) },
+    { label: "Term Loan Repayment", vals: YEARS.map(() => 0) },
+    { label: "Total (Denominator)", vals: YEARS.map(() => 0), type: "total" },
+    { type: "spacer" },
+    { label: "D.S.C.R", vals: YEARS.map((_, yi) => { const d = 0; const n = pat[yi] + deprn[yi]; return d > 0 ? n / d : 0; }), type: "ratio" },
+  ];
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title="DSCR — Debt Service Coverage Ratio" sub="M/S TREATMENT RANGE HOSPITAL PRIVATE LIMITED" readOnly />
+      <table style={{ borderCollapse: "collapse", minWidth: 800 }}>
+        <thead>
+          <tr>
+            <th style={th({ textAlign: "left", minWidth: 280 })}>Particulars</th>
+            {YEARS.map(y => <th key={y} style={th({ minWidth: 130 })}>{y}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => {
+            if (row.type === "spacer") return <tr key={i}><td colSpan={6} style={{ height: 8 }} /></tr>;
+            if (row.type === "header") return <tr key={i} style={{ background: C.sectionBg }}><td colSpan={6} style={{ padding: "7px 10px", color: C.gold, fontWeight: 700, fontSize: 10, textTransform: "uppercase" }}>{row.label}</td></tr>;
+            const isTotal = row.type === "total";
+            return (
+              <tr key={i} style={{ background: isTotal ? C.totalBg : i % 2 === 0 ? C.bg1 : C.bg0 }}>
+                <td style={{ ...td0(isTotal ? { borderTop: `1px solid ${C.borderLight}` } : {}), color: isTotal ? C.text0 : C.text1, fontWeight: isTotal ? 700 : 400 }}>{row.label}</td>
+                {row.vals.map((v, yi) => (
+                  <td key={yi} style={{ ...td0(isTotal ? { borderTop: `1px solid ${C.borderLight}` } : {}), color: row.type === "ratio" ? (v >= 1.5 ? C.greenL : v > 0 ? C.gold : C.text2) : v < 0 ? C.redL : isTotal ? C.text0 : C.text1, fontFamily: "monospace", textAlign: "right", fontWeight: isTotal ? 700 : 400 }}>
+                    {row.type === "ratio" ? (v > 0 ? `${v.toFixed(2)}x` : "—") : fmtINR(v, true)}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: REPAYMENT SCHEDULE ────────────────────────────────────────────────
+function RepaymentSchedule({ loan1, loan2 }) {
+  const l1 = calcLoan(loan1.amount, loan1.duration, loan1.rate, loan1.startDate);
+  const l2 = calcLoan(loan2.amount, loan2.duration, loan2.rate, loan2.startDate);
+  const [active, setActive] = useState(1);
+  const loan = active === 1 ? l1 : l2;
+  const cfg = active === 1 ? loan1 : loan2;
+  return (
+    <div>
+      <SheetHeader title="Repayment Schedule" sub="Phase-wise loan amortisation table" />
+      <div style={{ display: "flex", gap: 8, padding: "8px 12px", borderBottom: `1px solid ${C.border}` }}>
+        {[1, 2].map(p => <button key={p} onClick={() => setActive(p)} style={{ padding: "4px 14px", fontSize: 11, background: active === p ? C.navB : "transparent", border: `1px solid ${active === p ? C.teal : C.border}`, borderRadius: 4, color: active === p ? C.teal : C.text2, cursor: "pointer" }}>Phase {p} Loan</button>)}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, padding: "10px 12px", background: C.bg2, borderBottom: `1px solid ${C.border}` }}>
+        {[["Loan Amount", fmtINR(cfg.amount)], ["Duration", `${cfg.duration} months`], ["Rate", `${cfg.rate}% p.a.`], ["EMI", fmtINR(loan.emi)], ["Total Interest", fmtINR(loan.totalInterest, true)], ["Start Date", cfg.startDate]].map(([k, v]) => (
+          <div key={k} style={{ padding: "6px 10px" }}>
+            <div style={{ fontSize: 10, color: C.text2, marginBottom: 2 }}>{k}</div>
+            <div style={{ fontSize: 13, color: C.gold, fontFamily: "monospace", fontWeight: 700 }}>{v}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ maxHeight: 400, overflowY: "auto" }}>
+        <table style={{ borderCollapse: "collapse", width: "100%" }}>
+          <thead style={{ position: "sticky", top: 0 }}>
+            <tr>
+              {["EMI No", "Date", "Opening Bal.", "Principal", "Interest", "EMI", "Closing Bal."].map(h => <th key={h} style={th({ minWidth: h === "Date" ? 100 : 120 })}>{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {loan.rows.map((row, i) => (
+              <tr key={i} style={{ background: i % 2 === 0 ? C.bg1 : C.bg0 }}>
+                <td style={{ ...td0(), color: C.text2, textAlign: "center" }}>{row.no}</td>
+                <td style={{ ...td0(), color: C.text1, fontSize: 11 }}>{row.date}</td>
+                <td style={{ ...td0(), color: C.text0, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(row.opening, true)}</td>
+                <td style={{ ...td0(), color: C.blueL, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(row.principal, true)}</td>
+                <td style={{ ...td0(), color: C.redL, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(row.interest, true)}</td>
+                <td style={{ ...td0(), color: C.gold, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(row.emi, true)}</td>
+                <td style={{ ...td0(), color: C.text0, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(row.closing, true)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── SHEET: FA SCHEDULE ───────────────────────────────────────────────────────
+function FASchedule({ assets, setAssets }) {
+  const computed = calcFA(assets);
+  const updAsset = (i, k, v) => setAssets(p => p.map((a, ai) => ai !== i ? a : { ...a, [k]: v }));
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title="FA Schedule — Fixed Assets Schedule" sub="OnEasy — Schedule - 01" />
+      <table style={{ borderCollapse: "collapse", minWidth: 900 }}>
+        <thead>
+          <tr>
+            {["Description of Asset", "Rate", "Opening WDV", "Addition >180d", "Addition <180d", "Dep (31.3.26)", "Closing (31.3.26)", "Addition Y2", "Dep Y2", "Closing (31.3.27)"].map((h, i) => (
+              <th key={i} style={th({ textAlign: i >= 1 ? "right" : "left", minWidth: i === 0 ? 160 : 90 })}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {computed.map((a, i) => (
+            <tr key={i} style={{ background: i % 2 === 0 ? C.bg1 : C.bg0 }}>
+              <td style={td0()}><TI v={a.name} onChange={v => updAsset(i, "name", v)} placeholder="Asset name..." style={{ color: C.text1 }} /></td>
+              <td style={td0()}><EC v={a.rate} type="pct" onChange={v => updAsset(i, "rate", v)} /></td>
+              <td style={td0()}><EC v={a.opening} type="num" onChange={v => updAsset(i, "opening", v)} /></td>
+              <td style={td0()}><EC v={a.addAbove} type="num" onChange={v => updAsset(i, "addAbove", v)} /></td>
+              <td style={td0()}><EC v={a.addBelow} type="num" onChange={v => updAsset(i, "addBelow", v)} /></td>
+              <td style={{ ...td0(), color: C.redL, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(a.dep1, true)}</td>
+              <td style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(a.closing1, true)}</td>
+              <td style={{ ...td0(), color: C.inputBlue, fontFamily: "monospace", textAlign: "right" }}>—</td>
+              <td style={{ ...td0(), color: C.redL, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(a.dep2, true)}</td>
+              <td style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(a.closing2, true)}</td>
+            </tr>
+          ))}
+          <tr style={{ background: C.totalBg }}>
+            <td colSpan={2} style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontWeight: 700 }}>Total</td>
+            {[
+              computed.reduce((s, a) => s + a.opening, 0), computed.reduce((s, a) => s + a.addAbove, 0), computed.reduce((s, a) => s + a.addBelow, 0),
+              computed.reduce((s, a) => s + a.dep1, 0), computed.reduce((s, a) => s + a.closing1, 0),
+              0, computed.reduce((s, a) => s + a.dep2, 0), computed.reduce((s, a) => s + a.closing2, 0)
+            ].map((v, i) => <td key={i} style={{ ...td0({ borderTop: `1px solid ${C.borderLight}` }), color: C.gold, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(v, true)}</td>)}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── SHEET: 3B CAPITAL COSTING ────────────────────────────────────────────────
+function CapitalCosting({ data, setData }) {
+  const updItem = (ci, ii, k, v) => setData(p => p.map((cat, ci2) => ci2 !== ci ? cat : { ...cat, items: cat.items.map((it, ii2) => ii2 !== ii ? it : { ...it, [k]: v }) }));
+  const yLabels = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"];
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <SheetHeader title="3b. Costing — Capital Expenditure" sub="Cost for each period ending" />
+      <table style={{ borderCollapse: "collapse", minWidth: 900 }}>
+        <thead>
+          <tr>
+            {["S.No", "Nature of Expense", "Total (₹)", ...yLabels].map((h, i) => (
+              <th key={i} style={th({ textAlign: i >= 2 ? "right" : "left", minWidth: i === 1 ? 200 : 90 })}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((cat, ci) => [
+            <tr key={`c${ci}`} style={{ background: C.sectionBg }}>
+              <td style={{ ...td0(), color: C.gold, fontWeight: 700, fontFamily: "monospace" }}>{cat.sno}</td>
+              <td style={{ ...td0(), color: C.text0, fontWeight: 700 }}>{cat.category}</td>
+              <td style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(cat.items.reduce((s, it) => s + (it.total || 0), 0), true)}</td>
+              {["y1", "y2", "y3", "y4", "y5"].map(k => <td key={k} style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right" }}>{fmtINR(cat.items.reduce((s, it) => s + (it[k] || 0), 0), true)}</td>)}
+            </tr>,
+            ...cat.items.map((it, ii) => (
+              <tr key={`${ci}-${ii}`} style={{ background: ii % 2 === 0 ? C.bg1 : C.bg0 }}>
+                <td style={{ ...td0(), color: C.text2, fontSize: 10 }} />
+                <td style={{ ...td0(), paddingLeft: 20 }}><TI v={it.name} onChange={v => updItem(ci, ii, "name", v)} style={{ color: C.text1 }} /></td>
+                <td style={td0()}><EC v={it.total} type="num" onChange={v => updItem(ci, ii, "total", v)} /></td>
+                {["y1", "y2", "y3", "y4", "y5"].map(k => <td key={k} style={td0()}><EC v={it[k]} type="num" onChange={v => updItem(ci, ii, k, v)} /></td>)}
+              </tr>
+            )),
+            <tr key={`sp${ci}`}><td colSpan={8} style={{ height: 8 }} /></tr>
+          ])}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── GENERIC EMPTY SHEET ─────────────────────────────────────────────────────
+function EmptySheet({ title, sub }) {
+  return (
+    <div>
+      <SheetHeader title={title} sub={sub} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, flexDirection: "column", gap: 12 }}>
+        <div style={{ fontSize: 36 }}>📋</div>
+        <div style={{ color: C.text2, fontSize: 13 }}>This sheet is referenced from other sheets</div>
+        <div style={{ color: C.text3, fontSize: 11 }}>{sub}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
+function SheetHeader({ title, sub, readOnly }) {
+  return (
+    <div style={{ padding: "8px 14px 6px", background: C.nav, borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.text0, letterSpacing: "-0.01em" }}>{title}</div>
+        {sub && <div style={{ fontSize: 10, color: C.text2, marginTop: 1 }}>{sub}</div>}
+      </div>
+      {readOnly && <div style={{ fontSize: 10, color: C.teal, padding: "2px 8px", border: `1px solid rgba(42,158,158,0.3)`, borderRadius: 4 }}>Read-only — auto-calculated</div>}
+    </div>
+  );
+}
+
+// ─── AI SYSTEM PROMPT ────────────────────────────────────────────────────────
+const AI_SYSTEM = `You are the OnEasy Financial Strategist, a high-level agentic AI specialized in building investor-grade financial models. 
+
+### YOUR PERSONA
+- You are not just a data entry tool; you are a strategic partner.
+- Your tone is professional, insightful, and proactive.
+- You understand business models (SaaS, EdTech, Healthcare, etc.) and suggest industry-standard benchmarks.
+
+### OPERATION MODES
+1. **Discovery (New Model):** Guide the user through a logical sequence (Company -> Model Type -> Revenue -> Costs -> Growth -> Funding). Ask clarifying questions if the business model is unique.
+2. **Analysis & Refinement:** When data exists, analyze it. If a margin is too low or growth is unrealistic, point it out and propose a fix.
+3. **Execution:** When the user asks for changes, respond with clear explanations and the required [DATA] changes.
+
+### DATA MANIPULATION RULES
+Respond with valid JSON:
+{
+  "message": "Direct response to the user. Explain YOUR STRATEGIC REASONING here.",
+  "changes": {
+    "basics": { "legalName": "...", "tradeName": "...", "description": "...", "startDateP1": "YYYY-MM-DD" },
+    "revP1": [ { "header": "...", "items": [{ "sub": "...", "qty": 0, "price": 0, "gY1": 0.1 }] } ],
+    "opexP1": [ { "header": "...", "items": [{ "sub": "...", "qty": 0, "cost": 0, "gY1": 0.1 }] } ],
+    "capex": [ { "category": "...", "items": [{ "name": "...", "total": 0 }] } ],
+    "totalProjectCost": { "promoterContrib": 0, "termLoan": 0 },
+    "loan1": { "amount": 0, "duration": 36, "rate": 12 },
+    "fixedAssets": [ { "name": "...", "rate": 0.15, "opening": 0 } ]
+  }
+}
+
+### CRITICAL GUIDELINES
+- **Proactivity:** If a user adds a revenue stream but forgets the associated COGS/OPEX, suggest adding them.
+- **Consistency:** Ensure growth rates and start dates are consistent across the model.
+- **Integrity:** Never hallucinate data. If unsure about a specific industry cost, ask or provide a range based on common knowledge.
+- **Feedback Loop:** Always summarize what you changed and why it helps the model's accuracy or investor appeal.`;
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+export default function DoctyModel() {
+  const MODEL_DB = {
+    edtech: {
+      label: "EdTech",
+      streams: ["Course Sales", "Subscription Plans", "Corporate Training", "Certifications", "Live Workshops"],
+      products: ["Online Courses", "Tutoring Platform", "Learning App", "Test Prep", "Certification Programs"],
+      substreams: ["Recorded Courses", "Live Cohorts", "1-on-1 Tutoring", "Mobile App Access", "Test Series"],
+      audience: ["K-12 Students", "College Students", "Working Professionals", "Exam Aspirants", "Schools/Institutions"],
+      pricing: ["Subscription", "Per Course", "Freemium + Paid", "Cohort-based", "B2B Licensing"],
+      opex: ["Instructor Payout", "Platform Hosting", "Marketing", "Support Team", "Content Production"]
+    },
+    saas: {
+      label: "SaaS",
+      streams: ["Starter Plan", "Pro Plan", "Enterprise Plan", "API Usage", "Add-ons"],
+      products: ["Starter Plan", "Pro Plan", "Enterprise Plan", "API Access", "Add-ons"],
+      substreams: ["Monthly Billing", "Annual Billing", "Per-seat Pricing", "Usage-based API", "Implementation Fee"],
+      audience: ["SMBs", "Mid-market", "Enterprise", "Developers", "Agencies"],
+      pricing: ["Monthly Subscription", "Annual Subscription", "Usage-based", "Tiered Pricing", "Hybrid"],
+      opex: ["Engineering Team", "Cloud Infrastructure", "Sales Team", "Customer Success", "Marketing"]
+    },
+    healthcare: {
+      label: "Healthcare",
+      streams: ["Consultations", "Diagnostics", "Telemedicine", "Pharmacy", "Packages"],
+      products: ["Consultations", "Diagnostics", "Telemedicine", "Pharmacy", "Health Packages"],
+      substreams: ["General OPD", "Specialist OPD", "Lab Tests", "Home Collection", "Annual Health Plans"],
+      audience: ["Urban Families", "Working Professionals", "Senior Citizens", "Corporate Employees"],
+      pricing: ["Per Visit", "Per Test", "Package-based", "Membership", "Insurance-linked"],
+      opex: ["Doctor Salaries", "Nursing Staff", "Rent", "Medical Consumables", "Admin"]
+    },
+    consulting: {
+      label: "Consulting",
+      streams: ["Retainers", "Project Consulting", "Workshops", "Advisory Calls", "Audits"],
+      products: ["Retainers", "Project Consulting", "Workshops", "Advisory Calls", "Audits"],
+      substreams: ["Monthly Retainer", "Strategy Projects", "Leadership Workshops", "CXO Advisory", "Process Audits"],
+      audience: ["Startups", "SMEs", "Enterprises", "Founders", "CXOs"],
+      pricing: ["Retainer", "Per Project", "Hourly", "Outcome-based", "Hybrid"],
+      opex: ["Consultant Salaries", "Travel", "Office Rent", "Software Licenses", "Business Development"]
+    },
+    ecommerce: {
+      label: "E-commerce",
+      streams: ["Direct Sales", "Marketplace Sales", "Subscriptions", "Bundles", "Wholesale"],
+      products: ["Direct Product Sales", "Marketplace Sales", "Subscriptions", "Bundles", "Wholesale"],
+      substreams: ["Website Orders", "Marketplace Orders", "Repeat Subscriptions", "Combo Packs", "Bulk Orders"],
+      audience: ["Retail Consumers", "D2C Buyers", "Resellers", "B2B Buyers"],
+      pricing: ["Per Unit", "Bundle Pricing", "Subscription", "Tiered", "Promo-driven"],
+      opex: ["Inventory", "Fulfillment", "Ad Spend", "Warehouse", "Returns"]
+    }
+  };
+
+  const detectModel = (text) => {
+    const t = String(text || "").toLowerCase();
+    if (t.includes("edtech") || t.includes("education") || t.includes("course")) return "edtech";
+    if (t.includes("saas") || t.includes("software")) return "saas";
+    if (t.includes("health")) return "healthcare";
+    if (t.includes("consult")) return "consulting";
+    if (t.includes("ecom") || t.includes("retail") || t.includes("store")) return "ecommerce";
+    return "consulting";
+  };
+
+  const getQuestionText = (step, modelKey) => {
+    const m = MODEL_DB[modelKey] || MODEL_DB.consulting;
+    if (step === 0) return "Let’s start with your company name or brand name.";
+    if (step === 1) return "What type of business are you building? I’ll use this to suggest relevant streams and costs.";
+    if (step === 2) return `For your ${m.label} model, what are your main revenue streams?`;
+    if (step === 3) return "Great. Now share substreams under each main stream (example: Stream A: sub1, sub2 | Stream B: sub1, sub2).";
+    if (step === 4) return "Who are your target customers?";
+    if (step === 5) return "How do you price these offerings? Share pricing model and base prices.";
+    if (step === 6) return "What monthly volumes do you expect in Year 1?";
+    if (step === 7) return "What are your major monthly operating expenses for this business?";
+    if (step === 8) return "What growth assumptions should we use? (Volume %, Price %, OPEX %)";
+    return "Finally, what is your launch timeline and starting funding?";
+  };
+
+  const getSuggestionsForStep = (step, modelKey) => {
+    const m = MODEL_DB[modelKey] || MODEL_DB.consulting;
+    if (step === 1) return ["EdTech", "SaaS", "Healthcare", "Consulting", "E-commerce"];
+    if (step === 2) return m.streams || m.products;
+    if (step === 3) return m.substreams || m.products;
+    if (step === 4) return m.audience;
+    if (step === 5) return m.pricing;
+    if (step === 7) return m.opex;
+    return [];
+  };
+
+  const [d, setD] = useState(buildEmptyState());
+  const [sheet, setSheet] = useState("1. Basics");
+  const CONTEXT_QUESTIONS = [];
+  const [businessModel, setBusinessModel] = useState("consulting");
+  const [mainStreams, setMainStreams] = useState([]);
+  const [msgs, setMsgs] = useState([{
+    role: "assistant",
+    text:
+      "👋 Welcome to the **OnEasy Financial Model**.\n\n" +
+      "I’m here to help you build your financial model step by step. We'll start with some basics and then dive into the details.\n\n" +
+      getQuestionText(0, "consulting")
+  }]);
+  const [contextStep, setContextStep] = useState(0);
+  const [selectedSuggestion, setSelectedSuggestion] = useState("");
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [chatOpen, setChatOpen] = useState(true);
+  const endRef = useRef(null);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+
+  const handleDownloadExcel = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const res = await fetch("/api/excel-fill", { method: "GET" });
+      if (!res.ok) throw new Error(`Download failed (${res.status})`);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Financial_Model.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      setMsgs((p) => [...p, { role: "assistant", text: `Could not download Excel. ${(e && e.message) ? e.message : ""}` }]);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const writePatchesToExcel = async (patches) => {
+    const safe = Array.isArray(patches) ? patches.filter(p => p && p.sheet && p.cell) : [];
+    if (!safe.length) return;
+    try {
+      await fetch("/api/excel-fill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patches: safe }),
+      });
+    } catch {
+      // non-blocking for UI state
+    }
+  };
+
+  const applyRevenueAction = (prev, action) => {
+    const streamName = String(action.streamName || "Revenue").trim();
+    const subName = String(action.subName || "General").trim();
+    const productName = String(action.productName || action.label || "Service").trim();
+    const qty = Math.max(0, Number(action.units) || 0);
+    const price = Math.max(0, Number(action.price ?? action.value) || 0);
+
+    const next = { ...prev, revP1: prev.revP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
+    let targetGroup = next.revP1.find(g => String(g.header || "").toLowerCase() === streamName.toLowerCase());
+    if (!targetGroup) targetGroup = next.revP1.find(g => !String(g.header || "").trim());
+    if (!targetGroup) targetGroup = next.revP1[0];
+    if (!targetGroup.header) targetGroup.header = streamName;
+
+    let targetItem = targetGroup.items.find(it => String(it.sub || "").toLowerCase() === productName.toLowerCase());
+    if (!targetItem) targetItem = targetGroup.items.find(it => !String(it.sub || "").trim());
+    if (!targetItem) targetItem = targetGroup.items[0];
+
+    targetItem.sub = productName || subName;
+    targetItem.qty = qty;
+    targetItem.price = price;
+    return next;
+  };
+
+  const applyOpexAction = (prev, action) => {
+    const cat = String(action.category || "Expense").trim();
+    const sub = String(action.subCategory || action.label || "General").trim();
+    const units = Math.max(0, Number(action.units) || 1);
+    const cost = Math.max(0, Number(action.price ?? action.value) || 0);
+
+    const next = { ...prev, opexP1: prev.opexP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
+    let targetGroup = next.opexP1.find(g => String(g.header || "").toLowerCase() === cat.toLowerCase());
+    if (!targetGroup) targetGroup = next.opexP1.find(g => !String(g.header || "").trim());
+    if (!targetGroup) targetGroup = next.opexP1[0];
+    if (!targetGroup.header) targetGroup.header = cat;
+
+    let targetItem = targetGroup.items.find(it => String(it.sub || "").toLowerCase() === sub.toLowerCase());
+    if (!targetItem) targetItem = targetGroup.items.find(it => !String(it.sub || "").trim());
+    if (!targetItem) targetItem = targetGroup.items[0];
+
+    targetItem.sub = sub;
+    targetItem.qty = units;
+    targetItem.cost = cost;
+    return next;
+  };
+
+  const applyDataAction = async (action) => {
+    if (!action || typeof action !== "object") return;
+    const t = String(action.type || "");
+
+    if (t === "navigateTab" && action.tab) {
+      setSheet(String(action.tab));
+      return;
+    }
+
+    if (t === "setBusinessInfo") {
+      setD(prev => ({
+        ...prev,
+        basics: {
+          ...prev.basics,
+          legalName: action.legalName ?? prev.basics.legalName,
+          tradeName: action.tradeName ?? prev.basics.tradeName,
+          address: action.address ?? prev.basics.address,
+          email: action.email ?? prev.basics.email,
+          contact: action.phone ?? action.contact ?? prev.basics.contact,
+          description: action.description ?? prev.basics.description,
+          startDateP1: action.startDate ?? prev.basics.startDateP1,
+        }
+      }));
+      await writePatchesToExcel(dataActionToPatches({ type: "setBusinessInfo", ...action }));
+      return;
+    }
+
+    if (t === "setFunding") {
+      await writePatchesToExcel(dataActionToPatches({ type: "setFunding", ...action }));
+      return;
+    }
+
+    if (t === "setAssumptions" || t === "setAssumption") {
+      const mapped = t === "setAssumption"
+        ? { [String(action.key || "")]: action.value }
+        : action;
+      await writePatchesToExcel(dataActionToPatches({ type: "setAssumptions", ...mapped }));
+      return;
+    }
+
+    if (t === "editCell" && action.sheet && action.cell && action.value !== undefined) {
+      try {
+        await fetch("/api/edit-cell", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sheet: action.sheet, cell: action.cell, value: action.value }),
+        });
+      } catch {
+        // non-blocking
+      }
+      return;
+    }
+
+    if (t === "addRevenueStream") {
+      setD(prev => applyRevenueAction(prev, action));
+      await writePatchesToExcel(dataActionToPatches({ type: "addRevenueStream", ...action }));
+      return;
+    }
+
+    if (t === "addOpex") {
+      setD(prev => applyOpexAction(prev, action));
+      await writePatchesToExcel(dataActionToPatches({ type: "addOpex", ...action }));
+    }
+  };
+
+  const parseList = (text) => String(text || "")
+    .split(/,|\n|;/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+
+  const parseNumbers = (text) => {
+    const m = String(text || "").match(/\d[\d,]*(?:\.\d+)?/g) || [];
+    return m.map(v => Number(String(v).replace(/,/g, ""))).filter(n => Number.isFinite(n) && n > 0);
+  };
+
+  const parsePercentages = (text) => {
+    const matches = String(text || "").match(/(\d+(?:\.\d+)?)\s*%/g) || [];
+    return matches
+      .map(m => Number(String(m).replace("%", "").trim()))
+      .filter(n => Number.isFinite(n) && n >= 0);
+  };
+
+  const parseSubstreamMap = (text, streams) => {
+    const map = {};
+    const normalizedStreams = (streams || []).map(s => String(s || "").trim()).filter(Boolean);
+    const chunks = String(text || "").split(/\||\n/).map(s => s.trim()).filter(Boolean);
+    for (const chunk of chunks) {
+      const idx = chunk.indexOf(":");
+      if (idx > 0) {
+        const key = chunk.slice(0, idx).trim();
+        const values = chunk
+          .slice(idx + 1)
+          .split(/,|;/)
+          .map(s => s.trim())
+          .filter(Boolean)
+          .slice(0, 5);
+        if (key && values.length) map[key.toLowerCase()] = values;
+      }
+    }
+    if (Object.keys(map).length) return map;
+    const fallback = parseList(text).slice(0, 5);
+    if (fallback.length && normalizedStreams[0]) {
+      map[normalizedStreams[0].toLowerCase()] = fallback;
+    }
+    return map;
+  };
+
+  const buildCleanRevenueState = (modelKey, products = []) => {
+    const preset = MODEL_DB[modelKey] || MODEL_DB.consulting;
+    const list = (Array.isArray(products) && products.length ? products : preset.products).slice(0, 20);
+    const next = INIT.revP1.map(g => ({
+      ...g,
+      header: "",
+      items: g.items.map(it => ({ ...it, sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })),
+    }));
+    const headers = ["Primary Revenue", "Secondary Revenue", "Other Revenue", "", ""];
+    headers.forEach((h, i) => { if (next[i]) next[i].header = h; });
+    list.forEach((name, idx) => {
+      const gi = Math.floor(idx / 5);
+      const ii = idx % 5;
+      if (!next[gi] || !next[gi].items[ii]) return;
+      next[gi].items[ii].sub = String(name).trim();
+      next[gi].items[ii].qty = 1;
+      next[gi].items[ii].price = 1000;
+    });
+    return next;
+  };
+
+  const buildRevenueFromStreams = (streams = []) => {
+    const list = (Array.isArray(streams) ? streams : []).map(s => String(s || "").trim()).filter(Boolean).slice(0, 5);
+    const next = INIT.revP1.map(g => ({
+      ...g,
+      header: "",
+      items: g.items.map(it => ({ ...it, sub: "", qty: 0, price: 0 })),
+    }));
+    list.forEach((name, i) => {
+      if (!next[i]) return;
+      next[i].header = name;
+    });
+    return next;
+  };
+
+  const buildRevenueWithSubstreams = (streams = [], subMap = {}) => {
+    const next = buildRevenueFromStreams(streams);
+    streams.forEach((streamName, si) => {
+      if (!next[si]) return;
+      const subs = subMap[String(streamName || "").toLowerCase()] || [];
+      subs.slice(0, 5).forEach((sub, ii) => {
+        if (!next[si].items[ii]) return;
+        next[si].items[ii].sub = String(sub).trim();
+        next[si].items[ii].qty = 1;
+        next[si].items[ii].price = 1000;
+      });
+    });
+    return next;
+  };
+
+  const buildCleanOpexState = (modelKey, costs = []) => {
+    const preset = MODEL_DB[modelKey] || MODEL_DB.consulting;
+    const list = (Array.isArray(costs) && costs.length ? costs : preset.opex).slice(0, 20);
+    const next = INIT.opexP1.map(g => ({
+      ...g,
+      header: "",
+      items: g.items.map(it => ({ ...it, sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })),
+    }));
+    const headers = ["Operating Expense", "People Cost", "Admin Cost", "", ""];
+    headers.forEach((h, i) => { if (next[i]) next[i].header = h; });
+    list.forEach((name, idx) => {
+      const gi = Math.floor(idx / 7);
+      const ii = idx % 7;
+      if (!next[gi] || !next[gi].items[ii]) return;
+      next[gi].items[ii].sub = String(name).trim();
+      next[gi].items[ii].qty = 0;
+      next[gi].items[ii].cost = 0;
+    });
+    return next;
+  };
+
+  const parseLaunchDate = (text) => {
+    const raw = String(text || "").trim();
+    if (!raw) return "";
+    const low = raw.toLowerCase();
+    const today = new Date();
+    if (low.includes("next month") || low.includes("next moth")) {
+      return new Date(today.getFullYear(), today.getMonth() + 1, 1).toISOString().slice(0, 10);
+    }
+    const d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    return raw;
+  };
+
+  useEffect(() => {
+    setD(prev => {
+      const hasLegacyRevenueDefaults =
+        String(prev?.revP1?.[0]?.header || "").toLowerCase().includes("doctor") ||
+        String(prev?.revP1?.[1]?.header || "").toLowerCase().includes("advert");
+      const hasLegacyOpexDefaults =
+        String(prev?.opexP1?.[0]?.header || "").toLowerCase().includes("technology") ||
+        String(prev?.opexP1?.[1]?.header || "").toLowerCase().includes("legal");
+      if (!hasLegacyRevenueDefaults && !hasLegacyOpexDefaults) return prev;
+      return {
+        ...prev,
+        revP1: buildCleanRevenueState("consulting", []),
+        opexP1: buildCleanOpexState("consulting", []),
+      };
+    });
+  }, []);
+
+  const applyContextAnswer = async (step, answer) => {
+    const text = String(answer || "").trim();
+    if (!text) return;
+
+    if (step === 0) {
+      setD(prev => ({ ...prev, basics: { ...prev.basics, legalName: text, tradeName: text } }));
+      await writePatchesToExcel(dataActionToPatches({ type: "setBusinessInfo", legalName: text, tradeName: text }));
+      setSheet("1. Basics");
+      return;
+    }
+
+    if (step === 1) {
+      const mk = detectModel(text);
+      setBusinessModel(mk);
+      setMainStreams([]);
+      setD(prev => ({
+        ...prev,
+        basics: { ...prev.basics, description: `Business Type: ${text}` },
+        revP1: buildRevenueFromStreams((MODEL_DB[mk] || MODEL_DB.consulting).streams || []),
+        opexP1: buildCleanOpexState(mk),
+      }));
+      await writePatchesToExcel(dataActionToPatches({ type: "setBusinessInfo", description: `Business Type: ${text}` }));
+      setSheet("1. Basics");
+      return;
+    }
+
+    if (step === 2) {
+      const streams = parseList(text);
+      const selected = streams.length ? streams : getSuggestionsForStep(2, businessModel);
+      setMainStreams(selected);
+      setD(prev => ({ ...prev, revP1: buildRevenueFromStreams(selected) }));
+      setSheet("A.I Revenue Streams - P1");
+      return;
+    }
+
+    if (step === 3) {
+      const streams = mainStreams.length ? mainStreams : getSuggestionsForStep(2, businessModel).slice(0, 5);
+      const subMap = parseSubstreamMap(text, streams);
+      setD(prev => ({ ...prev, revP1: buildRevenueWithSubstreams(streams, subMap) }));
+      for (const streamName of streams) {
+        const subs = (subMap[String(streamName || "").toLowerCase()] || []).slice(0, 5);
+        for (const sub of subs) {
+          // eslint-disable-next-line no-await-in-loop
+          await writePatchesToExcel(dataActionToPatches({
+            type: "addRevenueStream",
+            streamName,
+            subName: sub,
+            productName: sub,
+            units: 1,
+            price: 1000,
+          }));
+        }
+      }
+      setSheet("A.I Revenue Streams - P1");
+      return;
+    }
+
+    if (step === 4) {
+      setD(prev => ({ ...prev, basics: { ...prev.basics, burningDesire: `Target Customers: ${text}` } }));
+      setSheet("1. Basics");
+      return;
+    }
+
+    if (step === 5) {
+      const nums = parseNumbers(text);
+      setD(prev => ({ ...prev, basics: { ...prev.basics, pitchDeck: `Pricing: ${text}` } }));
+      if (nums.length) {
+        setD(prev => {
+          const next = { ...prev, revP1: prev.revP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
+          const items = next.revP1.flatMap(g => g.items).filter(it => String(it.sub || "").trim());
+          items.forEach((it, i) => { if (nums[i] != null) it.price = nums[i]; });
+          return next;
+        });
+      }
+      setSheet("A.I Revenue Streams - P1");
+      return;
+    }
+
+    if (step === 6) {
+      const nums = parseNumbers(text);
+      if (nums.length) {
+        setD(prev => {
+          const next = { ...prev, revP1: prev.revP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
+          const items = next.revP1.flatMap(g => g.items).filter(it => String(it.sub || "").trim());
+          items.forEach((it, i) => { if (nums[i] != null) it.qty = nums[i]; });
+          return next;
+        });
+      }
+      setSheet("A.I Revenue Streams - P1");
+      return;
+    }
+
+    if (step === 7) {
+      const costs = parseNumbers(text);
+      const names = parseList(text);
+      const lines = names.length ? names : ["Operations", "Salaries", "Marketing"];
+      setD(prev => ({ ...prev, opexP1: buildCleanOpexState(businessModel, lines) }));
+      for (let i = 0; i < lines.length; i++) {
+        const name = lines[i];
+        const cost = costs[i] || 10000;
+        // eslint-disable-next-line no-await-in-loop
+        await writePatchesToExcel(dataActionToPatches({
+          type: "addOpex",
+          category: "Operating Expense",
+          subCategory: name,
+          units: 1,
+          price: cost
+        }));
+      }
+      setSheet("A.IIOPEX");
+      return;
+    }
+
+    if (step === 8) {
+      const [volumeGrowth = 10, priceGrowth = 5, opexGrowth = 8] = parsePercentages(text);
+      setD(prev => {
+        const next = {
+          ...prev,
+          revP1: prev.revP1.map(g => ({
+            ...g,
+            items: g.items.map(it => ({
+              ...it,
+              gY1: (volumeGrowth || 0) / 100,
+              gY2: (priceGrowth || 0) / 100,
+            })),
+          })),
+          opexP1: prev.opexP1.map(g => ({
+            ...g,
+            items: g.items.map(it => ({
+              ...it,
+              gY1: (opexGrowth || 0) / 100,
+            })),
+          })),
+        };
+        return next;
+      });
+      await writePatchesToExcel(dataActionToPatches({
+        type: "setAssumptions",
+        revenueGrowthRate: (volumeGrowth || 0) / 100,
+        priceGrowthRate: (priceGrowth || 0) / 100,
+        opexGrowthRate: (opexGrowth || 0) / 100,
+      }));
+      setSheet("A.I Revenue Streams - P1");
+      return;
+    }
+
+    if (step === 9) {
+      const nums = parseNumbers(text);
+      const funding = nums[0] || 0;
+      const launchDate = parseLaunchDate(text);
+      setD(prev => ({
+        ...prev,
+        basics: { ...prev.basics, startDateP1: launchDate || text },
+        totalProjectCost: {
+          ...prev.totalProjectCost,
+          total: funding,
+          promoterContrib: Math.round(funding * 0.2),
+          termLoan: Math.max(0, funding - Math.round(funding * 0.2)),
+        }
+      }));
+      await writePatchesToExcel(dataActionToPatches({ type: "setFunding", loanAmount: Math.max(0, funding - Math.round(funding * 0.2)) }));
+      setSheet("2.Total Project Cost");
+      return;
+    }
+  };
+
+  const SHEETS = [
+    { id: "1. Basics", label: "1. Basics" },
+    { id: "A. Data Needed", label: "A. Data Needed" },
+    { id: "A.I Revenue Streams - P1", label: "A.I Rev. P1" },
+    { id: "A.I Revenue Streams - P2", label: "A.I Rev. P2" },
+    { id: "A.IIOPEX", label: "A.II OPEX" },
+    { id: "A.III CAPEX", label: "A.III CAPEX" },
+    { id: "B.I Sales - P1", label: "B.I Sales P1" },
+    { id: "B.I Sales - P2", label: "B.I Sales P2" },
+    { id: "B.II - OPEX", label: "B.II OPEX" },
+    { id: "2.Total Project Cost", label: "2. Project Cost" },
+    { id: "B.II OPEX - P1", label: "B.II OPEX P1" },
+    { id: "4. P&L", label: "4. P&L" },
+    { id: "3b. Costing - (Capital Exp)", label: "3b. Costing" },
+    { id: "5. Balance sheet", label: "5. Balance Sheet" },
+    { id: "6. Ratios", label: "6. Ratios" },
+    { id: "DSCR", label: "DSCR" },
+    { id: "Repayment schedule", label: "Repayment" },
+    { id: "FA Schedule", label: "FA Schedule" },
+    { id: "Phase 1", label: "Phase 1 Loan" },
+    { id: "Phase 2", label: "Phase 2 Loan" },
+    { id: "Costing", label: "Costing" },
+  ];
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput(""); setLoading(true);
+    const nextMsgs = [...msgs, { role: "user", text }];
+    setMsgs(nextMsgs);
+    if (/start fresh|new data|reset/i.test(text)) {
+      setContextStep(0);
+      setBusinessModel("consulting");
+      setMainStreams([]);
+      setD(buildEmptyState());
+      setSheet("1. Basics");
+      setMsgs(p => [...p, { role: "assistant", text: `Sure. ${getQuestionText(0, "consulting")}` }]);
+      setLoading(false);
+      return;
+    }
+    if (contextStep >= 0 && contextStep <= 9) {
+      await applyContextAnswer(contextStep, text);
+      const nextStep = contextStep + 1;
+      setContextStep(nextStep);
+      const nextModel = contextStep === 1 ? detectModel(text) : businessModel;
+      if (nextStep <= 9) {
+        setMsgs(p => [...p, { role: "assistant", text: getQuestionText(nextStep, nextModel) }]);
+      } else {
+        setMsgs(p => [...p, { role: "assistant", text: "Perfect. Context captured. I have updated the sheet progressively with your data. Now tell me what you want to refine first: Revenue, OPEX, Project Cost, or P&L." }]);
+      }
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch("/api/chat-simple", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system: AI_SYSTEM,
+          messages: nextMsgs,
+          prompt: `Current data snapshot:\n${JSON.stringify(d)}\n\nLatest user request:\n${text}`
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "LLM request failed");
+      const raw = data?.text || "{}";
+      const tags = extractDataTags(raw);
+      if (tags.length) {
+        for (const tag of tags) {
+          // eslint-disable-next-line no-await-in-loop
+          await applyDataAction(tag);
+        }
+      }
+      let parsed;
+      try { parsed = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch { parsed = { message: raw, changes: null }; }
+      if (parsed.changes) {
+        setD(prev => ({
+          basics: parsed.changes.basics ? { ...prev.basics, ...parsed.changes.basics } : prev.basics,
+          revP1: parsed.changes.revP1 || prev.revP1,
+          revP2: parsed.changes.revP2 || prev.revP2,
+          opexP1: parsed.changes.opexP1 || prev.opexP1,
+          capex: parsed.changes.capex || prev.capex,
+          totalProjectCost: parsed.changes.totalProjectCost ? { ...prev.totalProjectCost, ...parsed.changes.totalProjectCost } : prev.totalProjectCost,
+          loan1: parsed.changes.loan1 ? { ...prev.loan1, ...parsed.changes.loan1 } : prev.loan1,
+          loan2: parsed.changes.loan2 ? { ...prev.loan2, ...parsed.changes.loan2 } : prev.loan2,
+          fixedAssets: parsed.changes.fixedAssets || prev.fixedAssets,
+        }));
+      }
+      setMsgs(p => [...p, { role: "assistant", text: cleanForDisplay(parsed.message || raw || "Done!") }]);
+    } catch (e) {
+      setMsgs(p => [...p, { role: "assistant", text: `⚠️ Error. ${(e && e.message) ? e.message : "Please try again."}` }]);
+    }
+    setLoading(false);
+  };
+
+  const renderSheet = () => {
+    const props = { d, setD };
+    switch (sheet) {
+      case "1. Basics": return <Basics d={d.basics} setD={v => setD(p => ({ ...p, basics: v(p.basics) }))} />;
+      case "A. Data Needed": return <DataNeeded setSheet={setSheet} />;
+      case "A.I Revenue Streams - P1": return <RevStreams groups={d.revP1} setGroups={v => setD(p => ({ ...p, revP1: typeof v === "function" ? v(p.revP1) : v }))} phase="Phase 1" />;
+      case "A.I Revenue Streams - P2": return <RevStreams groups={d.revP2} setGroups={v => setD(p => ({ ...p, revP2: typeof v === "function" ? v(p.revP2) : v }))} phase="Phase 2" perDay />;
+      case "A.IIOPEX": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} />;
+      case "A.III CAPEX": return <Capex data={d.capex} setData={v => setD(p => ({ ...p, capex: typeof v === "function" ? v(p.capex) : v }))} />;
+      case "B.I Sales - P1": return <SalesSheet groups={d.revP1} phase="Phase 1" />;
+      case "B.I Sales - P2": return <SalesSheet groups={d.revP2} phase="Phase 2" />;
+      case "B.II - OPEX": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} />;
+      case "2.Total Project Cost": return <TotalProjectCost data={d.totalProjectCost} setData={v => setD(p => ({ ...p, totalProjectCost: typeof v === "function" ? v(p.totalProjectCost) : v }))} />;
+      case "B.II OPEX - P1": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} />;
+      case "4. P&L": return <PL revP1={d.revP1} opexP1={d.opexP1} />;
+      case "3b. Costing - (Capital Exp)": return <CapitalCosting data={d.capex} setData={v => setD(p => ({ ...p, capex: typeof v === "function" ? v(p.capex) : v }))} />;
+      case "5. Balance sheet": return <BalanceSheet revP1={d.revP1} opexP1={d.opexP1} />;
+      case "6. Ratios": return <Ratios revP1={d.revP1} opexP1={d.opexP1} />;
+      case "DSCR": return <DSCR revP1={d.revP1} opexP1={d.opexP1} />;
+      case "Repayment schedule": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} />;
+      case "FA Schedule": return <FASchedule assets={d.fixedAssets} setAssets={v => setD(p => ({ ...p, fixedAssets: typeof v === "function" ? v(p.fixedAssets) : v }))} />;
+      case "Phase 1": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} />;
+      case "Phase 2": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} />;
+      case "Costing": return <EmptySheet title="Costing" sub="Referenced from other sheets — no direct data entry" />;
+      default: return <EmptySheet title={sheet} sub="Sheet content" />;
+    }
+  };
+
+  const revY1 = calcRevYearly(d.revP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
+  const opexY1 = calcOpexYearly(d.opexP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
+
+  return (
+    <div style={{ display: "flex", height: "100vh", background: C.bg0, fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        *{box-sizing:border-box;} ::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-track{background:${C.bg0};} ::-webkit-scrollbar-thumb{background:${C.navB};border-radius:2px;}
+        input::placeholder,textarea::placeholder{color:${C.text3};} textarea{resize:none;} input:focus,textarea:focus{outline:none;}
+        tr:hover td{background:rgba(255,255,255,0.015)!important;}
+      `}</style>
+
+      {/* MAIN AREA */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+        {/* Top bar */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", height: 42, background: C.nav, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 6, background: "linear-gradient(135deg,#2A9E9E,#2EA870)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>🏥</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text0, lineHeight: 1 }}>OnEasy Financial Model</div>
+              <div style={{ fontSize: 9, color: C.text2, textTransform: "uppercase", letterSpacing: "0.07em" }}>OnEasy · Hyderabad · {SHEETS.length} Sheets</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <button
+              onClick={handleDownloadExcel}
+              disabled={downloading}
+              style={{
+                padding: "4px 12px",
+                fontSize: 11,
+                background: "linear-gradient(135deg,#0f9f52,#18c463)",
+                border: "1px solid rgba(24,196,99,0.45)",
+                borderRadius: 5,
+                color: "#eaffef",
+                cursor: downloading ? "not-allowed" : "pointer",
+                opacity: downloading ? 0.7 : 1,
+                fontWeight: 700
+              }}
+            >
+              {downloading ? "Downloading..." : "Download Excel"}
+            </button>
+            <div style={{ fontSize: 10, padding: "2px 8px", background: "rgba(46,168,112,0.1)", border: "1px solid rgba(46,168,112,0.3)", borderRadius: 4, color: C.greenL }}>● Live Calculation</div>
+            <button onClick={() => setChatOpen(v => !v)} style={{ padding: "4px 10px", fontSize: 11, background: C.navB, border: `1px solid ${C.border}`, borderRadius: 5, color: C.text1, cursor: "pointer" }}>{chatOpen ? "◀ Hide" : "▶ Chat"}</button>
+          </div>
+        </div>
+
+        {/* Sheet tabs — scrollable */}
+        <div style={{ display: "flex", gap: 1, padding: "5px 10px 0", background: C.nav, borderBottom: `1px solid ${C.border}`, overflowX: "auto", flexShrink: 0, scrollbarWidth: "none" }}>
+          {SHEETS.map(s => (
+            <button key={s.id} onClick={() => setSheet(s.id)} style={{ padding: "4px 11px", fontSize: 10, fontWeight: 600, background: sheet === s.id ? C.bg0 : "transparent", color: sheet === s.id ? C.gold : C.text2, border: "none", borderRadius: "3px 3px 0 0", cursor: "pointer", borderBottom: sheet === s.id ? `2px solid ${C.gold}` : "2px solid transparent", whiteSpace: "nowrap", flexShrink: 0 }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sheet content */}
+        <div style={{ flex: 1, overflow: "auto" }}>{renderSheet()}</div>
+
+        {/* Status bar */}
+        <div style={{ display: "flex", gap: 18, padding: "3px 14px", background: C.nav, borderTop: `1px solid ${C.border}`, flexShrink: 0, alignItems: "center" }}>
+          {[["Rev Y1", fmtINR(revY1, true), C.tealL], ["OPEX Y1", fmtINR(opexY1, true), C.redL], ["EBITDA Y1", fmtINR(revY1 - opexY1, true), revY1 > opexY1 ? C.greenL : C.redL]].map(([k, v, col]) => (
+            <div key={k} style={{ display: "flex", gap: 6 }}>
+              <span style={{ fontSize: 10, color: C.text2 }}>{k}:</span>
+              <span style={{ fontSize: 10, color: col, fontFamily: "monospace", fontWeight: 700 }}>{v}</span>
+            </div>
+          ))}
+          <div style={{ marginLeft: "auto", fontSize: 10, color: C.text3 }}>💡 Click <span style={{ color: C.inputBlue }}>blue</span> cells to edit · Use chat for bulk changes</div>
+        </div>
+      </div>
+
+      {/* CHAT PANEL */}
+      {chatOpen && (
+        <div style={{ width: 340, flexShrink: 0, display: "flex", flexDirection: "column", background: C.bg1, borderLeft: `1px solid ${C.border}` }}>
+          <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg,#1a4db5,#3b78d4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>🤖</div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.text0 }}>AI Model Editor</div>
+              <div style={{ fontSize: 9, color: C.teal }}>Edit any sheet with natural language</div>
+            </div>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
+            {msgs.map((m, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
+                <div style={{ maxWidth: "90%", padding: "8px 11px", borderRadius: m.role === "user" ? "10px 10px 2px 10px" : "2px 10px 10px 10px", background: m.role === "user" ? C.navB : "#0D1E38", border: `1px solid ${m.role === "user" ? C.borderLight : C.border}`, fontSize: 11, lineHeight: 1.6, color: m.role === "user" ? C.text0 : C.text1, whiteSpace: "pre-wrap" }}>
+                  {m.text.split(/(\*\*.*?\*\*)/).map((p, j) => p.startsWith("**") && p.endsWith("**") ? <strong key={j} style={{ color: C.text0 }}>{p.slice(2, -2)}</strong> : p)}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
+                <div style={{ padding: "8px 13px", borderRadius: "2px 10px 10px 10px", background: "#0D1E38", border: `1px solid ${C.border}`, display: "flex", gap: 4 }}>
+                  {[0, 1, 2].map(i => <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: C.teal, animation: `p 1.2s ${i * 0.2}s infinite` }} />)}
+                  <style>{`@keyframes p{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}`}</style>
+                </div>
+              </div>
+            )}
+            <div ref={endRef} />
+          </div>
+          <div style={{ padding: "4px 8px 6px", display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {getSuggestionsForStep(contextStep, businessModel).length > 0 && (
+              <div style={{ display: "flex", width: "100%", gap: 6, marginBottom: 4 }}>
+                <select
+                  value={selectedSuggestion}
+                  onChange={(e) => setSelectedSuggestion(e.target.value)}
+                  style={{ flex: 1, background: C.bg0, color: C.text0, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px", fontSize: 11 }}
+                >
+                  <option value="">Suggestions (optional)</option>
+                  {getSuggestionsForStep(contextStep, businessModel).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+                <button
+                  onClick={() => {
+                    if (!selectedSuggestion) return;
+                    setInput(prev => prev ? `${prev}, ${selectedSuggestion}` : selectedSuggestion);
+                  }}
+                  style={{ padding: "0 10px", fontSize: 11, background: C.navB, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text1, cursor: "pointer" }}
+                >
+                  Use
+                </button>
+              </div>
+            )}
+            {["Set Doctor qty to 50,000", "Add Pharmacy revenue", "Change App Dev cost", "Show P&L summary"].map(s => (
+              <button key={s} onClick={() => setInput(s)} style={{ padding: "2px 8px", fontSize: 10, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text2, cursor: "pointer" }}>{s}</button>
+            ))}
+          </div>
+          <div style={{ padding: "8px 10px", borderTop: `1px solid ${C.border}` }}>
+            <div style={{ display: "flex", gap: 6, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px 6px 10px", alignItems: "flex-end" }}>
+              <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Edit model or ask a question..." rows={2} style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 11, lineHeight: 1.5, fontFamily: "Inter,sans-serif", maxHeight: 70, overflowY: "auto" }} />
+              <button onClick={send} disabled={loading || !input.trim()} style={{ width: 28, height: 28, borderRadius: 7, background: loading || !input.trim() ? C.border : "linear-gradient(135deg,#1a4db5,#3b78d4)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,15 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import ExcelJS from 'exceljs';
-import {
-    BUSINESS_INFO_CELLS,
-    FUNDING_CELLS,
-    ASSUMPTION_CELLS,
-} from '../../../lib/excelCellMap.js';
+import { BUSINESS_INFO_CELLS, FUNDING_CELLS, ASSUMPTION_CELLS } from '../../../lib/excelCellMap.js';
 import { revenueCatalog, opexCatalog } from '../../../lib/modelCatalog.js';
 
+const WORK_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
 const SOURCE_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'Docty Healthcare - Business Plan.xlsx');
-const WORK_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'Docty_Healthcare_Working.xlsx');
 
 /**
  * POST /api/excel-reset
@@ -19,13 +15,15 @@ const WORK_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'Docty_Healthcar
  */
 export async function POST() {
     try {
-        if (!fs.existsSync(SOURCE_EXCEL)) {
-            return Response.json({ error: `Source Excel not found: ${SOURCE_EXCEL}` }, { status: 404 });
+        const WORK_EXCEL = path.join(process.cwd(), 'Docty-Healthcare', 'active_working.xlsx');
+
+        if (!fs.existsSync(WORK_EXCEL)) {
+            return Response.json({ error: `Working Excel not found: ${WORK_EXCEL}` }, { status: 404 });
         }
 
-        // Always start from the original source — fresh slate
+        // Always scrub the CURRENT active template
         const wb = new ExcelJS.Workbook();
-        await wb.xlsx.readFile(SOURCE_EXCEL);
+        await wb.xlsx.readFile(WORK_EXCEL);
 
         let cleared = 0;
 
@@ -49,35 +47,36 @@ export async function POST() {
         // Clear Assumption cells
         Object.values(ASSUMPTION_CELLS).forEach(({ sheet, cell }) => clearCell(sheet, cell));
 
-        // Clear revenue stream volume/price/growth cells (from model_inputs.json)
-        const SHEET_REVENUE = 'A.I Revenue Streams - P1';
-        revenueCatalog.forEach(product => {
-            const refs = product.cellRefs;
-            if (refs.qty) clearCell(SHEET_REVENUE, refs.qty);
-            if (refs.price) clearCell(SHEET_REVENUE, refs.price);
-            if (refs.growth_Y2_monthly) clearCell(SHEET_REVENUE, refs.growth_Y2_monthly);
-            if (refs.growth_Y2_Y3) clearCell(SHEET_REVENUE, refs.growth_Y2_Y3);
-            if (refs.growth_Y3_Y4) clearCell(SHEET_REVENUE, refs.growth_Y3_Y4);
-            if (refs.growth_Y4_Y5) clearCell(SHEET_REVENUE, refs.growth_Y4_Y5);
-            if (refs.growth_Y5_Y6) clearCell(SHEET_REVENUE, refs.growth_Y5_Y6);
-            if (refs.growth_Y6_Y7) clearCell(SHEET_REVENUE, refs.growth_Y6_Y7);
+        // Clear only known Revenue/OPEX editable input cells from model catalog
+        revenueCatalog.forEach(item => {
+            if (item?.cellRefs?.qty) clearCell('A.I Revenue Streams - P1', item.cellRefs.qty);
+            if (item?.cellRefs?.price) clearCell('A.I Revenue Streams - P1', item.cellRefs.price);
         });
 
-        // Clear OPEX cost cells (from model_inputs.json)
-        const SHEET_OPEX = 'A.IIOPEX';
         opexCatalog.forEach(item => {
-            const refs = item.cellRefs;
-            if (refs.cost) clearCell(SHEET_OPEX, refs.cost);
-            if (refs.growth_Y1_monthly) clearCell(SHEET_OPEX, refs.growth_Y1_monthly);
-            if (refs.growth_Y1_Y2) clearCell(SHEET_OPEX, refs.growth_Y1_Y2);
-            if (refs.growth_Y2_Y3) clearCell(SHEET_OPEX, refs.growth_Y2_Y3);
-            if (refs.growth_Y3_Y4) clearCell(SHEET_OPEX, refs.growth_Y3_Y4);
-            if (refs.growth_Y4_Y5) clearCell(SHEET_OPEX, refs.growth_Y4_Y5);
-            if (refs.growth_Y5_Y6) clearCell(SHEET_OPEX, refs.growth_Y5_Y6);
+            if (item?.cellRefs?.cost) clearCell('A.IIOPEX', item.cellRefs.cost);
+        });
+
+        // Reset branch multiplier inputs
+        clearCell('A.I Revenue Streams - P1', 'H7');
+        clearCell('A.IIOPEX', 'I8');
+
+        // Wipe cached formula results only; never touch formula text or static labels/headers
+        wb.worksheets.forEach(ws => {
+            ws.eachRow({ includeEmpty: false }, (row) => {
+                row.eachCell({ includeEmpty: false }, (cell) => {
+                    if (!(cell.formula || cell.sharedFormula)) return;
+                    if (cell.value && cell.value.result !== undefined) {
+                        cell.value = { ...cell.value, result: undefined };
+                    }
+                });
+            });
         });
 
         // Save to working copy
         await wb.xlsx.writeFile(WORK_EXCEL);
+
+        console.log(`[excel-reset] Deep cleaned ${cleared} raw data fields from active memory.`);
 
         return Response.json({ success: true, clearedCells: cleared });
     } catch (err) {

@@ -16,3 +16,9 @@ yarn-error.log*
 dist/
 coverage/
 .vercel
+
+# Generated model artifacts
+Docty-Healthcare/active_working.xlsx
+Docty-Healthcare/*_working.xlsx
+Docty-Healthcare/temp_calc.xlsx
+info/hyperformula_formulas.json

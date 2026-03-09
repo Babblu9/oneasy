@@ -4,9 +4,9 @@ export default function RootLayout({ children }) {
     return (
         <html lang="en">
             <head>
-                <title>Docty-Healthcare Smart Platform</title>
+                <title>Fina AI — Multi-Template Financial Platform</title>
             </head>
-            <body className="antialiased min-h-screen">
+            <body suppressHydrationWarning className="antialiased min-h-screen">
                 <FinancialProvider>
                     {children}
                 </FinancialProvider>

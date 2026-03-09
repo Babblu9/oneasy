@@ -8,21 +8,20 @@
  *   1. Explicit cellRef in AI DATA tags (preferred, always used when available)
  *   2. Lightweight fallback lookup tables (for backwards compatibility)
  */
+import { createDeterministicRowAllocator, SLOT_RANGES } from './streamInjection.js';
 
-// ── Sheet Names (real Excel names) ──────────────────────────────────────────
+// ── Sheet Names (real Excel names - Standardized for Professional Models) ─────────────────
 export const SHEET = {
-    BASICS: '2. Basics',
-    BRANCH: 'Branch',
+    BASICS: '1. Basics',
+    PROJECT_COST: '2.Total Project Cost',
     REVENUE: 'A.I Revenue Streams - P1',
+    REVENUE_P2: 'A.I Revenue Streams - P2',
     OPEX: 'A.IIOPEX',
-    CAPEX: 'A.III CAPEX',
-    SALES: 'B.I Sales - P1',
-    PNL: '1. P&L',
-    FA: 'FA Schedule',
-    BALANCE: '5. Balance sheet',
-    RATIOS: '6. Ratios',
-    DSCR: 'DSCR',
+    PNL: '4. P&L',
+    BALANCE: '5. Balance Sheet',
 };
+
+const REVENUE_WRITE_SHEETS = [SHEET.REVENUE, SHEET.REVENUE_P2];
 
 // ── Business Info → Basics Sheet ────────────────────────────────────────────
 export const BUSINESS_INFO_CELLS = {
@@ -97,6 +96,30 @@ const OPEX_FALLBACK = [
     { name: 'Lease Deed Registration', cost: 'I66' },
     { name: 'Drug Licenses', cost: 'I67' },
 ];
+
+// ── Generic Row Slot Fallback (for non-healthcare labels like EdTech/SaaS) ──
+const GENERIC_REVENUE = {
+    startRow: 10,
+    endRow: 200,
+    nameCols: ['E', 'F'],
+    // Different templates place editable qty/price in slightly different columns.
+    // Write to both likely editable candidates to keep live chat injection template-agnostic.
+    qtyCols: ['G', 'H'],
+    priceCols: ['I', 'J']
+};
+const GENERIC_OPEX = { startRow: 10, endRow: 200, nameCols: ['D', 'E'], qtyCol: 'G', costCol: 'I' };
+
+const allocRevenueRow = createDeterministicRowAllocator(SLOT_RANGES.revenue);
+const allocOpexRow = createDeterministicRowAllocator(SLOT_RANGES.opex);
+
+function normalizeKey(v) {
+    return String(v || '').trim().toLowerCase();
+}
+
+function allocateGenericRow(type, key) {
+    if (!key) return null;
+    return type === 'revenue' ? allocRevenueRow(key) : allocOpexRow(key);
+}
 
 // ── CAPEX ────────────────────────────────────────────────────────────────────
 export const CAPEX_START_ROW = 5;
@@ -182,14 +205,26 @@ export function dataActionToPatches(action) {
         }
 
         case 'addRevenueStream': {
+            const pushRevenuePatch = (cell, value) => {
+                if (!cell) return;
+                for (const sheetName of REVENUE_WRITE_SHEETS) {
+                    patches.push({
+                        sheet: sheetName,
+                        cell,
+                        value,
+                        sourceType: 'revenue',
+                        sourceName: action.productName || action.label || action.subName || action.streamName || 'Revenue Item'
+                    });
+                }
+            };
             // Primary: use cellRef from AI DATA tag (exact cell reference from catalog)
             if (action.cellRef && typeof action.cellRef === 'object') {
                 const { qty, price: priceCell } = action.cellRef;
                 if (qty && isValidCellRef(qty) && action.units != null) {
-                    patches.push({ sheet: SHEET.REVENUE, cell: qty, value: Number(action.units) });
+                    pushRevenuePatch(qty, Number(action.units));
                 }
                 if (priceCell && isValidCellRef(priceCell) && action.price != null) {
-                    patches.push({ sheet: SHEET.REVENUE, cell: priceCell, value: Number(action.price) });
+                    pushRevenuePatch(priceCell, Number(action.price));
                 }
 
                 // Write growth rates if provided
@@ -204,11 +239,7 @@ export function dataActionToPatches(action) {
                     };
                     for (const [grKey, cellAddr] of Object.entries(growthCells)) {
                         if (action.growthRates[grKey] != null && cellAddr && isValidCellRef(cellAddr)) {
-                            patches.push({
-                                sheet: SHEET.REVENUE,
-                                cell: cellAddr,
-                                value: Number(action.growthRates[grKey]) / 100,
-                            });
+                            pushRevenuePatch(cellAddr, Number(action.growthRates[grKey]) / 100);
                         }
                     }
                 }
@@ -217,10 +248,29 @@ export function dataActionToPatches(action) {
                 const row = findRevenueRow(action.productName);
                 if (row) {
                     if (row.qty && action.units != null) {
-                        patches.push({ sheet: SHEET.REVENUE, cell: row.qty, value: Number(action.units) });
+                        pushRevenuePatch(row.qty, Number(action.units));
                     }
                     if (row.price && action.price != null) {
-                        patches.push({ sheet: SHEET.REVENUE, cell: row.price, value: Number(action.price) });
+                        pushRevenuePatch(row.price, Number(action.price));
+                    }
+                } else {
+                    // Generic slot fallback for unmapped products (EdTech/SaaS/etc.)
+                    const key = normalizeKey(action.productName || action.label || action.subName || action.streamName);
+                    const rowNum = allocateGenericRow('revenue', key);
+
+                    if (rowNum != null) {
+                        const label = String(action.productName || action.label || 'Service').slice(0, 100);
+                        for (const c of GENERIC_REVENUE.nameCols) pushRevenuePatch(`${c}${rowNum}`, label);
+                        if (action.units != null) {
+                            for (const qc of GENERIC_REVENUE.qtyCols) {
+                                pushRevenuePatch(`${qc}${rowNum}`, Number(action.units));
+                            }
+                        }
+                        if (action.price != null) {
+                            for (const pc of GENERIC_REVENUE.priceCols) {
+                                pushRevenuePatch(`${pc}${rowNum}`, Number(action.price));
+                            }
+                        }
                     }
                 }
             }
@@ -233,7 +283,13 @@ export function dataActionToPatches(action) {
                 const { cost } = action.cellRef;
                 if (cost && isValidCellRef(cost)) {
                     const totalCost = (Number(action.price) || 0) * (Number(action.units) || 1);
-                    patches.push({ sheet: SHEET.OPEX, cell: cost, value: totalCost });
+                    patches.push({
+                        sheet: SHEET.OPEX,
+                        cell: cost,
+                        value: totalCost,
+                        sourceType: 'opex',
+                        sourceName: action.subCategory || action.category || action.label || 'Expense'
+                    });
                 }
 
                 // Write growth rates if provided
@@ -252,6 +308,8 @@ export function dataActionToPatches(action) {
                                 sheet: SHEET.OPEX,
                                 cell: cellAddr,
                                 value: Number(action.growthRates[grKey]) / 100,
+                                sourceType: 'opex',
+                                sourceName: action.subCategory || action.category || action.label || 'Expense',
                             });
                         }
                     }
@@ -262,7 +320,45 @@ export function dataActionToPatches(action) {
                 if (row) {
                     const totalCost = (Number(action.price) || 0) * (Number(action.units) || 1);
                     if (row.cost) {
-                        patches.push({ sheet: SHEET.OPEX, cell: row.cost, value: totalCost });
+                        patches.push({
+                            sheet: SHEET.OPEX,
+                            cell: row.cost,
+                            value: totalCost,
+                            sourceType: 'opex',
+                            sourceName: action.subCategory || action.category || action.label || 'Expense'
+                        });
+                    }
+                } else {
+                    // Generic slot fallback for unmapped OPEX categories
+                    const key = normalizeKey(action.subCategory || action.category || action.label);
+                    const rowNum = allocateGenericRow('opex', key);
+
+                    if (rowNum != null) {
+                        const totalCost = (Number(action.price) || 0) * (Number(action.units) || 1);
+                        const label = String(action.subCategory || action.category || action.label || 'Expense').slice(0, 100);
+                        for (const c of GENERIC_OPEX.nameCols) {
+                            patches.push({
+                                sheet: SHEET.OPEX,
+                                cell: `${c}${rowNum}`,
+                                value: label,
+                                sourceType: 'opex',
+                                sourceName: label
+                            });
+                        }
+                        patches.push({
+                            sheet: SHEET.OPEX,
+                            cell: `${GENERIC_OPEX.qtyCol}${rowNum}`,
+                            value: Number(action.units) || 1,
+                            sourceType: 'opex',
+                            sourceName: label
+                        });
+                        patches.push({
+                            sheet: SHEET.OPEX,
+                            cell: `${GENERIC_OPEX.costCol}${rowNum}`,
+                            value: totalCost,
+                            sourceType: 'opex',
+                            sourceName: label
+                        });
                     }
                 }
             }

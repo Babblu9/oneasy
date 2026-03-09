@@ -1,0 +1,178 @@
+{
+  "edtech": {
+    "revenue": [
+      {
+        "stream": "Course Sales",
+        "substream": "Recorded Courses",
+        "price": 2000,
+        "quantity": 200
+      },
+      {
+        "stream": "Subscriptions",
+        "substream": "Monthly Membership",
+        "price": 99,
+        "quantity": 500
+      },
+      {
+        "stream": "Certification",
+        "substream": "Exam Fees",
+        "price": 120,
+        "quantity": 120
+      },
+      {
+        "stream": "Corporate Training",
+        "substream": "B2B Contract",
+        "price": 10000,
+        "quantity": 4
+      }
+    ],
+    "opex": [
+      {
+        "name": "Content Development",
+        "value": 25000
+      },
+      {
+        "name": "Platform Hosting",
+        "value": 12000
+      },
+      {
+        "name": "Marketing",
+        "value": 20000
+      },
+      {
+        "name": "Salaries",
+        "value": 60000
+      },
+      {
+        "name": "Customer Support",
+        "value": 8000
+      }
+    ]
+  },
+  "saas": {
+    "revenue": [
+      {
+        "stream": "Subscriptions",
+        "substream": "Starter Plan",
+        "price": 49,
+        "quantity": 1000
+      },
+      {
+        "stream": "Subscriptions",
+        "substream": "Pro Plan",
+        "price": 199,
+        "quantity": 250
+      },
+      {
+        "stream": "Enterprise",
+        "substream": "Enterprise License",
+        "price": 10000,
+        "quantity": 8
+      },
+      {
+        "stream": "Usage Revenue",
+        "substream": "API Overage",
+        "price": 0.05,
+        "quantity": 500000
+      }
+    ],
+    "opex": [
+      {
+        "name": "Engineering Team",
+        "value": 120000
+      },
+      {
+        "name": "Cloud Infrastructure",
+        "value": 45000
+      },
+      {
+        "name": "Sales Team",
+        "value": 70000
+      },
+      {
+        "name": "Customer Success",
+        "value": 30000
+      },
+      {
+        "name": "Marketing",
+        "value": 60000
+      }
+    ]
+  },
+  "healthcare": {
+    "revenue": [
+      {
+        "stream": "Consultations",
+        "substream": "Doctor Consultation",
+        "price": 500,
+        "quantity": 400
+      },
+      {
+        "stream": "Diagnostics",
+        "substream": "Lab Tests",
+        "price": 1200,
+        "quantity": 250
+      },
+      {
+        "stream": "Telemedicine",
+        "substream": "Online Consult",
+        "price": 300,
+        "quantity": 150
+      },
+      {
+        "stream": "Pharmacy",
+        "substream": "Pharmacy Margin",
+        "price": 250,
+        "quantity": 300
+      }
+    ],
+    "opex": [
+      {
+        "name": "Staff Salaries",
+        "value": 600000
+      },
+      {
+        "name": "Facility Costs",
+        "value": 120000
+      },
+      {
+        "name": "Medical Supplies",
+        "value": 80000
+      },
+      {
+        "name": "Software & Administration",
+        "value": 40000
+      }
+    ]
+  },
+  "default": {
+    "revenue": [
+      {
+        "stream": "Core Revenue",
+        "substream": "Primary Offer",
+        "price": 1000,
+        "quantity": 100
+      },
+      {
+        "stream": "Secondary Revenue",
+        "substream": "Upsell",
+        "price": 500,
+        "quantity": 80
+      }
+    ],
+    "opex": [
+      {
+        "name": "Salaries",
+        "value": 50000
+      },
+      {
+        "name": "Marketing",
+        "value": 20000
+      },
+      {
+        "name": "Operations",
+        "value": 15000
+      }
+    ]
+  }
+}

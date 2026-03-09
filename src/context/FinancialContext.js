@@ -31,6 +31,9 @@ export function FinancialProvider({ children }) {
     // ---- REVENUE STREAMS (Hierarchical: Stream → Sub-Stream → Product) ----
     const [revenueStreams, setRevenueStreams] = useState([]);
 
+    // ---- AI GENERATED STREAMS (Context-Aware Auto-fill) ----
+    const [generatedStreams, setGeneratedStreams] = useState({ revenue: [], opex: [] });
+
     // ---- OPEX ----
     const [opex, setOpex] = useState([]);
 
@@ -54,19 +57,28 @@ export function FinancialProvider({ children }) {
         grantAmount: 0,
     });
 
-    // ---- COLLECTION PROGRESS (derived from real data state) ----
-    // This is computed, not stored — it updates automatically as data flows in
+    // ---- UNIVERSAL MULTI-TEMPLATE STATE ----
+    const [templateId, setTemplateId] = useState('healthcare');
+    const [universalAssumptions, setUniversalAssumptions] = useState({});
+    const [allTemplates, setAllTemplates] = useState([]);
+
+    // Get active template metadata
+    const activeTemplate = allTemplates.find(t => t.id === templateId) || { name: 'Healthcare Clinic', icon: '🏥' };
+
+
+
+    // ---- COLLECTION PROGRESS (Universal 5-Step Flow) ----
     const collectionProgress = {
-        basics: !!(businessInfo.legalName || businessInfo.tradeName),
-        branches: branches.length > 0,
-        revenue: revenueStreams.some(s => s.subStreams?.some(sub => sub.products?.length > 0)),
-        opex: opex.length > 0,
-        capex: capex.length > 0,
-        funding: !!(funding.loanAmount > 0 || funding.equityFromPromoters > 0),
+        type: !!templateId && templateId !== 'loading',
+        revenue: !!universalAssumptions.revenue_model,
+        price: !!(universalAssumptions.avg_ticket || universalAssumptions.course_price || universalAssumptions.mrr_per_customer || universalAssumptions.avg_order_value || universalAssumptions.daily_sales || universalAssumptions.avg_project_value || universalAssumptions.price_per_unit),
+        volume: !!(universalAssumptions.patients_per_month || universalAssumptions.students_per_month || universalAssumptions.customers_per_month || universalAssumptions.orders_per_month || universalAssumptions.daily_sales || universalAssumptions.clients_per_month || universalAssumptions.units_per_month),
+        team: !!universalAssumptions.employees,
+        funding: !!universalAssumptions.funding,
     };
 
     // ---- ACTIVE SPREADSHEET TAB (controlled by AI) ----
-    const [activeSpreadsheetTab, setActiveSpreadsheetTab] = useState('2. Basics');
+    const [activeSpreadsheetTab, setActiveSpreadsheetTab] = useState('Loading...');
     const [flashingTab, setFlashingTab] = useState(null);
 
     // ---- ENGINE OUTPUTS ----
@@ -75,18 +87,65 @@ export function FinancialProvider({ children }) {
     // ---- EXCEL PATCHES (real Excel cell updates) ----
     const [excelPatches, setExcelPatches] = useState([]);
     const [excelPatchVersion, setExcelPatchVersion] = useState(0);
+    const [injectionReport, setInjectionReport] = useState(null);
     const patchQueueRef = useRef([]);
     const patchTimerRef = useRef(null);
     const didResetRef = useRef(false);
 
-    // ---- AUTO-RESET Excel on first mount (gives a blank slate) ----
+    // ---- LIVE EDIT RELOAD: listen for AI editCell events ----
+    useEffect(() => {
+        const handler = () => setExcelPatchVersion(v => v + 1);
+        window.addEventListener('excel-cell-edited', handler);
+        return () => window.removeEventListener('excel-cell-edited', handler);
+    }, []);
+
+    // Fetch available templates on load
+    useEffect(() => {
+        fetch('/api/select-template')
+            .then(res => res.json())
+            .then(data => {
+                if (data.templates) setAllTemplates(data.templates);
+            })
+            .catch(err => console.error("Failed to fetch templates:", err));
+    }, []);
+
+    // ---- AUTO-RESET Excel on first mount (gives a blank slate) + Fetch INITIAL SHEETS ----
     useEffect(() => {
         if (didResetRef.current) return;
         didResetRef.current = true;
+
+        const fetchSheets = () => {
+            fetch('/api/excel-sheets')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.sheets && data.sheets.length > 0) {
+                        if (data.sheets.includes('2. Basics')) {
+                            setActiveSpreadsheetTab('2. Basics');
+                        } else if (data.sheets.includes('Assumptions')) {
+                            setActiveSpreadsheetTab('Assumptions');
+                        } else {
+                            setActiveSpreadsheetTab(data.sheets[0]);
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to fetch initial sheets:", err);
+                    setActiveSpreadsheetTab('Error Loading Sheets');
+                });
+        };
+
         fetch('/api/excel-reset', { method: 'POST' })
             .then(r => r.json())
-            .then(d => { if (d.success) setExcelPatchVersion(v => v + 1); })
-            .catch(err => console.warn('excel-reset failed (non-critical):', err));
+            .then(d => {
+                if (d.success) {
+                    setExcelPatchVersion(v => v + 1);
+                    fetchSheets(); // Fetch sheets ONLY after reset is done
+                }
+            })
+            .catch(err => {
+                console.warn('excel-reset failed (non-critical):', err);
+                fetchSheets(); // Fallback to fetch sheets anyway
+            });
     }, []);
 
     // Re-run engine whenever inputs change
@@ -167,9 +226,17 @@ export function FinancialProvider({ children }) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ patches: batch }),
                 });
+                const body = await res.json().catch(() => ({}));
+                if (body && (body.report || body.errors)) {
+                    setInjectionReport({
+                        timestamp: Date.now(),
+                        report: body.report || null,
+                        errors: Array.isArray(body.errors) ? body.errors : [],
+                        patchedCount: Number(body.patchedCount) || 0,
+                    });
+                }
                 if (!res.ok) {
-                    const err = await res.json();
-                    console.warn('Excel fill warning:', err);
+                    console.warn('Excel fill warning:', body);
                 }
             } catch (err) {
                 console.error('Excel fill error:', err);
@@ -242,18 +309,26 @@ export function FinancialProvider({ children }) {
                 stream.subStreams.push(sub);
             }
             const exists = sub.products.find(p => p.name.toLowerCase() === productName.toLowerCase());
+            const safeUnits = Number(units) || 0;
+            const safePrice = Number(price) || 0;
             if (!exists) {
                 sub.products.push({
                     id: `prod-${Date.now()}`,
                     name: productName,
-                    units: Number(units) || 0,
-                    price: Number(price) || 0,
+                    units: safeUnits,
+                    price: safePrice,
                     growthY1: Number(growthY1) || 0.1,
                     growthY2: 0.08,
                     growthY3: 0.05,
                     cellRef: cellRef || null,
                     growthRates: growthRates || null,
                 });
+            } else {
+                // Upsert behavior: if stream already exists with zero placeholders, overwrite with real values.
+                if ((Number(exists.units) || 0) <= 0 && safeUnits > 0) exists.units = safeUnits;
+                if ((Number(exists.price) || 0) <= 0 && safePrice > 0) exists.price = safePrice;
+                if (!exists.cellRef && cellRef) exists.cellRef = cellRef;
+                if (!exists.growthRates && growthRates) exists.growthRates = growthRates;
             }
             return newStreams;
         });
@@ -276,13 +351,28 @@ export function FinancialProvider({ children }) {
                 o.category.toLowerCase() === category.toLowerCase() &&
                 o.subCategory.toLowerCase() === subCategory.toLowerCase()
             );
-            if (exists) return prev;
+            const safeUnits = Number(units) || 0;
+            const safePrice = Number(price) || 0;
+            if (exists) {
+                // Upsert behavior: replace zero placeholder values when better values arrive.
+                return prev.map(o => {
+                    if (!(o.category.toLowerCase() === category.toLowerCase() &&
+                        o.subCategory.toLowerCase() === subCategory.toLowerCase())) return o;
+                    return {
+                        ...o,
+                        units: (Number(o.units) || 0) <= 0 && safeUnits > 0 ? safeUnits : o.units,
+                        price: (Number(o.price) || 0) <= 0 && safePrice > 0 ? safePrice : o.price,
+                        cellRef: o.cellRef || cellRef || null,
+                        growthRates: o.growthRates || growthRates || null,
+                    };
+                });
+            }
             return [...prev, {
                 id: `opex-${Date.now()}`,
                 category: String(category).substring(0, 100),
                 subCategory: String(subCategory).substring(0, 100),
-                units: Number(units) || 0,
-                price: Number(price) || 0,
+                units: safeUnits,
+                price: safePrice,
                 cellRef: cellRef || null,
                 growthRates: growthRates || null,
             }];
@@ -290,6 +380,12 @@ export function FinancialProvider({ children }) {
         patchExcel(dataActionToPatches({ type: 'addOpex', category, subCategory, units, price, cellRef, growthRates }));
         flashTab('A.II OPEX');
     }, [flashTab, patchExcel]);
+
+    const removeOpexByName = useCallback((subCategory) => {
+        const target = String(subCategory || '').trim().toLowerCase();
+        if (!target) return;
+        setOpex(prev => prev.filter(o => String(o.subCategory || '').trim().toLowerCase() !== target));
+    }, []);
 
     // ---- BRANCH COUNT ACTION ----
     const setBranchCount = useCallback((count) => {
@@ -344,6 +440,70 @@ export function FinancialProvider({ children }) {
         flashTab('A.III CAPEX');
     }, [flashTab, patchExcel]);
 
+    const removeRevenueProductByName = useCallback((productName) => {
+        const target = String(productName || '').trim().toLowerCase();
+        if (!target) return;
+
+        setRevenueStreams(prev => prev
+            .map(stream => ({
+                ...stream,
+                subStreams: stream.subStreams
+                    .map(sub => ({
+                        ...sub,
+                        products: sub.products.filter(p => String(p.name || '').trim().toLowerCase() !== target)
+                    }))
+                    .filter(sub => sub.products.length > 0)
+            }))
+            .filter(stream => stream.subStreams.length > 0)
+        );
+    }, []);
+
+    // ---- TEMPLATE SWITCH RESET ----
+    // Prevent cross-template bleed by clearing in-memory model state
+    // before applying assumptions/streams for the newly selected template.
+    const clearSessionForTemplateSwitch = useCallback(() => {
+        setBranches([]);
+        setBranchCountState(10);
+        setRevenueStreams([]);
+        setOpex([]);
+        setCapex([]);
+        setGeneratedStreams({ revenue: [], opex: [] });
+        setAssumptions({
+            taxRate: 0,
+            inflationRate: 0,
+            initialInvestment: 0
+        });
+        setFundingState({
+            loanAmount: 0,
+            interestRate: 0,
+            loanTenureMonths: 0,
+            moratoriumMonths: 0,
+            equityFromPromoters: 0,
+            grantAmount: 0,
+        });
+        setInjectionReport(null);
+        setExcelPatches([]);
+    }, []);
+
+    // ---- GENERATED STREAMS ACTIONS ----
+    const setGeneratedStreamsViaChat = useCallback((payload) => {
+        setGeneratedStreams(payload);
+    }, []);
+
+    const revenueMonthlyTotal = revenueStreams.reduce((sum, stream) => {
+        const streamTotal = stream.subStreams.reduce((subSum, sub) => {
+            const subTotal = sub.products.reduce((prodSum, prod) =>
+                prodSum + ((Number(prod.units) || 0) * (Number(prod.price) || 0)), 0);
+            return subSum + subTotal;
+        }, 0);
+        return sum + streamTotal;
+    }, 0);
+
+    const opexMonthlyTotal = opex.reduce((sum, item) =>
+        sum + ((Number(item.units) || 0) * (Number(item.price) || 0)), 0);
+
+    const netMonthlyTotal = revenueMonthlyTotal - opexMonthlyTotal;
+
     return (
         <FinancialContext.Provider value={{
             // Business Identity
@@ -354,10 +514,10 @@ export function FinancialProvider({ children }) {
             branchCount, setBranchCount,
 
             // Revenue
-            revenueStreams, setRevenueStreams, updateProductCell, addProductViaChat,
+            revenueStreams, setRevenueStreams, updateProductCell, addProductViaChat, removeRevenueProductByName,
 
             // OPEX
-            opex, setOpex, updateOpexCell, addOpexViaChat,
+            opex, setOpex, updateOpexCell, addOpexViaChat, removeOpexByName,
 
             // CAPEX
             capex, setCapex, updateCapexCell, addCapexViaChat,
@@ -371,14 +531,24 @@ export function FinancialProvider({ children }) {
             // Progress
             collectionProgress, markComplete, getCompletionPercent,
 
+            // AI Generated Streams
+            generatedStreams, setGeneratedStreams, setGeneratedStreamsViaChat,
+
+            // Calculated totals
+            revenueMonthlyTotal, opexMonthlyTotal, netMonthlyTotal,
+
             // Spreadsheet navigation
             activeSpreadsheetTab, setActiveSpreadsheetTab, flashingTab, navigateToTab,
 
-            // Engine outputs
-            projectionOutputs,
+            // Multi-Template
+            templateId, setTemplateId,
+            universalAssumptions, setUniversalAssumptions,
+            allTemplates, activeTemplate,
+            clearSessionForTemplateSwitch,
 
             // Excel patch tracking
-            excelPatches, excelPatchVersion, patchExcel,
+            excelPatches, excelPatchVersion, setExcelPatchVersion, patchExcel,
+            injectionReport, setInjectionReport,
         }}>
             {children}
         </FinancialContext.Provider>

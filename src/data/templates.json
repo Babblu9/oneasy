@@ -1,0 +1,425 @@
+[
+  {
+    "id": "healthcare",
+    "name": "Healthcare Clinic",
+    "description": "Medical clinic, dental practice, diagnostic center, physio, pharmacy",
+    "file": "healthcare_master.xlsx",
+    "icon": "🏥",
+    "keywords": [
+      "clinic",
+      "hospital",
+      "dental",
+      "doctor",
+      "pharmacy",
+      "diagnostic",
+      "physio",
+      "healthcare",
+      "medical"
+    ],
+    "questions": [
+      {
+        "id": "revenue_model",
+        "text": "How do you earn revenue?",
+        "options": [
+          "Doctor Consultations",
+          "Pharmacy Sales",
+          "Diagnostics / Lab Tests",
+          "Subscriptions / Health Plans",
+          "Combination of above"
+        ]
+      },
+      {
+        "id": "avg_ticket",
+        "text": "What's your average revenue per patient visit (₹)?",
+        "placeholder": "e.g. 800"
+      },
+      {
+        "id": "patients_per_month",
+        "text": "How many patients do you expect per month initially?",
+        "placeholder": "e.g. 200"
+      },
+      {
+        "id": "branches",
+        "text": "How many clinic branches will you operate?",
+        "placeholder": "e.g. 3"
+      },
+      {
+        "id": "employees",
+        "text": "How many staff members initially (doctors + support)?",
+        "placeholder": "e.g. 12"
+      },
+      {
+        "id": "funding",
+        "text": "What is your starting capital / funding amount (₹)?",
+        "placeholder": "e.g. 50,00,000"
+      }
+    ],
+    "assumptionCells": {
+      "avg_ticket": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "I10"
+      },
+      "patients_per_month": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "G10"
+      },
+      "branches": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "H7"
+      },
+      "employees": {
+        "sheet": "A.IIOPEX",
+        "cell": "G45"
+      },
+      "funding": {
+        "sheet": "2.Total Project Cost",
+        "cell": "C7"
+      }
+    }
+  },
+  {
+    "id": "edtech",
+    "name": "EdTech / Courses",
+    "description": "Online education platform, course sales, subscriptions, corporate training",
+    "file": "edtech_master.xlsx",
+    "icon": "🎓",
+    "keywords": [
+      "edtech",
+      "education",
+      "courses",
+      "learning",
+      "training",
+      "e-learning",
+      "lms",
+      "tutoring",
+      "certification"
+    ],
+    "questions": [
+      {
+        "id": "course_price",
+        "text": "Average price of your course / subscription (₹)?",
+        "placeholder": "e.g. 5000"
+      },
+      {
+        "id": "students_per_month",
+        "text": "How many new students do you expect per month initially?",
+        "placeholder": "e.g. 200"
+      },
+      {
+        "id": "employees",
+        "text": "How many team members initially?",
+        "placeholder": "e.g. 5"
+      },
+      {
+        "id": "funding",
+        "text": "What is your starting capital / funding amount (₹)?",
+        "placeholder": "e.g. 20,00,000"
+      }
+    ],
+    "assumptionCells": {
+      "course_price": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "I10"
+      },
+      "students_per_month": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "G10"
+      },
+      "employees": {
+        "sheet": "A.IIOPEX",
+        "cell": "G45"
+      },
+      "funding": {
+        "sheet": "2.Total Project Cost",
+        "cell": "C7"
+      }
+    }
+  },
+  {
+    "id": "saas",
+    "name": "SaaS / Software",
+    "description": "Software-as-a-service, subscription software, B2B/B2C SaaS product",
+    "file": "saas_master.xlsx",
+    "icon": "💻",
+    "keywords": [
+      "saas",
+      "software",
+      "subscription",
+      "platform",
+      "app",
+      "api",
+      "b2b software",
+      "b2c app",
+      "tech product"
+    ],
+    "questions": [
+      {
+        "id": "mrr_per_customer",
+        "text": "Monthly revenue per customer (₹ MRR)?",
+        "placeholder": "e.g. 2000"
+      },
+      {
+        "id": "customers_per_month",
+        "text": "New customers expected per month initially?",
+        "placeholder": "e.g. 50"
+      },
+      {
+        "id": "employees",
+        "text": "How many team members initially?",
+        "placeholder": "e.g. 8"
+      },
+      {
+        "id": "funding",
+        "text": "What is your starting capital / funding amount (₹)?",
+        "placeholder": "e.g. 1,00,00,000"
+      }
+    ],
+    "assumptionCells": {
+      "mrr_per_customer": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "I10"
+      },
+      "customers_per_month": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "G10"
+      },
+      "employees": {
+        "sheet": "A.IIOPEX",
+        "cell": "G45"
+      },
+      "funding": {
+        "sheet": "2.Total Project Cost",
+        "cell": "C7"
+      }
+    }
+  },
+  {
+    "id": "ecommerce",
+    "name": "E-commerce / Marketplace",
+    "description": "Online store, D2C brand, marketplace, dropshipping",
+    "file": "ecommerce_master.xlsx",
+    "icon": "🛒",
+    "keywords": [
+      "ecommerce",
+      "shop",
+      "store",
+      "marketplace",
+      "d2c",
+      "retail",
+      "dropshipping",
+      "amazon",
+      "product sales"
+    ],
+    "questions": [
+      {
+        "id": "avg_order_value",
+        "text": "Average order value (AOV) in ₹?",
+        "placeholder": "e.g. 1500"
+      },
+      {
+        "id": "orders_per_month",
+        "text": "Expected orders per month initially?",
+        "placeholder": "e.g. 500"
+      },
+      {
+        "id": "employees",
+        "text": "How many team members initially?",
+        "placeholder": "e.g. 4"
+      },
+      {
+        "id": "funding",
+        "text": "What is your starting capital / funding amount (₹)?",
+        "placeholder": "e.g. 30,00,000"
+      }
+    ],
+    "assumptionCells": {
+      "avg_order_value": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "I10"
+      },
+      "orders_per_month": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "G10"
+      },
+      "employees": {
+        "sheet": "A.IIOPEX",
+        "cell": "G45"
+      },
+      "funding": {
+        "sheet": "2.Total Project Cost",
+        "cell": "C7"
+      }
+    }
+  },
+  {
+    "id": "pharma",
+    "name": "Pharma / Hospitals",
+    "description": "Hospitals, retail pharmacy, medicine retail, OTC drug sales",
+    "file": "pharma_master.xlsx",
+    "icon": "💊",
+    "keywords": [
+      "pharma",
+      "pharmacy",
+      "medicine",
+      "drug",
+      "chemist",
+      "retail pharmacy",
+      "medstore",
+      "hospital"
+    ],
+    "questions": [
+      {
+        "id": "daily_sales",
+        "text": "Expected daily sales revenue per store (₹)?",
+        "placeholder": "e.g. 25000"
+      },
+      {
+        "id": "units_per_month",
+        "text": "Expected patient/customer volume per month?",
+        "placeholder": "e.g. 1000"
+      },
+      {
+        "id": "employees",
+        "text": "How many staff members initially?",
+        "placeholder": "e.g. 5"
+      },
+      {
+        "id": "funding",
+        "text": "What is your starting capital / funding amount (₹)?",
+        "placeholder": "e.g. 40,00,000"
+      }
+    ],
+    "assumptionCells": {
+      "daily_sales": {
+        "sheet": "2.Sales",
+        "cell": "G10"
+      },
+      "units_per_month": {
+        "sheet": "2.Sales",
+        "cell": "F10"
+      },
+      "employees": {
+        "sheet": "3. OPEX",
+        "cell": "G10"
+      },
+      "funding": {
+        "sheet": "2.Total Project Cost",
+        "cell": "C7"
+      }
+    }
+  },
+  {
+    "id": "consulting",
+    "name": "Consulting / Services",
+    "description": "Management consulting, IT services, agency, freelance practice",
+    "file": "consulting_master.xlsx",
+    "icon": "📋",
+    "keywords": [
+      "consulting",
+      "agency",
+      "services",
+      "advisory",
+      "freelance",
+      "it services",
+      "outsourcing",
+      "professional services"
+    ],
+    "questions": [
+      {
+        "id": "avg_project_value",
+        "text": "Average project or retainer value per client (₹)?",
+        "placeholder": "e.g. 2,00,000"
+      },
+      {
+        "id": "clients_per_month",
+        "text": "How many active clients do you expect initially?",
+        "placeholder": "e.g. 10"
+      },
+      {
+        "id": "employees",
+        "text": "How many consultants / team members?",
+        "placeholder": "e.g. 6"
+      },
+      {
+        "id": "funding",
+        "text": "What is your starting capital / funding amount (₹)?",
+        "placeholder": "e.g. 10,00,000"
+      }
+    ],
+    "assumptionCells": {
+      "avg_project_value": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "I10"
+      },
+      "clients_per_month": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "G10"
+      },
+      "employees": {
+        "sheet": "A.IIOPEX",
+        "cell": "G45"
+      },
+      "funding": {
+        "sheet": "2.Total Project Cost",
+        "cell": "C7"
+      }
+    }
+  },
+  {
+    "id": "manufacturing",
+    "name": "Manufacturing / Product",
+    "description": "Product manufacturing, factory, assembly, FMCG, industrial goods",
+    "file": "manufacturing_master.xlsx",
+    "icon": "🏭",
+    "keywords": [
+      "manufacturing",
+      "factory",
+      "production",
+      "fmcg",
+      "industrial",
+      "goods",
+      "assembly",
+      "supply chain"
+    ],
+    "questions": [
+      {
+        "id": "price_per_unit",
+        "text": "Average selling price per unit (₹)?",
+        "placeholder": "e.g. 500"
+      },
+      {
+        "id": "units_per_month",
+        "text": "Expected production / sales volume per month (units)?",
+        "placeholder": "e.g. 5000"
+      },
+      {
+        "id": "employees",
+        "text": "How many workers / staff initially?",
+        "placeholder": "e.g. 20"
+      },
+      {
+        "id": "funding",
+        "text": "What is your starting capital / funding amount (₹)?",
+        "placeholder": "e.g. 2,00,00,000"
+      }
+    ],
+    "assumptionCells": {
+      "price_per_unit": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "J10"
+      },
+      "units_per_month": {
+        "sheet": "A.I Revenue Streams - P1",
+        "cell": "H10"
+      },
+      "employees": {
+        "sheet": "A.IIOPEX",
+        "cell": "G45"
+      },
+      "funding": {
+        "sheet": "2.Total Project Cost",
+        "cell": "C7"
+      }
+    }
+  }
+]
