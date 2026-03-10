@@ -4,7 +4,19 @@ import ExcelJS from 'exceljs';
 import { isAllowedSheet, isFormulaCell, isValidCellAddress, normalizeInputValue, normalizeSheetName, resolveWorksheet } from '@/lib/templateGuards';
 import { detectOpexColumnsFromExcelJs, detectRevenueColumnsFromExcelJs } from '@/lib/streamInjection';
 
-const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+// /tmp is the only writable directory on Vercel; the master template is read-only in the project bundle
+const WORK_EXCEL = '/tmp/active_working.xlsx';
+const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+
+export const maxDuration = 60;
+
+/** Seed /tmp with the master template on cold-starts or when /tmp has been cleared */
+function ensureWorkingFile() {
+    if (!fs.existsSync(WORK_EXCEL)) {
+        if (!fs.existsSync(SOURCE_EXCEL)) throw new Error(`Source template not found: ${SOURCE_EXCEL}`);
+        fs.copyFileSync(SOURCE_EXCEL, WORK_EXCEL);
+    }
+}
 
 /**
  * POST /api/excel-fill
@@ -22,9 +34,9 @@ export async function POST(request) {
             return Response.json({ error: 'patches must be a non-empty array' }, { status: 400 });
         }
 
-        // Work only on active working file to preserve master template integrity
-        if (!fs.existsSync(WORK_EXCEL)) {
-            return Response.json({ error: `Working Excel not found: ${WORK_EXCEL}` }, { status: 404 });
+        // Seed /tmp with master template if needed (Vercel cold-start)
+        try { ensureWorkingFile(); } catch (e) {
+            return Response.json({ error: e.message }, { status: 404 });
         }
 
         const wb = new ExcelJS.Workbook();
@@ -225,11 +237,11 @@ export async function POST(request) {
  */
 export async function GET() {
     try {
-        const filePath = WORK_EXCEL;
-        if (!fs.existsSync(filePath)) {
-            return Response.json({ error: `Working Excel not found: ${filePath}` }, { status: 404 });
+        // Seed if needed then send the working file
+        try { ensureWorkingFile(); } catch (e) {
+            return Response.json({ error: e.message }, { status: 404 });
         }
-        const buffer = fs.readFileSync(filePath);
+        const buffer = fs.readFileSync(WORK_EXCEL);
 
         return new Response(buffer, {
             status: 200,

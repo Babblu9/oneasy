@@ -2,6 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import { NextResponse } from 'next/server';
 
+// NOTE: On Vercel, the project bundle is read-only — we cannot permanently write back to
+// excel-templates/ or templates/ from a serverless function. Instead, we write the uploaded
+// file to /tmp so subsequent API route calls use the fresh template for this instance.
+// If permanent template storage is needed, use Vercel Blob or S3.
+export const maxDuration = 60;
+
 export async function POST(req) {
     try {
         const formData = await req.formData();
@@ -13,23 +19,11 @@ export async function POST(req) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        // Path 1: The template used by the Generator API
-        const generatorPath = path.join(process.cwd(), 'templates', 'finance-model-final.xlsx');
+        // Write uploaded template directly as the active working copy in /tmp
+        const workExcelPath = '/tmp/active_working.xlsx';
+        fs.writeFileSync(workExcelPath, buffer);
 
-        // Path 2: The source excel used by the live Spreadsheet Viewer
-        const viewerPath = path.join(process.cwd(), 'excel-templates', 'Docty Healthcare - Business Plan.xlsx');
-
-        // Write the fresh file to both locations to keep the entire engine in sync
-        fs.writeFileSync(generatorPath, buffer);
-        fs.writeFileSync(viewerPath, buffer);
-
-        // Discard the working copy so the viewer is forced to render the new source template
-        const workExcelPath = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
-        if (fs.existsSync(workExcelPath)) {
-            fs.unlinkSync(workExcelPath);
-        }
-
-        return NextResponse.json({ message: "Template over-written and synced successfully." }, { status: 200 });
+        return NextResponse.json({ message: "Template uploaded and activated successfully." }, { status: 200 });
 
     } catch (error) {
         console.error("Error occurred while uploading custom template: ", error);

@@ -6,6 +6,20 @@ import { applyUpdatesToHyperFormula, buildHyperFormulaFromWorkbook, extractDashb
 import { isAllowedSheet, isFormulaCell, isValidCellAddress, normalizeInputValue, normalizeSheetName } from '@/lib/templateGuards';
 import { getCachedEngine, setCachedEngine, workbookFingerprint } from '@/lib/hfEngineCache';
 
+// /tmp is the only writable directory on Vercel
+const WORK_EXCEL = '/tmp/active_working.xlsx';
+const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+
+export const maxDuration = 60;
+
+/** Seed /tmp with the master template on cold-starts or when /tmp has been cleared */
+function ensureWorkingFile() {
+    if (!fs.existsSync(WORK_EXCEL)) {
+        if (!fs.existsSync(SOURCE_EXCEL)) throw new Error(`Source template not found: ${SOURCE_EXCEL}`);
+        fs.copyFileSync(SOURCE_EXCEL, WORK_EXCEL);
+    }
+}
+
 /**
  * POST /api/recalculate
  * Body: { updates: [{ sheet, cell, value }] }
@@ -22,10 +36,12 @@ export async function POST(req) {
     try {
         const { updates = [] } = await req.json();
 
-        const workbookPath = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
-        if (!fs.existsSync(workbookPath)) {
-            return NextResponse.json({ error: 'Working workbook not found. Select template first.' }, { status: 404 });
+        // Seed /tmp with master template if needed (Vercel cold-start)
+        try { ensureWorkingFile(); } catch (e) {
+            return NextResponse.json({ error: e.message }, { status: 404 });
         }
+
+        const workbookPath = WORK_EXCEL;
         const beforeFingerprint = workbookFingerprint(workbookPath);
 
         const workbook = new ExcelJS.Workbook();

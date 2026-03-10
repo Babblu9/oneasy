@@ -3,6 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import { getTemplate, getTemplatePath } from '@/lib/templateRegistry';
 
+export const maxDuration = 60;
+
 /**
  * POST /api/select-template
  * Body: { templateId: "edtech" }
@@ -35,8 +37,9 @@ export async function POST(req) {
             });
         }
 
-        // Copy selected template to the active working location for the viewer
-        const workingFile = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+        // Copy selected template to /tmp (only writable dir on Vercel)
+        // The project-bundled excel-templates/ dir is read-only on Vercel
+        const workingFile = '/tmp/active_working.xlsx';
 
         fs.copyFileSync(sourceFile, workingFile);
 

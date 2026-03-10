@@ -10,7 +10,7 @@ export async function POST(request) {
         const { branches, product, units, price } = await request.json();
 
         const timestamp = Date.now();
-        const outputPath = path.join(process.cwd(), `tmp_output_${timestamp}.xlsx`);
+        const outputPath = `/tmp/tmp_output_${timestamp}.xlsx`;
         const scriptPath = path.join(process.cwd(), 'fill_excel_v2.js');
 
         // Run Node.js script (v2 with exceljs)

@@ -4,6 +4,11 @@ import fs from 'fs';
 import XlsxPopulate from 'xlsx-populate';
 import { getTemplate, getAssumptionCells, getTemplatePath } from '@/lib/templateRegistry';
 
+// /tmp is the only writable directory on Vercel
+const WORK_EXCEL = '/tmp/active_working.xlsx';
+
+export const maxDuration = 60;
+
 /**
  * POST /api/inject-assumptions
  * Body: {
@@ -49,7 +54,7 @@ export async function POST(req) {
             );
         }
 
-        const workingFile = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+        const workingFile = WORK_EXCEL;
         if (!fs.existsSync(workingFile)) {
             // Initialize a session-scoped working file from selected template source
             fs.copyFileSync(sourceFile, workingFile);

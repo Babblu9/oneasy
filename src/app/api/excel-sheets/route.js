@@ -2,8 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import ExcelJS from 'exceljs';
 
-const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
-const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'Docty Healthcare - Business Plan.xlsx');
+// /tmp is the only writable directory on Vercel; reads still come from the bundled project files
+const WORK_EXCEL = '/tmp/active_working.xlsx';
+const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+
+export const maxDuration = 30;
 
 export async function GET() {
     const EXCEL_PATH = fs.existsSync(WORK_EXCEL) ? WORK_EXCEL : SOURCE_EXCEL;

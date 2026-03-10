@@ -4,14 +4,25 @@ import ExcelJS from 'exceljs';
 import { buildHyperFormulaFromWorkbook, getHfCellValue } from '@/lib/hyperFormulaEngine';
 import { resolveWorksheet } from '@/lib/templateGuards';
 
-const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
-// Fallback if active_working doesn't exist yet
-const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'Docty Healthcare - Business Plan.xlsx');
+// /tmp is the only writable directory on Vercel
+const WORK_EXCEL = '/tmp/active_working.xlsx';
+const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
 const TEMPLATE_FALLBACKS = [
     path.join(process.cwd(), 'templates', 'healthcare_master.xlsx'),
     path.join(process.cwd(), 'templates', 'saas_master.xlsx'),
     path.join(process.cwd(), 'templates', 'edtech_master.xlsx'),
 ];
+
+export const maxDuration = 60;
+
+/** Seed /tmp with the master template on cold-starts or when /tmp has been cleared */
+function ensureWorkingFile() {
+    if (!fs.existsSync(WORK_EXCEL)) {
+        if (fs.existsSync(SOURCE_EXCEL)) {
+            fs.copyFileSync(SOURCE_EXCEL, WORK_EXCEL);
+        }
+    }
+}
 
 // Map UI tab names → real Excel sheet names (Standardized for Professional models)
 const TAB_TO_SHEET = {
@@ -41,6 +52,8 @@ function colToLetter(colNumber) {
 }
 
 async function loadWorkbookWithRecovery() {
+    // Try /tmp working copy first, then project bundle, then template fallbacks
+    ensureWorkingFile();
     const candidates = [WORK_EXCEL, SOURCE_EXCEL, ...TEMPLATE_FALLBACKS].filter(p => fs.existsSync(p));
     const errors = [];
 
@@ -69,8 +82,9 @@ export async function GET(request) {
 
     try {
         const { wb, filePath, recovered, errors } = await loadWorkbookWithRecovery();
-        if (recovered && filePath && fs.existsSync(filePath)) {
+        if (recovered && filePath && fs.existsSync(filePath) && filePath !== WORK_EXCEL) {
             try {
+                // Copy recovered file to /tmp so subsequent requests use the patched version
                 fs.copyFileSync(filePath, WORK_EXCEL);
             } catch {
                 // non-fatal; we can still serve the recovered workbook for this request

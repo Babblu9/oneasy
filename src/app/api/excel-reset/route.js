@@ -4,8 +4,19 @@ import ExcelJS from 'exceljs';
 import { BUSINESS_INFO_CELLS, FUNDING_CELLS, ASSUMPTION_CELLS } from '../../../lib/excelCellMap.js';
 import { revenueCatalog, opexCatalog } from '../../../lib/modelCatalog.js';
 
-const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
-const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'Docty Healthcare - Business Plan.xlsx');
+// /tmp is the only writable directory on Vercel
+const WORK_EXCEL = '/tmp/active_working.xlsx';
+const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+
+export const maxDuration = 60;
+
+/** Seed /tmp with the master template on cold-starts or when /tmp has been cleared */
+function ensureWorkingFile() {
+    if (!fs.existsSync(WORK_EXCEL)) {
+        if (!fs.existsSync(SOURCE_EXCEL)) throw new Error(`Source template not found: ${SOURCE_EXCEL}`);
+        fs.copyFileSync(SOURCE_EXCEL, WORK_EXCEL);
+    }
+}
 
 /**
  * POST /api/excel-reset
@@ -15,10 +26,9 @@ const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'Docty Healthca
  */
 export async function POST() {
     try {
-        const WORK_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
-
-        if (!fs.existsSync(WORK_EXCEL)) {
-            return Response.json({ error: `Working Excel not found: ${WORK_EXCEL}` }, { status: 404 });
+        // Seed /tmp with master template if needed (Vercel cold-start)
+        try { ensureWorkingFile(); } catch (e) {
+            return Response.json({ error: e.message }, { status: 404 });
         }
 
         // Always scrub the CURRENT active template
