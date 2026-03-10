@@ -7,10 +7,15 @@
   --primary-hover: #005696;
 }
 
+html {
+  font-size: 15px;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
 }
 
 @layer utilities {
