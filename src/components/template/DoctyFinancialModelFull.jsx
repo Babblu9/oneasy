@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { dataActionToPatches } from "@/lib/excelCellMap.js";
+import ScenarioDashboard from "@/components/template/ScenarioDashboard";
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
@@ -404,17 +405,17 @@ function EC({ v, onChange, type = "num", style = {}, onFocus = null }) {
     onChange(type === "pct" ? n / 100 : n);
   };
   const display = type === "pct" ? fmtPct(v) : type === "currency" ? fmtINR(v, true) : fmtNum(v);
-  if (ed) return <input autoFocus value={val} onChange={e => setVal(e.target.value)} onBlur={commit} onFocus={() => onFocus && onFocus()} onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEd(false); }} style={{ background: "#0A2040", border: `1px solid ${C.teal}`, borderRadius: 3, color: C.inputBlue, fontSize: 11, fontFamily: "monospace", padding: "2px 6px", textAlign: "right", width: "100%", outline: "none", boxSizing: "border-box", ...style }} />;
-  return <div onClick={() => { setEd(true); setVal(type === "pct" ? ((v || 0) * 100).toFixed(1) : String(v || 0)); if (onFocus) onFocus(); }} title="Click to edit" style={{ color: C.inputBlue, fontSize: 11, fontFamily: "monospace", textAlign: "right", cursor: "pointer", padding: "2px 6px", borderRadius: 3, border: "1px solid transparent", ...style }}>{display}</div>;
+  if (ed) return <input autoFocus value={val} onChange={e => setVal(e.target.value)} onBlur={commit} onFocus={() => onFocus && onFocus()} onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEd(false); }} style={{ background: "#0A2040", border: `1px solid ${C.teal}`, borderRadius: 3, color: C.inputBlue, fontSize: 14, fontFamily: "monospace", padding: "2px 6px", textAlign: "right", width: "100%", outline: "none", boxSizing: "border-box", ...style }} />;
+  return <div onClick={() => { setEd(true); setVal(type === "pct" ? ((v || 0) * 100).toFixed(1) : String(v || 0)); if (onFocus) onFocus(); }} title="Click to edit" style={{ color: C.inputBlue, fontSize: 14, fontFamily: "monospace", textAlign: "right", cursor: "pointer", padding: "2px 6px", borderRadius: 3, border: "1px solid transparent", ...style }}>{display}</div>;
 }
 
 function TI({ v, onChange, placeholder = "", style = {}, onFocus = null }) {
-  return <input value={v || ""} onChange={e => onChange(e.target.value)} onFocus={() => onFocus && onFocus()} placeholder={placeholder} style={{ background: "transparent", border: "none", outline: "none", color: C.inputBlue, fontSize: 11, fontFamily: "sans-serif", width: "100%", ...style }} />;
+  return <input value={v || ""} onChange={e => onChange(e.target.value)} onFocus={() => onFocus && onFocus()} placeholder={placeholder} style={{ background: "transparent", border: "none", outline: "none", color: C.inputBlue, fontSize: 14, fontFamily: "sans-serif", width: "100%", ...style }} />;
 }
 
 // ─── SHARED TABLE STYLES ──────────────────────────────────────────────────────
-const th = (extra = {}) => ({ padding: "7px 10px", fontSize: 10, color: C.gold, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", borderBottom: `2px solid ${C.goldD}`, background: C.headerBg, whiteSpace: "nowrap", ...extra });
-const td0 = (extra = {}) => ({ padding: "5px 10px", fontSize: 11, borderBottom: `1px solid ${C.border}`, ...extra });
+const th = (extra = {}) => ({ padding: "8px 12px", fontSize: 13, color: C.gold, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", borderBottom: `2px solid ${C.goldD}`, background: C.headerBg, whiteSpace: "nowrap", ...extra });
+const td0 = (extra = {}) => ({ padding: "6px 12px", fontSize: 14, borderBottom: `1px solid ${C.border}`, ...extra });
 
 // ─── SHEET: 1. BASICS ────────────────────────────────────────────────────────
 function Basics({ d, setD, onFocus }) {
@@ -1379,18 +1380,18 @@ export default function DoctyModel() {
     console.log("[DEBUG] applyRevenueAction:", { streamName, productName, qty, price });
 
     const next = { ...prev, revP1: prev.revP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
-    
+
     // Try to find existing group or empty group
     let targetGroup = next.revP1.find(g => String(g.header || "").toLowerCase() === streamName.toLowerCase());
     if (!targetGroup) targetGroup = next.revP1.find(g => !String(g.header || "").trim());
     if (!targetGroup && next.revP1.length > 0) targetGroup = next.revP1[0];
-    
+
     // If still no group, create new one
     if (!targetGroup) {
-      targetGroup = { id: String(next.revP1.length + 1), header: streamName, items: Array(5).fill(null).map((_, i) => ({ id: `${next.revP1.length + 1}${String.fromCharCode(97+i)}`, sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 })) };
+      targetGroup = { id: String(next.revP1.length + 1), header: streamName, items: Array(5).fill(null).map((_, i) => ({ id: `${next.revP1.length + 1}${String.fromCharCode(97 + i)}`, sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 })) };
       next.revP1.push(targetGroup);
     }
-    
+
     if (!targetGroup.header) targetGroup.header = streamName;
 
     // Find empty item slot
@@ -1415,16 +1416,16 @@ export default function DoctyModel() {
     console.log("[DEBUG] applyOpexAction:", { cat, sub, units, cost });
 
     const next = { ...prev, opexP1: prev.opexP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
-    
+
     let targetGroup = next.opexP1.find(g => String(g.header || "").toLowerCase() === cat.toLowerCase());
     if (!targetGroup) targetGroup = next.opexP1.find(g => !String(g.header || "").trim());
     if (!targetGroup && next.opexP1.length > 0) targetGroup = next.opexP1[0];
-    
+
     if (!targetGroup) {
-      targetGroup = { id: String(next.opexP1.length + 1), header: cat, items: Array(5).fill(null).map((_, i) => ({ id: `${next.opexP1.length + 1}${String.fromCharCode(97+i)}`, sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })) };
+      targetGroup = { id: String(next.opexP1.length + 1), header: cat, items: Array(5).fill(null).map((_, i) => ({ id: `${next.opexP1.length + 1}${String.fromCharCode(97 + i)}`, sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })) };
       next.opexP1.push(targetGroup);
     }
-    
+
     if (!targetGroup.header) targetGroup.header = cat;
 
     let targetItem = targetGroup.items.find(it => !String(it.sub || "").trim());
@@ -1712,6 +1713,7 @@ export default function DoctyModel() {
     { id: "Phase 1", label: "Phase 1 Loan" },
     { id: "Phase 2", label: "Phase 2 Loan" },
     { id: "Costing", label: "Costing" },
+    { id: "Scenarios", label: "🎯 Scenarios" },
   ];
 
   const send = async () => {
@@ -1802,6 +1804,7 @@ export default function DoctyModel() {
       case "Phase 1": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} onFocus={handleCellFocus} />;
       case "Phase 2": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} onFocus={handleCellFocus} />;
       case "Costing": return <EmptySheet title="Costing" sub="Referenced from other sheets — no direct data entry" />;
+      case "Scenarios": return <ScenarioDashboard revP1={d.revP1} opexP1={d.opexP1} />;
       default: return <EmptySheet title={sheet} sub="Sheet content" />;
     }
   };
