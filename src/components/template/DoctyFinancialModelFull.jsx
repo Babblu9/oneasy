@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { dataActionToPatches } from "@/lib/excelCellMap.js";
+import { modelStateToPatches } from "@/lib/modelStateToPatches.js";
 import ScenarioDashboard from "@/components/template/ScenarioDashboard";
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
@@ -1331,13 +1332,31 @@ export default function DoctyModel() {
     if (downloading) return;
     setDownloading(true);
     try {
+      // Step 1: Hard-reset working file to master template (clean slate)
+      await fetch("/api/excel-reset", { method: "POST" }).catch(() => { });
+
+      // Step 2: Convert UI model state → patches and write to Excel
+      const patches = modelStateToPatches(d);
+      console.log(`[DOWNLOAD] Injecting ${patches.length} patches from current model state`);
+      if (patches.length > 0) {
+        const fillRes = await fetch("/api/excel-fill", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ patches }),
+        });
+        const fillResult = await fillRes.json().catch(() => ({}));
+        console.log(`[DOWNLOAD] Patched ${fillResult.patchedCount || 0} cells`);
+      }
+
+      // Step 3: Download the now-populated Excel file
       const res = await fetch("/api/excel-fill", { method: "GET" });
       if (!res.ok) throw new Error(`Download failed (${res.status})`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "Financial_Model.xlsx";
+      const bizName = String(d?.basics?.tradeName || d?.basics?.legalName || "OnEasy").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+      a.download = `${bizName}_Financial_Model.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();

@@ -24,8 +24,18 @@ function ensureWorkingFile() {
  * Keeps all formulas and formatting intact.
  * Revenue/OPEX cell refs now sourced from model_inputs.json via modelCatalog.
  */
-export async function POST() {
+export async function POST(req) {
     try {
+        let hardReset = false;
+        try { const body = await req.json(); hardReset = !!body?.hardReset; } catch { /* no body */ }
+
+        // Hard reset: copy master template → working file (used by download flow)
+        if (hardReset || !fs.existsSync(WORK_EXCEL)) {
+            if (!fs.existsSync(SOURCE_EXCEL)) return Response.json({ error: 'Template not found' }, { status: 404 });
+            fs.copyFileSync(SOURCE_EXCEL, WORK_EXCEL);
+            if (hardReset) return Response.json({ success: true, mode: 'hard-reset' });
+        }
+
         // Seed /tmp with master template if needed (Vercel cold-start)
         try { ensureWorkingFile(); } catch (e) {
             return Response.json({ error: e.message }, { status: 404 });
@@ -34,6 +44,7 @@ export async function POST() {
         // Always scrub the CURRENT active template
         const wb = new ExcelJS.Workbook();
         await wb.xlsx.readFile(WORK_EXCEL);
+
 
         let cleared = 0;
 
