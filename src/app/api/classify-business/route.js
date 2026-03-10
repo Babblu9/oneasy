@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { classifyByKeywords, getAllTemplates } from '@/lib/templateRegistry';
+import { classifyIndustry, INDUSTRY_TEMPLATES } from '@/lib/engine';
+
 
 const gateway = createOpenAI({
     apiKey: process.env.AI_GATEWAY_API_KEY || '',
