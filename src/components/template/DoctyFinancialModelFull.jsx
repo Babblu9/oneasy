@@ -84,54 +84,55 @@ const extractSuggestions = (text) => {
 // ─── INITIAL DATA ─────────────────────────────────────────────────────────────
 const INIT = {
   basics: {
-    legalName: "OnEasy Financial Services", tradeName: "OnEasy",
+    legalName: "OnEasy Financial Services Pvt Ltd", tradeName: "OnEasy",
     address: "6-1-19 and 6-1-19/A, old no 108/3, Flat no 206, Musheerabad, Hyderabad - 500020, Telangana",
-    email: "Karimsavenue@gmail.com", contact: "", promoters: "4",
-    startDateP1: "2026-03-31", startDateP2: "",
-    description: "", pitchDeck: "", burningDesire: "",
+    email: "Karimsavenue@gmail.com", contact: "+91-99999-00000", promoters: "4",
+    startDateP1: "2026-04-01", startDateP2: "2027-04-01",
+    description: "Digital healthcare platform connecting patients to doctors for consultations, diagnostics, pharmacy and health packages across Hyderabad.",
+    pitchDeck: "", burningDesire: "Make quality healthcare accessible and affordable for every Indian household.",
   },
   revP1: [
     {
       id: "1", header: "Doctor Consultations", items: [
-        { id: "1a", sub: "Platform Access Fees", qty: 28000, price: 30, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
-        { id: "1b", sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
-        { id: "1c", sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
-        { id: "1d", sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
-        { id: "1e", sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
+        { id: "1a", sub: "Platform Access Fee (OPD)", qty: 28000, price: 30, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
+        { id: "1b", sub: "Telemedicine Consultation", qty: 3000, price: 200, gY1: 0.05, gY2: 0.90, gY3: 0.75, gY4: 0.55, gY5: 0.40 },
+        { id: "1c", sub: "Specialist Referral Fee", qty: 800, price: 500, gY1: 0.03, gY2: 0.70, gY3: 0.60, gY4: 0.45, gY5: 0.35 },
+        { id: "1d", sub: "Home Doctor Visit", qty: 200, price: 800, gY1: 0.02, gY2: 0.65, gY3: 0.55, gY4: 0.40, gY5: 0.30 },
+        { id: "1e", sub: "Health Report Generation", qty: 5000, price: 50, gY1: 0.05, gY2: 0.80, gY3: 0.65, gY4: 0.50, gY5: 0.35 },
       ]
     },
     {
-      id: "2", header: "Advertisement", items: [
-        { id: "2a", sub: "Advertisement", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "2b", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "2c", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "2d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "2e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+      id: "2", header: "Advertisement & Partnerships", items: [
+        { id: "2a", sub: "Pharma Brand Ads", qty: 8, price: 50000, gY1: 0.05, gY2: 0.60, gY3: 0.55, gY4: 0.40, gY5: 0.30 },
+        { id: "2b", sub: "Clinic / Lab Listing Fee", qty: 200, price: 5000, gY1: 0.08, gY2: 0.70, gY3: 0.60, gY4: 0.45, gY5: 0.35 },
+        { id: "2c", sub: "Insurance Referral Fee", qty: 300, price: 1500, gY1: 0.05, gY2: 0.65, gY3: 0.55, gY4: 0.40, gY5: 0.30 },
+        { id: "2d", sub: "Sponsored Health Posts", qty: 40, price: 2500, gY1: 0.03, gY2: 0.50, gY3: 0.45, gY4: 0.35, gY5: 0.25 },
+        { id: "2e", sub: "Doctor Profile Boost", qty: 150, price: 1000, gY1: 0.05, gY2: 0.60, gY3: 0.50, gY4: 0.35, gY5: 0.25 },
       ]
     },
     {
-      id: "3", header: "", items: [
-        { id: "3a", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "3b", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "3c", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+      id: "3", header: "Pharmacy & Lab Diagnostics", items: [
+        { id: "3a", sub: "Online Pharmacy Margin", qty: 5000, price: 180, gY1: 0.05, gY2: 0.75, gY3: 0.65, gY4: 0.50, gY5: 0.35 },
+        { id: "3b", sub: "Lab Test Booking Fee", qty: 4000, price: 300, gY1: 0.06, gY2: 0.80, gY3: 0.70, gY4: 0.52, gY5: 0.38 },
+        { id: "3c", sub: "Home Sample Collection", qty: 800, price: 150, gY1: 0.04, gY2: 0.65, gY3: 0.55, gY4: 0.40, gY5: 0.30 },
         { id: "3d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
         { id: "3e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
       ]
     },
     {
-      id: "4", header: "", items: [
-        { id: "4a", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "4b", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "4c", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+      id: "4", header: "Health Membership Plans", items: [
+        { id: "4a", sub: "Basic Plan (Rs.299/mo)", qty: 10000, price: 299, gY1: 0.10, gY2: 1.20, gY3: 0.90, gY4: 0.60, gY5: 0.40 },
+        { id: "4b", sub: "Premium Plan (Rs.999/mo)", qty: 2000, price: 999, gY1: 0.08, gY2: 1.10, gY3: 0.85, gY4: 0.55, gY5: 0.38 },
+        { id: "4c", sub: "Corporate Wellness Pack", qty: 15, price: 50000, gY1: 0.05, gY2: 0.80, gY3: 0.65, gY4: 0.50, gY5: 0.35 },
         { id: "4d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
         { id: "4e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
       ]
     },
     {
-      id: "5", header: "", items: [
-        { id: "5a", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "5b", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "5c", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+      id: "5", header: "Data & AI Services (B2B)", items: [
+        { id: "5a", sub: "Health Analytics Reports", qty: 5, price: 200000, gY1: 0, gY2: 0.50, gY3: 1.00, gY4: 0.60, gY5: 0.40 },
+        { id: "5b", sub: "Hospital Dashboard Licence", qty: 20, price: 15000, gY1: 0, gY2: 0.80, gY3: 1.20, gY4: 0.70, gY5: 0.45 },
+        { id: "5c", sub: "AI Diagnosis API", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0.50, gY4: 0.80, gY5: 0.60 },
         { id: "5d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
         { id: "5e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
       ]
@@ -160,98 +161,99 @@ const INIT = {
   opexP1: [
     {
       id: "1", header: "Technology & Product Development", items: [
-        { id: "1a", sub: "App Development", qty: 2, cost: 83333, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
-        { id: "1b", sub: "App maintenance", qty: 3, cost: 250000, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
-        { id: "1c", sub: "", qty: 2, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
-        { id: "1d", sub: "", qty: 1, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
-        { id: "1e", sub: "", qty: 2, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
-        { id: "1f", sub: "", qty: 5, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
-        { id: "1g", sub: "", qty: 0, cost: 0, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+        { id: "1a", sub: "App Development (outsourced)", qty: 1, cost: 250000, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+        { id: "1b", sub: "Platform Maintenance (SaaS)", qty: 1, cost: 120000, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
+        { id: "1c", sub: "Cloud Hosting (AWS/GCP)", qty: 1, cost: 80000, gY1: 0.08, gY2: 0.40, gY3: 1.00, gY4: 0.30, gY5: 0.20 },
+        { id: "1d", sub: "Cybersecurity & Compliance", qty: 1, cost: 40000, gY1: 0.05, gY2: 0.10, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+        { id: "1e", sub: "SMS / Notification API", qty: 1, cost: 25000, gY1: 0.10, gY2: 0.80, gY3: 0.70, gY4: 0.50, gY5: 0.35 },
+        { id: "1f", sub: "Third-party Integrations", qty: 1, cost: 15000, gY1: 0.05, gY2: 0.20, gY3: 0.30, gY4: 0.15, gY5: 0.10 },
+        { id: "1g", sub: "QA & Testing", qty: 1, cost: 30000, gY1: -0.30, gY2: 0.20, gY3: 0.50, gY4: 0.10, gY5: 0.10 },
       ]
     },
     {
       id: "2", header: "Legal, Compliance & Professional Charges", items: [
-        { id: "2a", sub: "Professional Charges", qty: 1, cost: 50000, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
-        { id: "2b", sub: "", qty: 2, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
-        { id: "2c", sub: "", qty: 2, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
-        { id: "2d", sub: "", qty: 1, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
-        { id: "2e", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
-        { id: "2f", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
-        { id: "2g", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+        { id: "2a", sub: "CA / Legal Retainer", qty: 1, cost: 50000, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
+        { id: "2b", sub: "NABH / Telemedicine Licence", qty: 1, cost: 20000, gY1: 0, gY2: 0, gY3: 0.05, gY4: 0.05, gY5: 0.05 },
+        { id: "2c", sub: "Data Privacy (IT Act)", qty: 1, cost: 15000, gY1: 0, gY2: 0.05, gY3: 0.08, gY4: 0.08, gY5: 0.08 },
+        { id: "2d", sub: "Insurance (D&O, Cyber)", qty: 1, cost: 10000, gY1: 0.05, gY2: 0.10, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
+        { id: "2e", sub: "ROC / MCA Compliance", qty: 1, cost: 8000, gY1: 0, gY2: 0.05, gY3: 0.05, gY4: 0.05, gY5: 0.05 },
+        { id: "2f", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "2g", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
       ]
     },
     {
-      id: "3", header: "Utilities", items: [
-        { id: "3a", sub: "Office Maintenance", qty: 1, cost: 100000, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
-        { id: "3b", sub: "Rent", qty: 1, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
-        { id: "3c", sub: "Power/ Electricity", qty: 0, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
-        { id: "3d", sub: "Miscellaneous", qty: 1, cost: 125000, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
-        { id: "3e", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
-        { id: "3f", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
-        { id: "3g", sub: "", qty: 5, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
-        { id: "3h", sub: "", qty: 5, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
-        { id: "3i", sub: "", qty: 0, cost: 0, gY1: -0.08, gY2: 0.05, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+      id: "3", header: "Utilities & Office", items: [
+        { id: "3a", sub: "Office Rent (Hyderabad)", qty: 1, cost: 75000, gY1: -0.08, gY2: 0.10, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
+        { id: "3b", sub: "Office Maintenance", qty: 1, cost: 30000, gY1: 0, gY2: 0.05, gY3: 0.20, gY4: 0.08, gY5: 0.08 },
+        { id: "3c", sub: "Power & Electricity", qty: 1, cost: 15000, gY1: 0, gY2: 0.08, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
+        { id: "3d", sub: "Broadband & Communication", qty: 1, cost: 8000, gY1: 0, gY2: 0.05, gY3: 0.10, gY4: 0.05, gY5: 0.05 },
+        { id: "3e", sub: "Travel & Conveyance", qty: 1, cost: 20000, gY1: -0.10, gY2: 0.15, gY3: 0.30, gY4: 0.15, gY5: 0.10 },
+        { id: "3f", sub: "Office Supplies", qty: 1, cost: 10000, gY1: -0.05, gY2: 0.05, gY3: 0.15, gY4: 0.08, gY5: 0.08 },
+        { id: "3g", sub: "Miscellaneous", qty: 1, cost: 25000, gY1: -0.10, gY2: 0.05, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
+        { id: "3h", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "3i", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
       ]
     },
     {
-      id: "4", header: "Support Team", items: [
-        { id: "4a", sub: "Salaries – Tech & Ops", qty: 0, cost: 400000, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
-        { id: "4b", sub: "Customer Support Team", qty: 0, cost: 120000, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
-        { id: "4c", sub: "Field Agents", qty: 0, cost: 120000, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
-        { id: "4d", sub: "", qty: 0, cost: 0, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
-        { id: "4e", sub: "", qty: 0, cost: 0, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
-        { id: "4f", sub: "", qty: 0, cost: 0, gY1: -0.50, gY2: 0.15, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
+      id: "4", header: "People (Salaries & HR)", items: [
+        { id: "4a", sub: "Tech & Engineering Team", qty: 4, cost: 80000, gY1: 0, gY2: 0.25, gY3: 0.20, gY4: 0.15, gY5: 0.12 },
+        { id: "4b", sub: "Customer Support Team", qty: 3, cost: 25000, gY1: 0, gY2: 0.30, gY3: 0.25, gY4: 0.15, gY5: 0.12 },
+        { id: "4c", sub: "Sales & BD Team", qty: 2, cost: 45000, gY1: 0, gY2: 0.50, gY3: 0.40, gY4: 0.25, gY5: 0.15 },
+        { id: "4d", sub: "Operations & Admin", qty: 2, cost: 35000, gY1: 0, gY2: 0.20, gY3: 0.25, gY4: 0.12, gY5: 0.10 },
+        { id: "4e", sub: "Field Agents (Part-time)", qty: 5, cost: 15000, gY1: 0.20, gY2: 0.60, gY3: 0.50, gY4: 0.30, gY5: 0.20 },
+        { id: "4f", sub: "Founders (Stipend Y1)", qty: 4, cost: 50000, gY1: 0.50, gY2: 0.25, gY3: 0.25, gY4: 0.20, gY5: 0.20 },
       ]
     },
     {
       id: "5", header: "Marketing & Sales", items: [
-        { id: "5a", sub: "Digital Marketing", qty: 0, cost: 50000, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
-        { id: "5b", sub: "Branding", qty: 0, cost: 25000, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
-        { id: "5c", sub: "", qty: 0, cost: 0, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
-        { id: "5d", sub: "", qty: 0, cost: 0, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
-        { id: "5e", sub: "", qty: 0, cost: 0, gY1: -0.10, gY2: 0.20, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
+        { id: "5a", sub: "Digital Marketing (Google/Meta)", qty: 1, cost: 150000, gY1: -0.10, gY2: 0.50, gY3: 0.80, gY4: 0.40, gY5: 0.25 },
+        { id: "5b", sub: "Content & SEO", qty: 1, cost: 30000, gY1: 0, gY2: 0.30, gY3: 0.40, gY4: 0.20, gY5: 0.15 },
+        { id: "5c", sub: "Influencer / Doctor Referrals", qty: 1, cost: 40000, gY1: 0.10, gY2: 0.60, gY3: 0.70, gY4: 0.35, gY5: 0.20 },
+        { id: "5d", sub: "Events & Partnerships", qty: 1, cost: 20000, gY1: 0, gY2: 0.40, gY3: 0.50, gY4: 0.25, gY5: 0.15 },
+        { id: "5e", sub: "Branding & Design", qty: 1, cost: 15000, gY1: -0.20, gY2: 0.10, gY3: 0.15, gY4: 0.08, gY5: 0.08 },
       ]
     },
   ],
   capex: [
     {
-      sno: 1, category: "Office Expenses", items: [
-        { name: "Laptop", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "Mobile", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "Monitor", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "Tab", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "Printer", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+      sno: 1, category: "Office Equipment", items: [
+        { name: "Laptops (x6)", total: 480000, y1: 480000, y2: 0, y3: 120000, y4: 0, y5: 0 },
+        { name: "Mobiles (x4)", total: 80000, y1: 80000, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "Monitors (x6)", total: 90000, y1: 90000, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "Printer", total: 25000, y1: 25000, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "Server (Local)", total: 150000, y1: 150000, y2: 0, y3: 0, y4: 0, y5: 0 },
       ]
     },
     {
       sno: 2, category: "Technology Infrastructure", items: [
-        { name: "Servers", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "Network Equipment", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "App Build (Initial)", total: 1500000, y1: 1500000, y2: 0, y3: 500000, y4: 0, y5: 0 },
+        { name: "Website & CMS", total: 200000, y1: 200000, y2: 0, y3: 0, y4: 0, y5: 0 },
       ]
     },
     {
-      sno: 3, category: "Medical Equipment", items: [
-        { name: "", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+      sno: 3, category: "Interior & Setup", items: [
+        { name: "Office Furnishing", total: 300000, y1: 300000, y2: 0, y3: 0, y4: 0, y5: 0 },
+        { name: "Security & CCTV", total: 80000, y1: 80000, y2: 0, y3: 0, y4: 0, y5: 0 },
       ]
     },
     {
-      sno: 4, category: "Furniture & Fixtures", items: [
-        { name: "", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
+      sno: 4, category: "Branding & Legal Setup", items: [
+        { name: "Trademark & IP", total: 50000, y1: 50000, y2: 0, y3: 0, y4: 0, y5: 0 },
       ]
     },
   ],
-  totalProjectCost: { total: 0, promoterContrib: 0, termLoan: 0, wcLoan: 0 },
-  loan1: { amount: 400000000, duration: 84, rate: 9, startDate: "2026-10-01" },
-  loan2: { amount: 430000000, duration: 84, rate: 9, startDate: "2027-04-01" },
+  totalProjectCost: { total: 3455000, promoterContrib: 691000, termLoan: 2000000, wcLoan: 764000 },
+  loan1: { amount: 2000000, duration: 60, rate: 12, startDate: "2026-10-01" },
+  loan2: { amount: 5000000, duration: 72, rate: 11.5, startDate: "2027-04-01" },
   fixedAssets: [
-    { name: "Office Equipment", rate: 0.15, opening: 500000, addAbove: 0, addBelow: 0 },
-    { name: "", rate: 0.15, opening: 0, addAbove: 0, addBelow: 0 },
-    { name: "", rate: 0.15, opening: 0, addAbove: 0, addBelow: 0 },
-    { name: "", rate: 0.25, opening: 0, addAbove: 0, addBelow: 0 },
-    { name: "", rate: 0.25, opening: 0, addAbove: 0, addBelow: 0 },
+    { name: "Office Equipment", rate: 0.15, opening: 825000, addAbove: 0, addBelow: 0 },
+    { name: "Technology Infrastructure", rate: 0.25, opening: 1700000, addAbove: 0, addBelow: 500000 },
+    { name: "Interior & Furnishing", rate: 0.10, opening: 380000, addAbove: 0, addBelow: 0 },
+    { name: "Leasehold Improvements", rate: 0.10, opening: 0, addAbove: 0, addBelow: 0 },
+    { name: "Other Assets", rate: 0.15, opening: 50000, addAbove: 0, addBelow: 0 },
   ],
 };
+
 
 const zeroGroupItems = (groups, isOpex = false, perDay = false) =>
   (groups || []).map((g) => ({
@@ -1305,7 +1307,7 @@ export default function DoctyModel() {
   };
 
 
-  const [d, setD] = useState(buildEmptyState());
+  const [d, setD] = useState(INIT);
   const [sheet, setSheet] = useState("1. Basics");
   const CONTEXT_QUESTIONS = [];
   const [contextStep, setContextStep] = useState(0);
@@ -1647,22 +1649,8 @@ export default function DoctyModel() {
     return raw;
   };
 
-  useEffect(() => {
-    setD(prev => {
-      const hasLegacyRevenueDefaults =
-        String(prev?.revP1?.[0]?.header || "").toLowerCase().includes("doctor") ||
-        String(prev?.revP1?.[1]?.header || "").toLowerCase().includes("advert");
-      const hasLegacyOpexDefaults =
-        String(prev?.opexP1?.[0]?.header || "").toLowerCase().includes("technology") ||
-        String(prev?.opexP1?.[1]?.header || "").toLowerCase().includes("legal");
-      if (!hasLegacyRevenueDefaults && !hasLegacyOpexDefaults) return prev;
-      return {
-        ...prev,
-        revP1: buildCleanRevenueState("consulting", []),
-        opexP1: buildCleanOpexState("consulting", []),
-      };
-    });
-  }, []);
+
+
 
   const handleCellFocus = async (sheetName, rowLabel, fieldName, currentValue) => {
     if (loading) return;
