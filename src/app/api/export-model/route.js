@@ -14,11 +14,15 @@ export const maxDuration = 60;
 const YEARS = ['2025-26', '2026-27', '2027-28', '2028-29', '2029-30'];
 
 function calcRevYearly(groups = []) {
-    return (groups || []).map(g => ({
+    return (Array.isArray(groups) ? groups : []).map(g => ({
         ...g,
+        items: Array.isArray(g.items) ? g.items : [],
         yearlyTotals: YEARS.map((_, yi) =>
-            (g.items || []).reduce((sum, item) => {
-                const base = (Number(item.qty) || 0) * (Number(item.price) || 0) * 12;
+            (Array.isArray(g.items) ? g.items : []).reduce((sum, item) => {
+                if (!item) return sum;
+                // Support both qty (monthly) and qtyDay (daily → × 30)
+                const qty = Number(item.qty) || (Number(item.qtyDay) * 30) || 0;
+                const base = qty * (Number(item.price) || 0) * 12;
                 if (!base) return sum;
                 let v = base;
                 for (let i = 0; i < yi; i++) v *= (1 + (Number(item[`gY${i + 1}`]) || 0));
@@ -29,10 +33,12 @@ function calcRevYearly(groups = []) {
 }
 
 function calcOpexYearly(groups = []) {
-    return (groups || []).map(g => ({
+    return (Array.isArray(groups) ? groups : []).map(g => ({
         ...g,
+        items: Array.isArray(g.items) ? g.items : [],
         yearlyTotals: YEARS.map((_, yi) =>
-            (g.items || []).reduce((sum, item) => {
+            (Array.isArray(g.items) ? g.items : []).reduce((sum, item) => {
+                if (!item) return sum;
                 const base = (Number(item.qty) || 1) * (Number(item.cost) || 0) * 12;
                 if (!base) return sum;
                 let v = base;
@@ -379,11 +385,14 @@ function buildPLSheet(wb, revP1 = [], opexP1 = [], loan1 = {}, loan2 = {}) {
             ...row.vals.map(v => row.isPct ? `${(v * 100).toFixed(1)}%` : fmtCr(v)),
         ]);
         r.height = row.isTotal ? 22 : 18;
+        let ci = 0;
         r.eachCell(c => {
+            ci++;
             c.style = {
                 fill: { type: 'pattern', pattern: 'solid', fgColor },
                 font: { bold: row.isTotal, color: fontColor, size: 10, name: 'Calibri' },
-                alignment: { horizontal: c._column._key === 'A' || c._column._key === 'B' ? 'left' : 'right', vertical: 'middle' },
+                // First 2 columns left-aligned, rest right-aligned
+                alignment: { horizontal: ci <= 2 ? 'left' : 'right', vertical: 'middle' },
             };
             if (row.isTotal) c.style.border = { top: { style: 'thin', color: { argb: `FF${COLORS.gold}` } } };
         });
