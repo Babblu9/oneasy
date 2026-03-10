@@ -13,40 +13,55 @@ export const maxDuration = 60;
 // ─── Shared calculation functions (mirrors DoctyFinancialModelFull.jsx) ────────
 const YEARS = ['2025-26', '2026-27', '2027-28', '2028-29', '2029-30'];
 
+function calcItemRevYearly(item) {
+    if (!item) return YEARS.map(() => 0);
+    return YEARS.map((_, yi) => {
+        const qty = Number(item.qty) || (Number(item.qtyDay) * 30) || 0;
+        const base = qty * (Number(item.price) || 0) * 12;
+        if (!base) return 0;
+        let v = base;
+        for (let i = 0; i < yi; i++) v *= (1 + (Number(item[`gY${i + 1}`]) || 0));
+        return v;
+    });
+}
+
+function calcItemOpexYearly(item) {
+    if (!item) return YEARS.map(() => 0);
+    return YEARS.map((_, yi) => {
+        const base = (Number(item.qty) || 1) * (Number(item.cost) || 0) * 12;
+        if (!base) return 0;
+        let v = base;
+        for (let i = 0; i < yi; i++) v *= (1 + (Number(item[`gY${i + 1}`]) || 0));
+        return v;
+    });
+}
+
 function calcRevYearly(groups = []) {
-    return (Array.isArray(groups) ? groups : []).map(g => ({
-        ...g,
-        items: Array.isArray(g.items) ? g.items : [],
-        yearlyTotals: YEARS.map((_, yi) =>
-            (Array.isArray(g.items) ? g.items : []).reduce((sum, item) => {
-                if (!item) return sum;
-                // Support both qty (monthly) and qtyDay (daily → × 30)
-                const qty = Number(item.qty) || (Number(item.qtyDay) * 30) || 0;
-                const base = qty * (Number(item.price) || 0) * 12;
-                if (!base) return sum;
-                let v = base;
-                for (let i = 0; i < yi; i++) v *= (1 + (Number(item[`gY${i + 1}`]) || 0));
-                return sum + v;
-            }, 0)
-        ),
-    }));
+    return (Array.isArray(groups) ? groups : []).map(g => {
+        const items = (Array.isArray(g.items) ? g.items : []).map(it => ({
+            ...it,
+            yearlyTotals: calcItemRevYearly(it),
+        }));
+        return {
+            ...g,
+            items,
+            yearlyTotals: YEARS.map((_, yi) => items.reduce((s, it) => s + (it.yearlyTotals[yi] || 0), 0)),
+        };
+    });
 }
 
 function calcOpexYearly(groups = []) {
-    return (Array.isArray(groups) ? groups : []).map(g => ({
-        ...g,
-        items: Array.isArray(g.items) ? g.items : [],
-        yearlyTotals: YEARS.map((_, yi) =>
-            (Array.isArray(g.items) ? g.items : []).reduce((sum, item) => {
-                if (!item) return sum;
-                const base = (Number(item.qty) || 1) * (Number(item.cost) || 0) * 12;
-                if (!base) return sum;
-                let v = base;
-                for (let i = 0; i < yi; i++) v *= (1 + (Number(item[`gY${i + 1}`]) || 0));
-                return sum + v;
-            }, 0)
-        ),
-    }));
+    return (Array.isArray(groups) ? groups : []).map(g => {
+        const items = (Array.isArray(g.items) ? g.items : []).map(it => ({
+            ...it,
+            yearlyTotals: calcItemOpexYearly(it),
+        }));
+        return {
+            ...g,
+            items,
+            yearlyTotals: YEARS.map((_, yi) => items.reduce((s, it) => s + (it.yearlyTotals[yi] || 0), 0)),
+        };
+    });
 }
 
 function fmtCr(v) {
