@@ -1881,7 +1881,7 @@ export default function DoctyModel() {
 
       {/* CHAT PANEL ON THE RIGHT */}
       {chatOpen && (
-        <div style={{ width: 340, flexShrink: 0, display: "flex", flexDirection: "column", background: C.bg1, borderLeft: `1px solid ${C.border}` }}>
+        <div style={{ width: 450, flexShrink: 0, display: "flex", flexDirection: "column", background: C.bg1, borderLeft: `1px solid ${C.border}` }}>
           <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg,#1a4db5,#3b78d4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>🤖</div>
             <div>
