@@ -7,18 +7,18 @@ import ScenarioDashboard from "@/components/template/ScenarioDashboard";
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
-  bg0: "#05091A", bg1: "#0A1020", bg2: "#0E1628", bg3: "#121E34",
-  nav: "#0C1426", navB: "#162040",
-  border: "#1A2B48", borderLight: "#243550",
-  gold: "#C4972A", goldL: "#E8C96B", goldD: "#8A6A1A",
-  teal: "#2A9E9E", tealL: "#3DBDBD",
-  green: "#2EA870", greenL: "#3DCA87",
-  red: "#C84040", redL: "#E85555",
-  blue: "#3B78D4", blueL: "#5B9CF6",
-  purple: "#7B52D4",
-  text0: "#E0EAF8", text1: "#8AAAC8", text2: "#4A6888", text3: "#2A3D58",
-  inputBlue: "#5B9CF6",
-  sectionBg: "#0C1830", totalBg: "#091422", headerBg: "#101E38",
+  bg0: "#F3F6F9", bg1: "#FFFFFF", bg2: "#F8F9FA", bg3: "#E9ECEF",
+  nav: "#FFFFFF", navB: "#F1F5F9",
+  border: "#E2E8F0", borderLight: "#F1F5F9",
+  gold: "#B7791F", goldL: "#D69E2E", goldD: "#975A16",
+  teal: "#2C7A7B", tealL: "#38B2AC",
+  green: "#2F855A", greenL: "#48BB78",
+  red: "#C53030", redL: "#E53E3E",
+  blue: "#2B6CB0", blueL: "#4299E1",
+  purple: "#6B46C1",
+  text0: "#1A202C", text1: "#2D3748", text2: "#4A5568", text3: "#718096",
+  inputBlue: "#2B6CB0",
+  sectionBg: "#EDF2F7", totalBg: "#E2E8F0", headerBg: "#E2E8F0",
 };
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
