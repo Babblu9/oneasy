@@ -1891,9 +1891,20 @@ export default function DoctyModel() {
           </div>
           <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
             {msgs.map((m, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
-                <div style={{ maxWidth: "90%", padding: "8px 11px", borderRadius: m.role === "user" ? "10px 10px 2px 10px" : "2px 10px 10px 10px", background: m.role === "user" ? C.navB : C.bg2, border: `1px solid ${m.role === "user" ? C.borderLight : C.border}`, fontSize: 11, lineHeight: 1.6, color: C.text0, whiteSpace: "pre-wrap" }}>
-                  {m.text.split(/(\*\*.*?\*\*)/).map((p, j) => p.startsWith("**") && p.endsWith("**") ? <strong key={j} style={{ color: C.teal }}>{p.slice(2, -2)}</strong> : p)}
+              <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 16 }}>
+                <div style={{
+                  maxWidth: "92%",
+                  padding: "12px 16px",
+                  borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
+                  background: m.role === "user" ? "#042B3D" : C.bg2,
+                  border: `1px solid ${m.role === "user" ? "transparent" : C.border}`,
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: m.role === "user" ? "#FFFFFF" : C.text0,
+                  whiteSpace: "pre-wrap",
+                  boxShadow: m.role === "user" ? "0 2px 4px rgba(4,43,61,0.15)" : "none"
+                }}>
+                  {m.text.split(/(\*\*.*?\*\*)/).map((p, j) => p.startsWith("**") && p.endsWith("**") ? <strong key={j} style={{ color: m.role === "user" ? "#FFFFFF" : C.teal }}>{p.slice(2, -2)}</strong> : p)}
                 </div>
               </div>
             ))}
@@ -1965,12 +1976,13 @@ export default function DoctyModel() {
                 )}
               </div>
             )}
-            <div style={{ display: "flex", gap: 6, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 8px 6px 10px", alignItems: "flex-end" }}>
-              <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Edit model or ask a question..." rows={2} style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 11, lineHeight: 1.5, fontFamily: "Inter,sans-serif", maxHeight: 70, overflowY: "auto" }} />
-              <button onClick={send} disabled={loading || !input.trim()} style={{ width: 28, height: 28, borderRadius: 7, background: loading || !input.trim() ? C.border : "linear-gradient(135deg,#1a4db5,#3b78d4)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <div style={{ display: "flex", gap: 10, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 24, padding: "8px 12px", alignItems: "flex-end", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+              <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Describe your business idea..." rows={1} style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 13, lineHeight: 1.5, fontFamily: "Inter,sans-serif", maxHeight: 90, overflowY: "auto", padding: "4px 0" }} />
+              <button onClick={send} disabled={loading || !input.trim()} style={{ width: 34, height: 34, borderRadius: 17, background: loading || !input.trim() ? C.border : "#042B3D", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             </div>
+            <div style={{ textAlign: "center", marginTop: 8, fontSize: 10, color: C.text3 }}>Press Enter to send · Shift+Enter for new line</div>
           </div>
         </div>
       )}
