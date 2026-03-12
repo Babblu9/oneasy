@@ -1813,7 +1813,7 @@ export default function DoctyModel() {
   const opexY1 = calcOpexYearly(d.opexP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: C.bg0, fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "row", height: "100vh", background: C.bg0, fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         *{box-sizing:border-box;} ::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-track{background:${C.bg0};} ::-webkit-scrollbar-thumb{background:${C.navB};border-radius:2px;}
@@ -1821,7 +1821,7 @@ export default function DoctyModel() {
         tr:hover td{background:rgba(255,255,255,0.015)!important;}
       `}</style>
 
-      {/* MAIN AREA */}
+      {/* MAIN AREA STAYS LEFT */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
         {/* Top bar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", height: 42, background: C.nav, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
@@ -1879,7 +1879,7 @@ export default function DoctyModel() {
         </div>
       </div>
 
-      {/* CHAT PANEL */}
+      {/* CHAT PANEL ON THE RIGHT */}
       {chatOpen && (
         <div style={{ width: 340, flexShrink: 0, display: "flex", flexDirection: "column", background: C.bg1, borderLeft: `1px solid ${C.border}` }}>
           <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8 }}>
