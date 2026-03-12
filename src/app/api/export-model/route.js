@@ -83,20 +83,22 @@ function fmtPct(v) {
 
 // ─── Styling helpers ───────────────────────────────────────────────────────────
 const COLORS = {
-    headerBg: '0C1426',
-    sectionBg: '0C1830',
-    totalBg: '091422',
+    headerBg: '0C1426',     // Dark navy for headers
+    sectionBg: '0C1830',    // Dark navy for section headers
+    totalBg: '091422',      // Very dark for totals
     gold: 'C4972A',
     goldL: 'E8C96B',
     teal: '2A9E9E',
     green: '2EA870',
     red: 'C84040',
-    text0: 'E0EAF8',
-    text1: '8AAAC8',
-    text2: '4A6888',
+    // Body Text Colors (Must be dark for visibility on white/light-gray backgrounds)
+    text0: '1A202C',        // Very dark gray/navy (for primary values/labels)
+    text1: '2D3748',        // Dark gray (secondary labels)
+    text2: '4A5568',        // Medium-dark gray (tertiary labels, empty states)
     white: 'FFFFFF',
-    lightGray: 'F4F6FA',
+    lightGray: 'F4F6FA',    // Background for alternate rows
     midGray: 'D0D8E8',
+
 };
 
 function headerStyle(hex = COLORS.headerBg, textHex = COLORS.gold) {
