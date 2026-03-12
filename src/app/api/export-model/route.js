@@ -64,6 +64,8 @@ function calcOpexYearly(groups = []) {
     });
 }
 
+const MONTHS_Y1 = ["Apr '26", "May '26", "Jun '26", "Jul '26", "Aug '26", "Sep '26", "Oct '26", "Nov '26", "Dec '26", "Jan '27", "Feb '27", "Mar '27"];
+
 function fmtCr(v) {
     if (!v && v !== 0) return '—';
     const abs = Math.abs(v);
@@ -73,6 +75,10 @@ function fmtCr(v) {
     else if (abs >= 100000) s = `₹${(abs / 100000).toFixed(2)} L`;
     else s = `₹${Math.round(abs).toLocaleString('en-IN')}`;
     return neg ? `(${s})` : s;
+}
+
+function fmtPct(v) {
+    return v == null ? '—' : `${(v * 100).toFixed(1)}%`;
 }
 
 // ─── Styling helpers ───────────────────────────────────────────────────────────
@@ -280,6 +286,55 @@ function buildRevenueSheet(wb, revP1 = []) {
     }
 }
 
+function buildRevenueSheetP2(wb, revP2 = []) {
+    const ws = wb.addWorksheet('A.I Revenue Streams - P2');
+    const computed = calcRevYearly(revP2);
+
+    ws.mergeCells('A1:N1');
+    const t = ws.getCell('A1');
+    t.value = 'A.I Revenue Streams — Phase 2 (Daily × 30 × 12 → Annual)';
+    t.style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.headerBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.goldL}` }, size: 13, name: 'Calibri' } };
+    ws.getRow(1).height = 30;
+
+    ws.columns = [
+        { key: 'id', width: 7 }, { key: 'sub', width: 34 }, { key: 'qtyDay', width: 14 }, { key: 'price', width: 14 },
+        { key: 'gY1', width: 10 }, { key: 'gY2', width: 10 }, { key: 'gY3', width: 10 }, { key: 'gY4', width: 10 }, { key: 'gY5', width: 10 },
+        ...YEARS.map(() => ({ width: 16 })),
+    ];
+
+    const hdr = ws.addRow(['ID', 'Item / Sub-Service', 'Qty/Day', 'Unit Price (₹)', 'Growth Y1', 'Growth Y2', 'Growth Y3', 'Growth Y4', 'Growth Y5', ...YEARS.map(y => `Annual Rev ${y}`)]);
+    hdr.height = 28;
+    hdr.eachCell(c => Object.assign(c, { style: headerStyle() }));
+
+    computed.forEach((g) => {
+        const gr = ws.addRow([g.id, g.header || '—', '', '', '', '', '', '', '', ...g.yearlyTotals.map(v => fmtCr(v))]);
+        gr.height = 22;
+        gr.getCell(1).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.gold}` }, size: 10, name: 'Calibri' } };
+        gr.getCell(2).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.text0}` }, size: 10, name: 'Calibri' } };
+        for (let ci = 3; ci <= 9; ci++) gr.getCell(ci).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } } };
+        for (let yi = 0; yi < YEARS.length; yi++) gr.getCell(10 + yi).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.teal}` }, size: 10, name: 'Calibri' }, alignment: { horizontal: 'right' } };
+
+        (g.items || []).filter(it => it.sub || Number(it.qtyDay) > 0).forEach((it, ii) => {
+            const bg = ii % 2 === 0 ? 'F2F5FA' : COLORS.white;
+            const r = ws.addRow([
+                it.id, it.sub || '—', Number(it.qtyDay) || 0, Number(it.price) || 0,
+                `${((Number(it.gY1) || 0) * 100).toFixed(1)}%`, `${((Number(it.gY2) || 0) * 100).toFixed(1)}%`, `${((Number(it.gY3) || 0) * 100).toFixed(1)}%`, `${((Number(it.gY4) || 0) * 100).toFixed(1)}%`, `${((Number(it.gY5) || 0) * 100).toFixed(1)}%`,
+                ...it.yearlyTotals.map(v => fmtCr(v)),
+            ]);
+            r.height = 18;
+            r.getCell(1).style = bodyStyle(bg, COLORS.text2); r.getCell(2).style = bodyStyle(bg, COLORS.text1);
+            r.getCell(3).style = { ...bodyStyle(bg, COLORS.text0, true) }; r.getCell(4).style = { ...bodyStyle(bg, COLORS.text0, true) };
+            for (let ci = 5; ci <= 9; ci++) r.getCell(ci).style = bodyStyle(bg, COLORS.text2, true);
+            for (let yi = 0; yi < YEARS.length; yi++) r.getCell(10 + yi).style = { ...bodyStyle(bg, COLORS.text0, true) };
+        });
+        const gt = ws.addRow(['', 'Grand Total', '', '', '', '', '', '', '', ...g.yearlyTotals.map(v => fmtCr(v))]);
+        gt.height = 20;
+        for (let ci = 1; ci <= 9; ci++) gt.getCell(ci).style = totalStyle(COLORS.goldL);
+        for (let yi = 0; yi < YEARS.length; yi++) gt.getCell(10 + yi).style = { ...totalStyle(COLORS.gold), alignment: { horizontal: 'right' } };
+        ws.addRow([]);
+    });
+}
+
 function buildOpexSheet(wb, opexP1 = []) {
     const ws = wb.addWorksheet('A.II OPEX');
     const computed = calcOpexYearly(opexP1);
@@ -351,6 +406,84 @@ function buildOpexSheet(wb, opexP1 = []) {
     }
 }
 
+function buildCapexSheet(wb, capex = []) {
+    const ws = wb.addWorksheet('A.III CAPEX');
+    ws.mergeCells('A1:I1');
+    const t = ws.getCell('A1');
+    t.value = 'A.III CAPEX — Capital Expenditure';
+    t.style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.headerBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.goldL}` }, size: 13, name: 'Calibri' } };
+    ws.getRow(1).height = 30;
+
+    ws.columns = [
+        { key: 'sno', width: 6 }, { key: 'cat', width: 34 }, { key: 'total', width: 14 },
+        { key: 'y1', width: 14 }, { key: 'y2', width: 14 }, { key: 'y3', width: 14 }, { key: 'y4', width: 14 }, { key: 'y5', width: 14 },
+    ];
+
+    const hdr = ws.addRow(['#', 'Nature of Expense', 'Total (₹)', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5']);
+    hdr.height = 26;
+    hdr.eachCell(c => Object.assign(c, { style: headerStyle() }));
+
+    (capex || []).forEach((cat) => {
+        const catTotal = (cat.items || []).reduce((s, it) => s + (it.total || 0), 0);
+        const yTotals = [1, 2, 3, 4, 5].map(n => (cat.items || []).reduce((s, it) => s + (it[`y${n}`] || 0), 0));
+
+        const cr = ws.addRow([cat.sno, cat.category || '—', fmtCr(catTotal), ...yTotals.map(v => fmtCr(v))]);
+        cr.height = 22;
+        cr.getCell(1).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.gold}` }, size: 10, name: 'Calibri' } };
+        cr.getCell(2).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.text0}` }, size: 10, name: 'Calibri' } };
+        for (let ci = 3; ci <= 8; ci++) cr.getCell(ci).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.teal}` }, size: 10, name: 'Calibri' }, alignment: { horizontal: 'right' } };
+
+        (cat.items || []).forEach((it, ii) => {
+            const bg = ii % 2 === 0 ? 'F2F5FA' : COLORS.white;
+            const r = ws.addRow(['', it.name, fmtCr(it.total || 0), ...[1, 2, 3, 4, 5].map(n => fmtCr(it[`y${n}`] || 0))]);
+            r.height = 18;
+            r.getCell(1).style = bodyStyle(bg, COLORS.text2);
+            r.getCell(2).style = bodyStyle(bg, COLORS.text1);
+            for (let ci = 3; ci <= 8; ci++) r.getCell(ci).style = { ...bodyStyle(bg, COLORS.text0, true) };
+        });
+        ws.addRow([]);
+    });
+}
+
+function buildCapitalCostingSheet(wb, capex = []) {
+    const ws = wb.addWorksheet('3b. Costing - Cap Exp');
+    ws.mergeCells('A1:H1');
+    const t = ws.getCell('A1');
+    t.value = '3b. Costing — Capital Expenditure (Summary)';
+    t.style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.headerBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.goldL}` }, size: 13, name: 'Calibri' } };
+    ws.getRow(1).height = 30;
+
+    ws.columns = [
+        { key: 'sno', width: 6 }, { key: 'cat', width: 34 }, { key: 'total', width: 14 },
+        { key: 'y1', width: 14 }, { key: 'y2', width: 14 }, { key: 'y3', width: 14 }, { key: 'y4', width: 14 }, { key: 'y5', width: 14 },
+    ];
+
+    const hdr = ws.addRow(['#', 'Nature of Expense', 'Total (₹)', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5']);
+    hdr.height = 26;
+    hdr.eachCell(c => Object.assign(c, { style: headerStyle() }));
+
+    (capex || []).forEach((cat) => {
+        const catTotal = (cat.items || []).reduce((s, it) => s + (it.total || 0), 0);
+        const yTotals = [1, 2, 3, 4, 5].map(n => (cat.items || []).reduce((s, it) => s + (it[`y${n}`] || 0), 0));
+
+        const cr = ws.addRow([cat.sno, cat.category || '—', fmtCr(catTotal), ...yTotals.map(v => fmtCr(v))]);
+        cr.height = 22;
+        cr.getCell(1).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.gold}` }, size: 10, name: 'Calibri' } };
+        cr.getCell(2).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.text0}` }, size: 10, name: 'Calibri' } };
+        for (let ci = 3; ci <= 8; ci++) cr.getCell(ci).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.teal}` }, size: 10, name: 'Calibri' }, alignment: { horizontal: 'right' } };
+
+        (cat.items || []).forEach((it, ii) => {
+            const bg = ii % 2 === 0 ? 'F2F5FA' : COLORS.white;
+            const r = ws.addRow(['', it.name, fmtCr(it.total || 0), ...[1, 2, 3, 4, 5].map(n => fmtCr(it[`y${n}`] || 0))]);
+            r.height = 18;
+            r.getCell(1).style = bodyStyle(bg, COLORS.text2);
+            r.getCell(2).style = bodyStyle(bg, COLORS.text1);
+            for (let ci = 3; ci <= 8; ci++) r.getCell(ci).style = { ...bodyStyle(bg, COLORS.text0, true) };
+        });
+        ws.addRow([]);
+    });
+}
+
 function buildPLSheet(wb, revP1 = [], opexP1 = [], loan1 = {}, loan2 = {}) {
     const ws = wb.addWorksheet('4. P&L');
 
@@ -406,10 +539,174 @@ function buildPLSheet(wb, revP1 = [], opexP1 = [], loan1 = {}, loan2 = {}) {
             c.style = {
                 fill: { type: 'pattern', pattern: 'solid', fgColor },
                 font: { bold: row.isTotal, color: fontColor, size: 10, name: 'Calibri' },
-                // First 2 columns left-aligned, rest right-aligned
                 alignment: { horizontal: ci <= 2 ? 'left' : 'right', vertical: 'middle' },
             };
             if (row.isTotal) c.style.border = { top: { style: 'thin', color: { argb: `FF${COLORS.gold}` } } };
+        });
+    });
+}
+
+function buildSalesSheet(wb, groups = [], phaseName = 'P1') {
+    const ws = wb.addWorksheet(`B.I Sales - ${phaseName}`);
+    const computed = calcRevYearly(groups);
+
+    ws.mergeCells(`A1:P1`);
+    const t = ws.getCell('A1');
+    t.value = `B.I Sales — ${phaseName} Monthly View (Year 1: 2026-27)`;
+    t.style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.headerBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.goldL}` }, size: 13, name: 'Calibri' } };
+    ws.getRow(1).height = 30;
+
+    ws.columns = [
+        { key: 'id', width: 6 }, { key: 'cat', width: 22 }, { key: 'sub', width: 22 },
+        ...MONTHS_Y1.map(() => ({ width: 12 })), { key: 'annual', width: 16 }
+    ];
+
+    const hdr = ws.addRow(['#', 'Services', 'Sub Services', ...MONTHS_Y1, 'Annual Total']);
+    hdr.height = 26;
+    hdr.eachCell(c => Object.assign(c, { style: headerStyle() }));
+
+    computed.forEach((g) => {
+        // Group header
+        const gr = ws.addRow([g.id, g.header || '—', '', ...MONTHS_Y1.map(() => ''), fmtCr(g.yearlyTotals[0] || 0)]);
+        gr.height = 22;
+        gr.getCell(1).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.gold}` }, size: 10, name: 'Calibri' } };
+        gr.getCell(2).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.text0}` }, size: 10, name: 'Calibri' } };
+        for (let ci = 3; ci <= 16; ci++) {
+            gr.getCell(ci).style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.teal}` }, size: 10, name: 'Calibri' }, alignment: { horizontal: 'right' } };
+        }
+
+        (g.items || []).filter(it => it.sub || (it.yearlyTotals && it.yearlyTotals[0] > 0)).forEach((it, ii) => {
+            const bg = ii % 2 === 0 ? 'F2F5FA' : COLORS.white;
+            const ann = it.yearlyTotals[0] || 0;
+            const mVal = ann / 12; // Flat monthly allocation for simplicity matching UI
+            const r = ws.addRow([it.id, '', it.sub || '—', ...MONTHS_Y1.map(() => fmtCr(mVal)), fmtCr(ann)]);
+            r.height = 18;
+            r.getCell(1).style = bodyStyle(bg, COLORS.text2);
+            r.getCell(3).style = bodyStyle(bg, COLORS.text1);
+            for (let ci = 4; ci <= 16; ci++) r.getCell(ci).style = { ...bodyStyle(bg, COLORS.text0, true) };
+        });
+        ws.addRow([]);
+    });
+}
+
+function buildBalanceSheet(wb, revP1 = [], opexP1 = []) {
+    const ws = wb.addWorksheet('5. Balance sheet');
+    ws.mergeCells('A1:G1');
+    const t = ws.getCell('A1');
+    t.value = '5. Balance Sheet — 5-Year Projection';
+    t.style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.headerBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.goldL}` }, size: 13, name: 'Calibri' } };
+    ws.getRow(1).height = 30;
+    ws.columns = [{ width: 36 }, ...YEARS.map(() => ({ width: 18 }))];
+
+    const hdr = ws.addRow(['Particulars', ...YEARS]);
+    hdr.height = 26;
+    hdr.eachCell(c => Object.assign(c, { style: headerStyle() }));
+
+    const revByYear = YEARS.map((_, yi) => calcRevYearly(revP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+    const opexByYear = YEARS.map((_, yi) => calcOpexYearly(opexP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+    const pat = YEARS.map((_, yi) => { const e = revByYear[yi] - opexByYear[yi] - 75000 * 12; return e - Math.max(0, e * 0.25); });
+    const retainedEarnings = YEARS.map((_, yi) => pat.slice(0, yi + 1).reduce((s, v) => s + v, 0));
+    const otherCL = [3509865, 4211838, 5054205, 6065046, 7278056];
+    const fixedAsset = [425000, 403750, 339521, 453865, 466535];
+    const investments = [4100000, 4300000, 5700000, 5800000, 6300000];
+    const secDep = [1500000, 1500000, 1500000, 1500000, 1500000];
+    const curAdv = [965000, 1302750, 1758712, 1934583, 2176406];
+    const otherCA = [1805430, 4262000, 4773440, 4964377, 5460815];
+
+    const sections = [
+        { label: 'LIABILITIES', type: 'header' },
+        { label: 'Shareholder Funds', type: 'section' },
+        { label: 'Capital Account', vals: YEARS.map(() => 0) },
+        { label: 'Add: Net Profit / Retained Earnings', vals: retainedEarnings },
+        { label: 'Shareholder Funds', vals: retainedEarnings, type: 'total' },
+        { type: 'spacer' },
+        { label: 'Current Liabilities', type: 'section' },
+        { label: 'Other Current Liabilities', vals: otherCL },
+        { label: 'Total Liabilities', vals: YEARS.map((_, yi) => retainedEarnings[yi] + otherCL[yi]), type: 'total' },
+        { type: 'spacer' },
+        { label: 'ASSETS', type: 'header' },
+        { label: 'Fixed Assets', type: 'section' },
+        { label: 'Net Fixed Assets', vals: fixedAsset },
+        { label: 'Investments', vals: investments },
+        { type: 'spacer' },
+        { label: 'Current Assets', type: 'section' },
+        { label: 'Security Deposits', vals: secDep },
+        { label: 'Current Advances', vals: curAdv },
+        { label: 'Other Current Assets', vals: otherCA },
+        { label: 'Cash & Bank Balance', vals: YEARS.map((_, yi) => Math.max(0, retainedEarnings[yi] + otherCL[yi] - fixedAsset[yi] - investments[yi] - secDep[yi] - curAdv[yi] - otherCA[yi])) },
+        { label: 'Total Assets', vals: YEARS.map((_, yi) => fixedAsset[yi] + investments[yi] + secDep[yi] + curAdv[yi] + otherCA[yi]), type: 'total' },
+    ];
+
+    sections.forEach((row, i) => {
+        if (row.type === 'spacer') { ws.addRow([]); return; }
+        if (row.type === 'header') {
+            const r = ws.addRow([row.label, ...YEARS.map(() => '')]);
+            r.eachCell(c => c.style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.sectionBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.gold}` }, size: 10 } });
+            return;
+        }
+        if (row.type === 'section') {
+            const r = ws.addRow([row.label, ...YEARS.map(() => '')]);
+            r.eachCell(c => c.style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.headerBg}` } }, font: { italic: true, color: { argb: `FF${COLORS.text1}` }, size: 10 } });
+            return;
+        }
+
+        const bg = row.type === 'total' ? COLORS.totalBg : (i % 2 === 0 ? 'F2F5FA' : COLORS.white);
+        const r = ws.addRow([row.label, ...row.vals.map(v => fmtCr(v))]);
+        r.height = row.type === 'total' ? 22 : 18;
+        let ci = 0;
+        r.eachCell(c => {
+            ci++;
+            c.style = {
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${bg}` } },
+                font: { bold: row.type === 'total', color: { argb: `FF${row.type === 'total' ? COLORS.text0 : COLORS.text1}` }, size: 10 },
+                alignment: { horizontal: ci === 1 ? 'left' : 'right' },
+            };
+            if (row.type === 'total') c.style.border = { top: { style: 'thin', color: { argb: `FF${COLORS.gold}` } } };
+        });
+    });
+}
+
+function buildRatiosSheet(wb, revP1 = [], opexP1 = []) {
+    const ws = wb.addWorksheet('6. Ratios');
+    ws.mergeCells('A1:G1');
+    const t = ws.getCell('A1');
+    t.value = '6. Analysis of Ratios';
+    t.style = { fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${COLORS.headerBg}` } }, font: { bold: true, color: { argb: `FF${COLORS.goldL}` }, size: 13, name: 'Calibri' } };
+    ws.getRow(1).height = 30;
+    ws.columns = [{ width: 36 }, ...YEARS.map(() => ({ width: 18 }))];
+
+    const hdr = ws.addRow(['Particulars', ...YEARS]);
+    hdr.height = 26;
+    hdr.eachCell(c => Object.assign(c, { style: headerStyle() }));
+
+    const revByYear = YEARS.map((_, yi) => calcRevYearly(revP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+    const opexByYear = YEARS.map((_, yi) => calcOpexYearly(opexP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+    const pat = YEARS.map((_, yi) => { const e = revByYear[yi] - opexByYear[yi] - 75000 * 12; return e - Math.max(0, e * 0.25); });
+    const fixedAssets = [425000, 403750, 339521, 453865, 466535];
+
+    const rows = [
+        { label: 'Gross Receipts', vals: revByYear, type: 'currency' },
+        { label: 'Net Profit After Deprn Before Tax', vals: YEARS.map((_, yi) => revByYear[yi] - opexByYear[yi] - 75000 * 12), type: 'currency' },
+        { label: 'Fixed Assets', vals: fixedAssets, type: 'currency' },
+        { label: 'Net Profit Ratio', vals: YEARS.map((_, yi) => revByYear[yi] > 0 ? pat[yi] / revByYear[yi] : 0), type: 'pct' },
+        { label: 'Net Sales / Fixed Assets', vals: YEARS.map((_, yi) => fixedAssets[yi] > 0 ? revByYear[yi] / fixedAssets[yi] : 0), type: 'multiple' },
+    ];
+
+    rows.forEach((row, i) => {
+        const bg = i % 2 === 0 ? 'F2F5FA' : COLORS.white;
+        const r = ws.addRow([
+            row.label,
+            ...row.vals.map(v => row.type === 'pct' ? fmtPct(v) : row.type === 'multiple' ? `${v.toFixed(2)}x` : fmtCr(v))
+        ]);
+        r.height = 18;
+        let ci = 0;
+        r.eachCell(c => {
+            ci++;
+            c.style = {
+                fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${bg}` } },
+                font: { color: { argb: `FF${COLORS.text0}` }, size: 10 },
+                alignment: { horizontal: ci === 1 ? 'left' : 'right' },
+            };
         });
     });
 }
@@ -501,7 +798,7 @@ function buildScenariosSheet(wb, revP1 = [], opexP1 = []) {
 export async function POST(request) {
     try {
         const state = await request.json();
-        const { basics = {}, revP1 = [], opexP1 = [], loan1 = {}, loan2 = {}, totalProjectCost = {} } = state;
+        const { basics = {}, revP1 = [], revP2 = [], opexP1 = [], capex = [], loan1 = {}, loan2 = {}, totalProjectCost = {} } = state;
 
         const wb = new ExcelJS.Workbook();
         wb.creator = 'OnEasy Financial Model';
@@ -510,8 +807,15 @@ export async function POST(request) {
 
         buildBasicsSheet(wb, basics, loan1, loan2, totalProjectCost);
         buildRevenueSheet(wb, revP1);
+        buildRevenueSheetP2(wb, revP2);
         buildOpexSheet(wb, opexP1);
+        buildCapexSheet(wb, capex);
+        buildCapitalCostingSheet(wb, capex);
+        buildSalesSheet(wb, revP1, 'P1');
+        buildSalesSheet(wb, revP2, 'P2');
         buildPLSheet(wb, revP1, opexP1, loan1, loan2);
+        buildBalanceSheet(wb, revP1, opexP1);
+        buildRatiosSheet(wb, revP1, opexP1);
         buildScenariosSheet(wb, revP1, opexP1);
 
         const buffer = await wb.xlsx.writeBuffer();
