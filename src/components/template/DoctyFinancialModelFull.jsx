@@ -1813,7 +1813,7 @@ export default function DoctyModel() {
   const opexY1 = calcOpexYearly(d.opexP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
 
   return (
-    <div style={{ display: "flex", flexDirection: "row-reverse", height: "100vh", background: C.bg0, fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "row", height: "100vh", background: C.bg0, fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         *{box-sizing:border-box;} ::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-track{background:${C.bg0};} ::-webkit-scrollbar-thumb{background:${C.navB};border-radius:2px;}
@@ -1883,7 +1883,7 @@ export default function DoctyModel() {
       {chatOpen && (
         <div style={{ width: 340, flexShrink: 0, display: "flex", flexDirection: "column", background: C.bg1, borderLeft: `1px solid ${C.border}` }}>
           <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg,#1a4db5,#3b78d4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>🤖</div>
+            <div style={{ width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg,#1a4db5,#3b78d4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "white" }}>🤖</div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.text0 }}>AI Model Editor</div>
               <div style={{ fontSize: 9, color: C.teal }}>Edit any sheet with natural language</div>
@@ -1892,8 +1892,8 @@ export default function DoctyModel() {
           <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
             {msgs.map((m, i) => (
               <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
-                <div style={{ maxWidth: "90%", padding: "8px 11px", borderRadius: m.role === "user" ? "10px 10px 2px 10px" : "2px 10px 10px 10px", background: m.role === "user" ? C.navB : "#0D1E38", border: `1px solid ${m.role === "user" ? C.borderLight : C.border}`, fontSize: 11, lineHeight: 1.6, color: m.role === "user" ? C.text0 : C.text1, whiteSpace: "pre-wrap" }}>
-                  {m.text.split(/(\*\*.*?\*\*)/).map((p, j) => p.startsWith("**") && p.endsWith("**") ? <strong key={j} style={{ color: C.text0 }}>{p.slice(2, -2)}</strong> : p)}
+                <div style={{ maxWidth: "90%", padding: "8px 11px", borderRadius: m.role === "user" ? "10px 10px 2px 10px" : "2px 10px 10px 10px", background: m.role === "user" ? C.navB : "#0D1E38", border: `1px solid ${m.role === "user" ? C.borderLight : C.border}`, fontSize: 11, lineHeight: 1.6, color: m.role === "user" ? C.text0 : "#E0EAF8", whiteSpace: "pre-wrap" }}>
+                  {m.text.split(/(\*\*.*?\*\*)/).map((p, j) => p.startsWith("**") && p.endsWith("**") ? <strong key={j} style={{ color: m.role === "user" ? C.text0 : "#FFFFFF" }}>{p.slice(2, -2)}</strong> : p)}
                 </div>
               </div>
             ))}
