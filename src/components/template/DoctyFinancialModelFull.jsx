@@ -1851,7 +1851,7 @@ export default function DoctyModel() {
               {downloading ? "Downloading..." : "Download Excel"}
             </button>
             <div style={{ fontSize: 10, padding: "2px 8px", background: "rgba(46,168,112,0.1)", border: "1px solid rgba(46,168,112,0.3)", borderRadius: 4, color: C.greenL }}>● Live Calculation</div>
-            <button onClick={() => setChatOpen(v => !v)} style={{ padding: "4px 10px", fontSize: 11, background: C.navB, border: `1px solid ${C.border}`, borderRadius: 5, color: C.text1, cursor: "pointer" }}>{chatOpen ? "◀ Hide" : "▶ Chat"}</button>
+            <button onClick={() => setChatOpen(v => !v)} style={{ padding: "4px 10px", fontSize: 11, background: C.navB, border: `1px solid ${C.border}`, borderRadius: 5, color: C.text1, cursor: "pointer" }}>{chatOpen ? "Hide ▶" : "◀ Chat"}</button>
           </div>
         </div>
 
@@ -1918,14 +1918,32 @@ export default function DoctyModel() {
                 style={{ flex: 1, background: C.bg0, color: C.text0, border: `1px solid ${C.teal}`, borderRadius: 8, padding: "6px 8px", fontSize: 11 }}
               >
                 <option value="">💡 AI Suggestions...</option>
-                {llmSuggestions.map((s, i) => (
-                  <option key={i} value={s}>{s}</option>
-                ))}
+                {llmSuggestions.map((s, i) => <option key={i} value={s}>{s}</option>)}
               </select>
             </div>
-            {["Show P&L", "Show Revenue", "Show Costs"].map(s => (
-              <button key={s} onClick={() => setInput(s)} style={{ padding: "2px 8px", fontSize: 10, background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 10, color: C.text2, cursor: "pointer" }}>{s}</button>
-            ))}
+            <div style={{ display: "flex", width: "100%", background: C.bg0, border: `1px solid ${C.borderLight}`, borderRadius: 8, padding: 4 }}>
+              <input
+                type="text"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") send(); }}
+                placeholder="Ask AI to change data e.g., 'Increase price of consultations to 500'"
+                style={{
+                  flex: 1, background: "transparent", border: "none", color: C.text0, padding: "8px 12px", fontSize: 12
+                }}
+              />
+              <button
+                onClick={send}
+                disabled={loading}
+                style={{
+                  background: loading ? C.nav : "linear-gradient(135deg,#3b78d4,#1a4db5)",
+                  border: "none", borderRadius: 6, color: "white", padding: "0 14px", fontWeight: 600, fontSize: 13, cursor: loading ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center"
+                }}
+              >
+                {loading ? "..." : "↑"}
+              </button>
+            </div>
           </div>
           <div style={{ padding: "8px 10px", borderTop: `1px solid ${C.border}` }}>
             {cellSuggestion && (

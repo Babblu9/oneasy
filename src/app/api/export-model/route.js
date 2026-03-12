@@ -83,22 +83,20 @@ function fmtPct(v) {
 
 // ─── Styling helpers ───────────────────────────────────────────────────────────
 const COLORS = {
-    headerBg: '0C1426',     // Dark navy for headers
-    sectionBg: '0C1830',    // Dark navy for section headers
-    totalBg: '091422',      // Very dark for totals
-    gold: 'C4972A',
-    goldL: 'E8C96B',
-    teal: '2A9E9E',
-    green: '2EA870',
-    red: 'C84040',
-    // Body Text Colors (Must be dark for visibility on white/light-gray backgrounds)
-    text0: '1A202C',        // Very dark gray/navy (for primary values/labels)
-    text1: '2D3748',        // Dark gray (secondary labels)
-    text2: '4A5568',        // Medium-dark gray (tertiary labels, empty states)
+    headerBg: 'F0F4F8',     // Light blue-gray for main headers
+    sectionBg: 'E2E8F0',    // Slightly darker gray for section headers
+    totalBg: 'EDF2F7',      // Very light gray for totals
+    gold: 'B7791F',         // Darker gold for better contrast on white
+    goldL: 'D69E2E',
+    teal: '2C7A7B',         // Darker teal for better contrast
+    green: '2F855A',        // Darker green
+    red: 'C53030',          // Darker red
+    text0: '1A202C',        // Very dark gray for primary values/labels
+    text1: '2D3748',        // Dark gray for secondary labels
+    text2: '4A5568',        // Medium gray for tertiary
     white: 'FFFFFF',
-    lightGray: 'F4F6FA',    // Background for alternate rows
-    midGray: 'D0D8E8',
-
+    lightGray: 'F7FAFC',    // Very light background for alternating rows
+    midGray: 'E2E8F0',
 };
 
 function headerStyle(hex = COLORS.headerBg, textHex = COLORS.gold) {
