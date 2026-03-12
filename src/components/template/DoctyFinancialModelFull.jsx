@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { dataActionToPatches } from "@/lib/excelCellMap.js";
 import { modelStateToPatches } from "@/lib/modelStateToPatches.js";
 import ScenarioDashboard from "@/components/template/ScenarioDashboard";
+import { Activity, Bot, Send, Download, Sparkles, MessageSquare } from "lucide-react";
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
@@ -1813,9 +1814,9 @@ export default function DoctyModel() {
   const opexY1 = calcOpexYearly(d.opexP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
 
   return (
-    <div style={{ display: "flex", flexDirection: "row-reverse", height: "100vh", background: C.bg0, fontFamily: "'Inter', sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "row-reverse", height: "100vh", background: C.bg0, fontFamily: "'Poppins', sans-serif", overflow: "hidden" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         *{box-sizing:border-box;} ::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-track{background:${C.bg0};} ::-webkit-scrollbar-thumb{background:${C.navB};border-radius:2px;}
         input::placeholder,textarea::placeholder{color:${C.text3};} textarea{resize:none;} input:focus,textarea:focus{outline:none;}
         tr:hover td{background:rgba(255,255,255,0.015)!important;}
@@ -1824,34 +1825,44 @@ export default function DoctyModel() {
       {/* MAIN AREA STAYS LEFT */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
         {/* Top bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", height: 42, background: C.nav, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", height: 48, background: C.nav, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 6, background: "linear-gradient(135deg,#2A9E9E,#2EA870)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>🏥</div>
+            <div style={{ width: 28, height: 28, borderRadius: 6, background: "linear-gradient(135deg,#2C7A7B,#38B2AC)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+              <Activity size={16} strokeWidth={2.5} />
+            </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.text0, lineHeight: 1 }}>OnEasy Financial Model</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text0, lineHeight: 1.2 }}>OnEasy Financial Model</div>
               <div style={{ fontSize: 9, color: C.text2, textTransform: "uppercase", letterSpacing: "0.07em" }}>OnEasy · Hyderabad · {SHEETS.length} Sheets</div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button
               onClick={handleDownloadExcel}
               disabled={downloading}
               style={{
-                padding: "4px 12px",
+                display: "flex", alignItems: "center", gap: 6,
+                padding: "6px 14px",
                 fontSize: 11,
-                background: "linear-gradient(135deg,#0f9f52,#18c463)",
-                border: "1px solid rgba(24,196,99,0.45)",
-                borderRadius: 5,
-                color: "#eaffef",
+                background: "linear-gradient(135deg,#2F855A,#48BB78)",
+                border: "none",
+                borderRadius: 6,
+                color: "#fff",
                 cursor: downloading ? "not-allowed" : "pointer",
                 opacity: downloading ? 0.7 : 1,
-                fontWeight: 700
+                fontWeight: 600,
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
               }}
             >
+              <Download size={13} strokeWidth={2.5} />
               {downloading ? "Downloading..." : "Download Excel"}
             </button>
-            <div style={{ fontSize: 10, padding: "2px 8px", background: "rgba(46,168,112,0.1)", border: "1px solid rgba(46,168,112,0.3)", borderRadius: 4, color: C.greenL }}>● Live Calculation</div>
-            <button onClick={() => setChatOpen(v => !v)} style={{ padding: "4px 10px", fontSize: 11, background: C.navB, border: `1px solid ${C.border}`, borderRadius: 5, color: C.text1, cursor: "pointer" }}>{chatOpen ? "Hide ▶" : "◀ Chat"}</button>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, padding: "4px 10px", background: "rgba(72,187,120,0.1)", border: `1px solid rgba(72,187,120,0.2)`, borderRadius: 6, color: C.greenL, fontWeight: 500 }}>
+              <div style={{ width: 6, height: 6, background: C.greenL, borderRadius: "50%" }}></div> Live Calculation
+            </div>
+            <button onClick={() => setChatOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", fontSize: 11, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text1, cursor: "pointer", fontWeight: 500, boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
+              <MessageSquare size={13} strokeWidth={2.5} />
+              {chatOpen ? "Hide Panel" : "Open Chat"}
+            </button>
           </div>
         </div>
 
@@ -1882,8 +1893,10 @@ export default function DoctyModel() {
       {/* CHAT PANEL ON THE RIGHT */}
       {chatOpen && (
         <div style={{ width: 450, flexShrink: 0, display: "flex", flexDirection: "column", background: C.bg1, borderLeft: `1px solid ${C.border}` }}>
-          <div style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg,#1a4db5,#3b78d4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>🤖</div>
+          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#2B6CB0,#4299E1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 2px 4px rgba(43,108,176,0.2)" }}>
+              <Bot size={17} strokeWidth={2.5} />
+            </div>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: C.text0 }}>AI Model Editor</div>
               <div style={{ fontSize: 9, color: C.teal }}>Edit any sheet with natural language</div>
@@ -1977,9 +1990,9 @@ export default function DoctyModel() {
               </div>
             )}
             <div style={{ display: "flex", gap: 10, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 24, padding: "8px 12px", alignItems: "flex-end", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
-              <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Describe your business idea..." rows={1} style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 13, lineHeight: 1.5, fontFamily: "Inter,sans-serif", maxHeight: 90, overflowY: "auto", padding: "4px 0" }} />
+              <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Describe your business idea..." rows={1} style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 13, lineHeight: 1.5, fontFamily: "Poppins, sans-serif", maxHeight: 90, overflowY: "auto", padding: "4px 0" }} />
               <button onClick={send} disabled={loading || !input.trim()} style={{ width: 34, height: 34, borderRadius: 17, background: loading || !input.trim() ? C.border : "#042B3D", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <Send size={15} strokeWidth={2} color="#fff" style={{ marginLeft: -2 }} />
               </button>
             </div>
             <div style={{ textAlign: "center", marginTop: 8, fontSize: 10, color: C.text3 }}>Press Enter to send · Shift+Enter for new line</div>
