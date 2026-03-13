@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { dataActionToPatches } from "@/lib/excelCellMap.js";
 import { modelStateToPatches } from "@/lib/modelStateToPatches.js";
+import { getIndustryTemplate, getGrowthRates } from "@/lib/engine/industryTemplates";
 import ScenarioDashboard from "@/components/template/ScenarioDashboard";
-import { Activity, Bot, Send, Download, Sparkles, MessageSquare } from "lucide-react";
+import { Activity, Bot, Send, Download, Sparkles, MessageSquare, TrendingUp, DollarSign, Building, CreditCard, Scale, FileText, PieChart, BarChart3, Layout, ChevronDown, ChevronRight, Calendar, Settings } from "lucide-react";
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
@@ -83,176 +84,98 @@ const extractSuggestions = (text) => {
   return null;
 };
 
+// ─── DRAGGABLE SCROLL WRAPPER ────────────────────────────────────────────────
+const DraggableScroll = ({ children, style = {}, className = "" }) => {
+  const scrollRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const onMouseDown = (e) => {
+    const tag = e.target.tagName?.toLowerCase();
+    if (['input', 'select', 'textarea', 'button'].includes(tag)) return;
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+  const onMouseLeave = () => setIsDragging(false);
+  const onMouseUp = () => setIsDragging(false);
+  const onMouseMove = (e) => {
+    if (!isDragging || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  return (
+    <div
+      ref={scrollRef}
+      onMouseDown={onMouseDown}
+      onMouseLeave={onMouseLeave}
+      onMouseUp={onMouseUp}
+      onMouseMove={onMouseMove}
+      style={{ overflowX: "auto", cursor: isDragging ? "grabbing" : "auto", ...style }}
+      className={className}
+    >
+      {children}
+    </div>
+  );
+};
+
 // ─── INITIAL DATA ─────────────────────────────────────────────────────────────
 const INIT = {
   basics: {
-    legalName: "OnEasy Financial Services Pvt Ltd", tradeName: "OnEasy",
-    address: "6-1-19 and 6-1-19/A, old no 108/3, Flat no 206, Musheerabad, Hyderabad - 500020, Telangana",
-    email: "Karimsavenue@gmail.com", contact: "+91-99999-00000", promoters: "4",
-    startDateP1: "2026-04-01", startDateP2: "2027-04-01",
-    description: "Digital healthcare platform connecting patients to doctors for consultations, diagnostics, pharmacy and health packages across Hyderabad.",
-    pitchDeck: "", burningDesire: "Make quality healthcare accessible and affordable for every Indian household.",
+    legalName: "", tradeName: "",
+    address: "",
+    email: "", contact: "", promoters: "",
+    startDateP1: "", startDateP2: "",
+    description: "",
+    pitchDeck: "", burningDesire: "",
   },
   revP1: [
     {
-      id: "1", header: "Doctor Consultations", items: [
-        { id: "1a", sub: "Platform Access Fee (OPD)", qty: 28000, price: 30, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 },
-        { id: "1b", sub: "Telemedicine Consultation", qty: 3000, price: 200, gY1: 0.05, gY2: 0.90, gY3: 0.75, gY4: 0.55, gY5: 0.40 },
-        { id: "1c", sub: "Specialist Referral Fee", qty: 800, price: 500, gY1: 0.03, gY2: 0.70, gY3: 0.60, gY4: 0.45, gY5: 0.35 },
-        { id: "1d", sub: "Home Doctor Visit", qty: 200, price: 800, gY1: 0.02, gY2: 0.65, gY3: 0.55, gY4: 0.40, gY5: 0.30 },
-        { id: "1e", sub: "Health Report Generation", qty: 5000, price: 50, gY1: 0.05, gY2: 0.80, gY3: 0.65, gY4: 0.50, gY5: 0.35 },
-      ]
-    },
-    {
-      id: "2", header: "Advertisement & Partnerships", items: [
-        { id: "2a", sub: "Pharma Brand Ads", qty: 8, price: 50000, gY1: 0.05, gY2: 0.60, gY3: 0.55, gY4: 0.40, gY5: 0.30 },
-        { id: "2b", sub: "Clinic / Lab Listing Fee", qty: 200, price: 5000, gY1: 0.08, gY2: 0.70, gY3: 0.60, gY4: 0.45, gY5: 0.35 },
-        { id: "2c", sub: "Insurance Referral Fee", qty: 300, price: 1500, gY1: 0.05, gY2: 0.65, gY3: 0.55, gY4: 0.40, gY5: 0.30 },
-        { id: "2d", sub: "Sponsored Health Posts", qty: 40, price: 2500, gY1: 0.03, gY2: 0.50, gY3: 0.45, gY4: 0.35, gY5: 0.25 },
-        { id: "2e", sub: "Doctor Profile Boost", qty: 150, price: 1000, gY1: 0.05, gY2: 0.60, gY3: 0.50, gY4: 0.35, gY5: 0.25 },
-      ]
-    },
-    {
-      id: "3", header: "Pharmacy & Lab Diagnostics", items: [
-        { id: "3a", sub: "Online Pharmacy Margin", qty: 5000, price: 180, gY1: 0.05, gY2: 0.75, gY3: 0.65, gY4: 0.50, gY5: 0.35 },
-        { id: "3b", sub: "Lab Test Booking Fee", qty: 4000, price: 300, gY1: 0.06, gY2: 0.80, gY3: 0.70, gY4: 0.52, gY5: 0.38 },
-        { id: "3c", sub: "Home Sample Collection", qty: 800, price: 150, gY1: 0.04, gY2: 0.65, gY3: 0.55, gY4: 0.40, gY5: 0.30 },
-        { id: "3d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "3e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-      ]
-    },
-    {
-      id: "4", header: "Health Membership Plans", items: [
-        { id: "4a", sub: "Basic Plan (Rs.299/mo)", qty: 10000, price: 299, gY1: 0.10, gY2: 1.20, gY3: 0.90, gY4: 0.60, gY5: 0.40 },
-        { id: "4b", sub: "Premium Plan (Rs.999/mo)", qty: 2000, price: 999, gY1: 0.08, gY2: 1.10, gY3: 0.85, gY4: 0.55, gY5: 0.38 },
-        { id: "4c", sub: "Corporate Wellness Pack", qty: 15, price: 50000, gY1: 0.05, gY2: 0.80, gY3: 0.65, gY4: 0.50, gY5: 0.35 },
-        { id: "4d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "4e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-      ]
-    },
-    {
-      id: "5", header: "Data & AI Services (B2B)", items: [
-        { id: "5a", sub: "Health Analytics Reports", qty: 5, price: 200000, gY1: 0, gY2: 0.50, gY3: 1.00, gY4: 0.60, gY5: 0.40 },
-        { id: "5b", sub: "Hospital Dashboard Licence", qty: 20, price: 15000, gY1: 0, gY2: 0.80, gY3: 1.20, gY4: 0.70, gY5: 0.45 },
-        { id: "5c", sub: "AI Diagnosis API", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0.50, gY4: 0.80, gY5: 0.60 },
-        { id: "5d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "5e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+      id: "1", header: "", items: [
+        { id: "1a", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "1b", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "1c", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "1d", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "1e", sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
       ]
     },
   ],
   revP2: [
     {
-      id: "1", header: "Cakes", items: [
-        { id: "1a", sub: "Cup Cakes", qtyDay: 5, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
-        { id: "1b", sub: "Customised Cakes", qtyDay: 4, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
-        { id: "1c", sub: "Standard Cake", qtyDay: 3, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
-        { id: "1d", sub: "Cake Slices", qtyDay: 2, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
-        { id: "1e", sub: "", qtyDay: 1, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
-      ]
-    },
-    {
-      id: "2", header: "Confectionary", items: [
-        { id: "2a", sub: "Burgers", qtyDay: 5, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
-        { id: "2b", sub: "Pizza", qtyDay: 4, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
-        { id: "2c", sub: "Puffs", qtyDay: 3, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
-        { id: "2d", sub: "Other 1", qtyDay: 2, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
-        { id: "2e", sub: "", qtyDay: 1, price: 20, gY1: 0.01, gY2: 0.50, gY3: 0.40, gY4: 0.30, gY5: 0.20 },
+      id: "1", header: "", items: [
+        { id: "1a", sub: "", qtyDay: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "1b", sub: "", qtyDay: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
       ]
     },
   ],
   opexP1: [
     {
-      id: "1", header: "Technology & Product Development", items: [
-        { id: "1a", sub: "App Development (outsourced)", qty: 1, cost: 250000, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
-        { id: "1b", sub: "Platform Maintenance (SaaS)", qty: 1, cost: 120000, gY1: -0.20, gY2: 0.35, gY3: 2.50, gY4: 0.10, gY5: 0.10 },
-        { id: "1c", sub: "Cloud Hosting (AWS/GCP)", qty: 1, cost: 80000, gY1: 0.08, gY2: 0.40, gY3: 1.00, gY4: 0.30, gY5: 0.20 },
-        { id: "1d", sub: "Cybersecurity & Compliance", qty: 1, cost: 40000, gY1: 0.05, gY2: 0.10, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
-        { id: "1e", sub: "SMS / Notification API", qty: 1, cost: 25000, gY1: 0.10, gY2: 0.80, gY3: 0.70, gY4: 0.50, gY5: 0.35 },
-        { id: "1f", sub: "Third-party Integrations", qty: 1, cost: 15000, gY1: 0.05, gY2: 0.20, gY3: 0.30, gY4: 0.15, gY5: 0.10 },
-        { id: "1g", sub: "QA & Testing", qty: 1, cost: 30000, gY1: -0.30, gY2: 0.20, gY3: 0.50, gY4: 0.10, gY5: 0.10 },
-      ]
-    },
-    {
-      id: "2", header: "Legal, Compliance & Professional Charges", items: [
-        { id: "2a", sub: "CA / Legal Retainer", qty: 1, cost: 50000, gY1: -0.08, gY2: 0.02, gY3: 0.15, gY4: 0.10, gY5: 0.10 },
-        { id: "2b", sub: "NABH / Telemedicine Licence", qty: 1, cost: 20000, gY1: 0, gY2: 0, gY3: 0.05, gY4: 0.05, gY5: 0.05 },
-        { id: "2c", sub: "Data Privacy (IT Act)", qty: 1, cost: 15000, gY1: 0, gY2: 0.05, gY3: 0.08, gY4: 0.08, gY5: 0.08 },
-        { id: "2d", sub: "Insurance (D&O, Cyber)", qty: 1, cost: 10000, gY1: 0.05, gY2: 0.10, gY3: 0.10, gY4: 0.10, gY5: 0.10 },
-        { id: "2e", sub: "ROC / MCA Compliance", qty: 1, cost: 8000, gY1: 0, gY2: 0.05, gY3: 0.05, gY4: 0.05, gY5: 0.05 },
-        { id: "2f", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "2g", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-      ]
-    },
-    {
-      id: "3", header: "Utilities & Office", items: [
-        { id: "3a", sub: "Office Rent (Hyderabad)", qty: 1, cost: 75000, gY1: -0.08, gY2: 0.10, gY3: 0.35, gY4: 0.10, gY5: 0.10 },
-        { id: "3b", sub: "Office Maintenance", qty: 1, cost: 30000, gY1: 0, gY2: 0.05, gY3: 0.20, gY4: 0.08, gY5: 0.08 },
-        { id: "3c", sub: "Power & Electricity", qty: 1, cost: 15000, gY1: 0, gY2: 0.08, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
-        { id: "3d", sub: "Broadband & Communication", qty: 1, cost: 8000, gY1: 0, gY2: 0.05, gY3: 0.10, gY4: 0.05, gY5: 0.05 },
-        { id: "3e", sub: "Travel & Conveyance", qty: 1, cost: 20000, gY1: -0.10, gY2: 0.15, gY3: 0.30, gY4: 0.15, gY5: 0.10 },
-        { id: "3f", sub: "Office Supplies", qty: 1, cost: 10000, gY1: -0.05, gY2: 0.05, gY3: 0.15, gY4: 0.08, gY5: 0.08 },
-        { id: "3g", sub: "Miscellaneous", qty: 1, cost: 25000, gY1: -0.10, gY2: 0.05, gY3: 0.20, gY4: 0.10, gY5: 0.10 },
-        { id: "3h", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-        { id: "3i", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
-      ]
-    },
-    {
-      id: "4", header: "People (Salaries & HR)", items: [
-        { id: "4a", sub: "Tech & Engineering Team", qty: 4, cost: 80000, gY1: 0, gY2: 0.25, gY3: 0.20, gY4: 0.15, gY5: 0.12 },
-        { id: "4b", sub: "Customer Support Team", qty: 3, cost: 25000, gY1: 0, gY2: 0.30, gY3: 0.25, gY4: 0.15, gY5: 0.12 },
-        { id: "4c", sub: "Sales & BD Team", qty: 2, cost: 45000, gY1: 0, gY2: 0.50, gY3: 0.40, gY4: 0.25, gY5: 0.15 },
-        { id: "4d", sub: "Operations & Admin", qty: 2, cost: 35000, gY1: 0, gY2: 0.20, gY3: 0.25, gY4: 0.12, gY5: 0.10 },
-        { id: "4e", sub: "Field Agents (Part-time)", qty: 5, cost: 15000, gY1: 0.20, gY2: 0.60, gY3: 0.50, gY4: 0.30, gY5: 0.20 },
-        { id: "4f", sub: "Founders (Stipend Y1)", qty: 4, cost: 50000, gY1: 0.50, gY2: 0.25, gY3: 0.25, gY4: 0.20, gY5: 0.20 },
-      ]
-    },
-    {
-      id: "5", header: "Marketing & Sales", items: [
-        { id: "5a", sub: "Digital Marketing (Google/Meta)", qty: 1, cost: 150000, gY1: -0.10, gY2: 0.50, gY3: 0.80, gY4: 0.40, gY5: 0.25 },
-        { id: "5b", sub: "Content & SEO", qty: 1, cost: 30000, gY1: 0, gY2: 0.30, gY3: 0.40, gY4: 0.20, gY5: 0.15 },
-        { id: "5c", sub: "Influencer / Doctor Referrals", qty: 1, cost: 40000, gY1: 0.10, gY2: 0.60, gY3: 0.70, gY4: 0.35, gY5: 0.20 },
-        { id: "5d", sub: "Events & Partnerships", qty: 1, cost: 20000, gY1: 0, gY2: 0.40, gY3: 0.50, gY4: 0.25, gY5: 0.15 },
-        { id: "5e", sub: "Branding & Design", qty: 1, cost: 15000, gY1: -0.20, gY2: 0.10, gY3: 0.15, gY4: 0.08, gY5: 0.08 },
+      id: "1", header: "", items: [
+        { id: "1a", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "1b", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
+        { id: "1c", sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 },
       ]
     },
   ],
   capex: [
     {
-      sno: 1, category: "Office Equipment", items: [
-        { name: "Laptops (x6)", total: 480000, y1: 480000, y2: 0, y3: 120000, y4: 0, y5: 0 },
-        { name: "Mobiles (x4)", total: 80000, y1: 80000, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "Monitors (x6)", total: 90000, y1: 90000, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "Printer", total: 25000, y1: 25000, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "Server (Local)", total: 150000, y1: 150000, y2: 0, y3: 0, y4: 0, y5: 0 },
-      ]
-    },
-    {
-      sno: 2, category: "Technology Infrastructure", items: [
-        { name: "App Build (Initial)", total: 1500000, y1: 1500000, y2: 0, y3: 500000, y4: 0, y5: 0 },
-        { name: "Website & CMS", total: 200000, y1: 200000, y2: 0, y3: 0, y4: 0, y5: 0 },
-      ]
-    },
-    {
-      sno: 3, category: "Interior & Setup", items: [
-        { name: "Office Furnishing", total: 300000, y1: 300000, y2: 0, y3: 0, y4: 0, y5: 0 },
-        { name: "Security & CCTV", total: 80000, y1: 80000, y2: 0, y3: 0, y4: 0, y5: 0 },
-      ]
-    },
-    {
-      sno: 4, category: "Branding & Legal Setup", items: [
-        { name: "Trademark & IP", total: 50000, y1: 50000, y2: 0, y3: 0, y4: 0, y5: 0 },
+      sno: 1, category: "", items: [
+        { name: "", total: 0, y1: 0, y2: 0, y3: 0, y4: 0, y5: 0 },
       ]
     },
   ],
-  totalProjectCost: { total: 3455000, promoterContrib: 691000, termLoan: 2000000, wcLoan: 764000 },
-  loan1: { amount: 2000000, duration: 60, rate: 12, startDate: "2026-10-01" },
-  loan2: { amount: 5000000, duration: 72, rate: 11.5, startDate: "2027-04-01" },
+  totalProjectCost: { total: 0, promoterContrib: 0, termLoan: 0, wcLoan: 0 },
+  loan1: { amount: 0, duration: 0, rate: 0, startDate: "2026-04-01" },
+  loan2: { amount: 0, duration: 0, rate: 0, startDate: "2027-04-01" },
   fixedAssets: [
-    { name: "Office Equipment", rate: 0.15, opening: 825000, addAbove: 0, addBelow: 0 },
-    { name: "Technology Infrastructure", rate: 0.25, opening: 1700000, addAbove: 0, addBelow: 500000 },
-    { name: "Interior & Furnishing", rate: 0.10, opening: 380000, addAbove: 0, addBelow: 0 },
-    { name: "Leasehold Improvements", rate: 0.10, opening: 0, addAbove: 0, addBelow: 0 },
-    { name: "Other Assets", rate: 0.15, opening: 50000, addAbove: 0, addBelow: 0 },
+    { name: "", rate: 0.10, opening: 0, addAbove: 0, addBelow: 0 },
+    { name: "", rate: 0.15, opening: 0, addAbove: 0, addBelow: 0 },
+    { name: "", rate: 0.40, opening: 0, addAbove: 0, addBelow: 0 },
   ],
 };
 
@@ -438,7 +361,7 @@ function Basics({ d, setD, onFocus }) {
   ];
   return (
     <div>
-      <SheetHeader title="1. Basic Information — OnEasy Financial Model" sub="Company Details & Project Basics" />
+      <SheetHeader title="1. Basic Information" sub="Company Details & Project Basics" />
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <tbody>
           {fields.map(([no, label, key], i) => (
@@ -504,7 +427,7 @@ function RevStreams({ groups, setGroups, phase, perDay = false, onFocus }) {
   const grandTotals = YEARS.map((_, yi) => computed.reduce((s, g) => s + g.yearlyTotals[yi], 0));
 
   return (
-    <div style={{ overflowX: "auto" }}>
+    <DraggableScroll>
       <SheetHeader title={`A.I Revenue Streams — ${phase}`} sub={`This sheet assists in getting data related to Sales (${perDay ? "qty per day" : "qty per month"})`} />
       <table style={{ borderCollapse: "collapse", minWidth: 1200 }}>
         <thead>
@@ -519,6 +442,8 @@ function RevStreams({ groups, setGroups, phase, perDay = false, onFocus }) {
             <tr key={`h${gi}`} style={{ background: C.sectionBg }}>
               <td style={{ ...td0(), color: C.gold, fontFamily: "monospace", fontWeight: 700, borderRight: `1px solid ${C.border}` }}>{g.id}</td>
               <td colSpan={2} style={td0()}><TI v={g.header} onChange={v => updG(gi, "header", v)} placeholder="Category name..." style={{ color: C.text0, fontWeight: 700, fontSize: 12 }} /></td>
+              <td style={td0()} />
+              <td style={td0()} />
               {YEARS.map((_, yi) => <td key={yi} style={{ ...td0(), color: C.tealL, fontFamily: "monospace", textAlign: "right", fontWeight: 700 }}>{fmtINR(g.yearlyTotals[yi], true)}</td>)}
               {gLabels.map((_, i) => <td key={i} style={td0()} />)}
             </tr>,
@@ -579,7 +504,7 @@ function RevStreams({ groups, setGroups, phase, perDay = false, onFocus }) {
           </tr>
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -593,7 +518,7 @@ function OpexSheet({ groups, setGroups, onFocus }) {
   const totals = YEARS.map((_, yi) => computed.reduce((s, g) => s + g.yearlyTotals[yi], 0));
 
   return (
-    <div style={{ overflowX: "auto" }}>
+    <DraggableScroll>
       <SheetHeader title="A.II OPEX — Operating Expenses" sub="Write down all major and minor headers for costing — quantity and price beside each header" />
       <table style={{ borderCollapse: "collapse", minWidth: 1200 }}>
         <thead>
@@ -668,7 +593,7 @@ function OpexSheet({ groups, setGroups, onFocus }) {
           </tr>
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -678,8 +603,8 @@ function Capex({ data, setData, onFocus }) {
   const updCat = (ci, k, v) => setData(p => p.map((cat, ci2) => ci2 !== ci ? cat : { ...cat, [k]: v }));
   const yLabels = ["Year 1 (31/03/2027)", "Year 2 (31/03/2028)", "Year 3 (31/03/2029)", "Year 4 (31/03/2030)", "Year 5 (31/03/2031)"];
   return (
-    <div style={{ overflowX: "auto" }}>
-      <SheetHeader title="A.III CAPEX — Capital Expenditure" sub="Cost for each period ending — define by equipment category" />
+    <DraggableScroll>
+      <SheetHeader title="A.III CAPEX — Capital Expenditures" sub="List all long-term assets and one-time setup costs" />
       <table style={{ borderCollapse: "collapse", minWidth: 900 }}>
         <thead>
           <tr>
@@ -708,7 +633,7 @@ function Capex({ data, setData, onFocus }) {
           ])}
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -716,7 +641,7 @@ function Capex({ data, setData, onFocus }) {
 function SalesSheet({ groups, phase }) {
   const computed = calcRevYearly(groups, false);
   return (
-    <div style={{ overflowX: "auto" }}>
+    <DraggableScroll>
       <SheetHeader title={`B.I Sales — ${phase} Monthly View (Year 1: 2026-27)`} sub="Do not enter any data in this sheet — calculated from Revenue Streams assumptions" readOnly />
       <table style={{ borderCollapse: "collapse", minWidth: 1400 }}>
         <thead>
@@ -776,7 +701,7 @@ function SalesSheet({ groups, phase }) {
           </tr>
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -785,7 +710,7 @@ function TotalProjectCost({ data, setData, onFocus }) {
   const { total, promoterContrib, termLoan, wcLoan } = data;
   return (
     <div>
-      <SheetHeader title="2. Statement of Total Project Cost" sub="OnEasy Financial Model" />
+      <SheetHeader title="2. Statement of Total Project Cost" sub="Project Summary" />
       <table style={{ borderCollapse: "collapse", width: 600 }}>
         <thead>
           <tr><th style={th({ textAlign: "left", minWidth: 300 })}>Description</th><th style={th({ minWidth: 160 })}>Amount (₹)</th></tr>
@@ -849,8 +774,8 @@ function PL({ revP1, opexP1 }) {
   ];
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <SheetHeader title="4. Profit & Loss Statement" sub="OnEasy — Projected Annual P&L" readOnly />
+    <DraggableScroll>
+      <SheetHeader title="4. Profit & Loss Statement" sub="Projected Annual P&L" readOnly />
       <table style={{ borderCollapse: "collapse", minWidth: 800 }}>
         <thead>
           <tr>
@@ -889,7 +814,7 @@ function PL({ revP1, opexP1 }) {
           })}
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -942,7 +867,7 @@ function BalanceSheet({ revP1, opexP1 }) {
   ];
 
   return (
-    <div style={{ overflowX: "auto" }}>
+    <DraggableScroll>
       <SheetHeader title="5. Balance Sheet" sub="M/S AIROC Hospitals Pvt Ltd — Projected Balance Sheet" readOnly />
       <table style={{ borderCollapse: "collapse", minWidth: 800 }}>
         <thead>
@@ -969,7 +894,7 @@ function BalanceSheet({ revP1, opexP1 }) {
           })}
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -989,7 +914,7 @@ function Ratios({ revP1, opexP1 }) {
     { label: "Optimum Coverage Ratio", vals: YEARS.map(() => 0.75), type: "num" },
   ];
   return (
-    <div style={{ overflowX: "auto" }}>
+    <DraggableScroll>
       <SheetHeader title="6. Analysis of Ratios" sub="M/S TREATMENT RANGE HOSPITAL PRIVATE LIMITED" readOnly />
       <table style={{ borderCollapse: "collapse", minWidth: 800 }}>
         <thead>
@@ -1014,7 +939,7 @@ function Ratios({ revP1, opexP1 }) {
           })}
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -1039,7 +964,7 @@ function DSCR({ revP1, opexP1 }) {
     { label: "D.S.C.R", vals: YEARS.map((_, yi) => { const d = 0; const n = pat[yi] + deprn[yi]; return d > 0 ? n / d : 0; }), type: "ratio" },
   ];
   return (
-    <div style={{ overflowX: "auto" }}>
+    <DraggableScroll>
       <SheetHeader title="DSCR — Debt Service Coverage Ratio" sub="M/S TREATMENT RANGE HOSPITAL PRIVATE LIMITED" readOnly />
       <table style={{ borderCollapse: "collapse", minWidth: 800 }}>
         <thead>
@@ -1066,7 +991,7 @@ function DSCR({ revP1, opexP1 }) {
           })}
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -1122,8 +1047,8 @@ function FASchedule({ assets, setAssets, onFocus }) {
   const computed = calcFA(assets);
   const updAsset = (i, k, v) => setAssets(p => p.map((a, ai) => ai !== i ? a : { ...a, [k]: v }));
   return (
-    <div style={{ overflowX: "auto" }}>
-      <SheetHeader title="FA Schedule — Fixed Assets Schedule" sub="OnEasy — Schedule - 01" />
+    <DraggableScroll>
+      <SheetHeader title="FA Schedule — Fixed Assets Schedule" sub="Schedule - 01" />
       <table style={{ borderCollapse: "collapse", minWidth: 900 }}>
         <thead>
           <tr>
@@ -1157,7 +1082,7 @@ function FASchedule({ assets, setAssets, onFocus }) {
           </tr>
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -1166,8 +1091,8 @@ function CapitalCosting({ data, setData, onFocus }) {
   const updItem = (ci, ii, k, v) => setData(p => p.map((cat, ci2) => ci2 !== ci ? cat : { ...cat, items: cat.items.map((it, ii2) => ii2 !== ii ? it : { ...it, [k]: v }) }));
   const yLabels = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"];
   return (
-    <div style={{ overflowX: "auto" }}>
-      <SheetHeader title="3b. Costing — Capital Expenditure" sub="Cost for each period ending" />
+    <DraggableScroll>
+      <SheetHeader title="3b. Costing" sub="Direct costs associated with generating revenue (COGS)" />
       <table style={{ borderCollapse: "collapse", minWidth: 900 }}>
         <thead>
           <tr>
@@ -1196,7 +1121,7 @@ function CapitalCosting({ data, setData, onFocus }) {
           ])}
         </tbody>
       </table>
-    </div>
+    </DraggableScroll>
   );
 }
 
@@ -1228,7 +1153,7 @@ function SheetHeader({ title, sub, readOnly }) {
 }
 
 // ─── AI SYSTEM PROMPT ────────────────────────────────────────────────────────
-const AI_SYSTEM = `You are the OnEasy Financial Strategist, a professional AI assistant specialized in building investor-grade financial models.
+const AI_SYSTEM = `You are the Financial AI Strategist, a professional AI assistant specialized in building investor-grade financial models.
 
 ### CRITICAL: YOU MUST OUTPUT [DATA] TAGS
 Every time the user confirms data (revenue, costs, funding), you MUST emit [DATA] tags to update the model. Never just say "I've added it" - you MUST include the data tag.
@@ -1326,13 +1251,18 @@ export default function DoctyModel() {
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [chatOpen, setChatOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const endRef = useRef(null);
   // Schema generation Modal State
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState("");
   const [importLoading, setImportLoading] = useState(false);
 
+  const [stage, setStage] = useState("discovery");
+  const [completion, setCompletion] = useState(0);
+
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+
 
   const handleImportPlan = async () => {
     if (!importText.trim()) return;
@@ -1392,7 +1322,7 @@ export default function DoctyModel() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const bizName = String(d?.basics?.tradeName || d?.basics?.legalName || "OnEasy").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+      const bizName = String(d?.basics?.tradeName || d?.basics?.legalName || "OnEasy_Financial_Agent").replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
       a.download = `${bizName}_Financial_Model.xlsx`;
       document.body.appendChild(a);
       a.click();
@@ -1436,33 +1366,35 @@ export default function DoctyModel() {
     const qty = Math.max(0, Number(action.units) || 0);
     const price = Math.max(0, Number(action.price ?? action.value) || 0);
 
-    console.log("[DEBUG] applyRevenueAction:", { streamName, productName, qty, price });
-
     const next = { ...prev, revP1: prev.revP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
 
-    // Try to find existing group or empty group
+    // Match by header name, or find first generic/empty group
     let targetGroup = next.revP1.find(g => String(g.header || "").toLowerCase() === streamName.toLowerCase());
-    if (!targetGroup) targetGroup = next.revP1.find(g => !String(g.header || "").trim());
-    if (!targetGroup && next.revP1.length > 0) targetGroup = next.revP1[0];
-
-    // If still no group, create new one
     if (!targetGroup) {
-      targetGroup = { id: String(next.revP1.length + 1), header: streamName, items: Array(5).fill(null).map((_, i) => ({ id: `${next.revP1.length + 1}${String.fromCharCode(97 + i)}`, sub: "", qty: 0, price: 0, gY1: 0.01, gY2: 0.82, gY3: 0.70, gY4: 0.55, gY5: 0.45 })) };
+      targetGroup = next.revP1.find(g => !String(g.header || "").trim() || g.header.startsWith("Revenue Stream"));
+    }
+
+    if (!targetGroup) {
+      targetGroup = { id: String(next.revP1.length + 1), header: streamName, items: Array(5).fill(null).map((_, i) => ({ id: `${next.revP1.length + 1}${String.fromCharCode(97 + i)}`, sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })) };
       next.revP1.push(targetGroup);
     }
 
-    if (!targetGroup.header) targetGroup.header = streamName;
+    // Always ensure the header is updated if it was generic or empty
+    if (!targetGroup.header || targetGroup.header.startsWith("Revenue Stream")) {
+      targetGroup.header = streamName;
+    }
 
-    // Find empty item slot
-    let targetItem = targetGroup.items.find(it => !String(it.sub || "").trim());
-    if (!targetItem) targetItem = targetGroup.items[0];
+    let targetItem = targetGroup.items.find(it => !String(it.sub || "").trim() || it.sub.startsWith("Sub service"));
+    if (!targetItem) {
+      targetItem = { id: `${targetGroup.id}${String.fromCharCode(97 + targetGroup.items.length)}`, sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 };
+      targetGroup.items.push(targetItem);
+    }
 
     if (targetItem) {
       targetItem.sub = productName || subName;
       targetItem.qty = qty;
       targetItem.price = price;
     }
-    console.log("[DEBUG] Updated revP1:", JSON.stringify(next.revP1).substring(0, 200));
     return next;
   };
 
@@ -1472,30 +1404,33 @@ export default function DoctyModel() {
     const units = Math.max(0, Number(action.units) || 1);
     const cost = Math.max(0, Number(action.price ?? action.value) || 0);
 
-    console.log("[DEBUG] applyOpexAction:", { cat, sub, units, cost });
-
     const next = { ...prev, opexP1: prev.opexP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
 
     let targetGroup = next.opexP1.find(g => String(g.header || "").toLowerCase() === cat.toLowerCase());
-    if (!targetGroup) targetGroup = next.opexP1.find(g => !String(g.header || "").trim());
-    if (!targetGroup && next.opexP1.length > 0) targetGroup = next.opexP1[0];
+    if (!targetGroup) {
+      targetGroup = next.opexP1.find(g => !String(g.header || "").trim() || g.header.startsWith("Expense Category") || g.header.startsWith("OPEX Group"));
+    }
 
     if (!targetGroup) {
       targetGroup = { id: String(next.opexP1.length + 1), header: cat, items: Array(5).fill(null).map((_, i) => ({ id: `${next.opexP1.length + 1}${String.fromCharCode(97 + i)}`, sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })) };
       next.opexP1.push(targetGroup);
     }
 
-    if (!targetGroup.header) targetGroup.header = cat;
+    if (!targetGroup.header || targetGroup.header.startsWith("Expense Category") || targetGroup.header.startsWith("OPEX Group")) {
+      targetGroup.header = cat;
+    }
 
-    let targetItem = targetGroup.items.find(it => !String(it.sub || "").trim());
-    if (!targetItem) targetItem = targetGroup.items[0];
+    let targetItem = targetGroup.items.find(it => !String(it.sub || "").trim() || it.sub.startsWith("Expense item") || it.sub.startsWith("Item..."));
+    if (!targetItem) {
+      targetItem = { id: `${targetGroup.id}${String.fromCharCode(97 + targetGroup.items.length)}`, sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 };
+      targetGroup.items.push(targetItem);
+    }
 
     if (targetItem) {
       targetItem.sub = sub;
       targetItem.qty = units;
       targetItem.cost = cost;
     }
-    console.log("[DEBUG] Updated opexP1:", JSON.stringify(next.opexP1).substring(0, 200));
     return next;
   };
 
@@ -1623,22 +1558,34 @@ export default function DoctyModel() {
   };
 
   const buildCleanRevenueState = (modelKey, products = []) => {
-    const preset = MODEL_DB[modelKey] || MODEL_DB.consulting;
-    const list = (Array.isArray(products) && products.length ? products : preset.products).slice(0, 20);
-    const next = INIT.revP1.map(g => ({
-      ...g,
+    const template = getIndustryTemplate(modelKey);
+    const growth = getGrowthRates(template?.growthProfile);
+    const seeded = Array.isArray(products) && products.length
+      ? products.map(name => ({ stream: "Primary Revenue", name: String(name).trim(), price: 0, quantity: 0 }))
+      : (template?.revenueStreams || []).map(item => ({ ...item }));
+
+    const next = Array.from({ length: Math.max(1, Math.ceil(seeded.length / 5), INIT.revP1.length) }, (_, gi) => ({
+      id: String(gi + 1),
       header: "",
-      items: g.items.map(it => ({ ...it, sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })),
+      items: Array.from({ length: 5 }, (_, ii) => ({ id: `${gi + 1}${String.fromCharCode(97 + ii)}`, sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 }))
     }));
-    const headers = ["Primary Revenue", "Secondary Revenue", "Other Revenue", "", ""];
-    headers.forEach((h, i) => { if (next[i]) next[i].header = h; });
-    list.forEach((name, idx) => {
+
+    seeded.slice(0, next.length * 5).forEach((item, idx) => {
       const gi = Math.floor(idx / 5);
       const ii = idx % 5;
       if (!next[gi] || !next[gi].items[ii]) return;
-      next[gi].items[ii].sub = String(name).trim();
-      next[gi].items[ii].qty = 1;
-      next[gi].items[ii].price = 1000;
+      next[gi].header = String(item.stream || next[gi].header || "Primary Revenue").trim();
+      next[gi].items[ii] = {
+        ...next[gi].items[ii],
+        sub: String(item.name || "").trim(),
+        qty: Number(item.quantity) || 0,
+        price: Number(item.price) || 0,
+        gY1: growth.y1 || 0,
+        gY2: growth.y2 || 0,
+        gY3: growth.y3 || 0,
+        gY4: growth.y4 || 0,
+        gY5: growth.y5 || 0,
+      };
     });
     return next;
   };
@@ -1658,37 +1605,61 @@ export default function DoctyModel() {
   };
 
   const buildRevenueWithSubstreams = (streams = [], subMap = {}) => {
+    const template = getIndustryTemplate(businessModel);
+    const growth = getGrowthRates(template?.growthProfile);
+    const priceLookup = new Map((template?.revenueStreams || []).map(item => [String(item.name || "").toLowerCase(), Number(item.price) || 0]));
     const next = buildRevenueFromStreams(streams);
     streams.forEach((streamName, si) => {
       if (!next[si]) return;
       const subs = subMap[String(streamName || "").toLowerCase()] || [];
       subs.slice(0, 5).forEach((sub, ii) => {
         if (!next[si].items[ii]) return;
-        next[si].items[ii].sub = String(sub).trim();
-        next[si].items[ii].qty = 1;
-        next[si].items[ii].price = 1000;
+        const key = String(sub || "").toLowerCase();
+        next[si].items[ii] = {
+          ...next[si].items[ii],
+          sub: String(sub).trim(),
+          qty: 0,
+          price: priceLookup.get(key) || 0,
+          gY1: growth.y1 || 0,
+          gY2: growth.y2 || 0,
+          gY3: growth.y3 || 0,
+          gY4: growth.y4 || 0,
+          gY5: growth.y5 || 0,
+        };
       });
     });
     return next;
   };
 
   const buildCleanOpexState = (modelKey, costs = []) => {
-    const preset = MODEL_DB[modelKey] || MODEL_DB.consulting;
-    const list = (Array.isArray(costs) && costs.length ? costs : preset.opex).slice(0, 20);
-    const next = INIT.opexP1.map(g => ({
-      ...g,
+    const template = getIndustryTemplate(modelKey);
+    const growth = getGrowthRates(template?.growthProfile);
+    const seeded = Array.isArray(costs) && costs.length
+      ? costs.map(name => ({ category: "Operating Expense", name: String(name).trim(), monthlyCost: 0 }))
+      : (template?.opex || []).map(item => ({ ...item }));
+
+    const next = Array.from({ length: Math.max(1, Math.ceil(seeded.length / 7), INIT.opexP1.length) }, (_, gi) => ({
+      id: String(gi + 1),
       header: "",
-      items: g.items.map(it => ({ ...it, sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })),
+      items: Array.from({ length: 7 }, (_, ii) => ({ id: `${gi + 1}${String.fromCharCode(97 + ii)}`, sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 }))
     }));
-    const headers = ["Operating Expense", "People Cost", "Admin Cost", "", ""];
-    headers.forEach((h, i) => { if (next[i]) next[i].header = h; });
-    list.forEach((name, idx) => {
+
+    seeded.slice(0, next.length * 7).forEach((item, idx) => {
       const gi = Math.floor(idx / 7);
       const ii = idx % 7;
       if (!next[gi] || !next[gi].items[ii]) return;
-      next[gi].items[ii].sub = String(name).trim();
-      next[gi].items[ii].qty = 0;
-      next[gi].items[ii].cost = 0;
+      next[gi].header = String(item.category || next[gi].header || "Operating Expense").trim();
+      next[gi].items[ii] = {
+        ...next[gi].items[ii],
+        sub: String(item.name || "").trim(),
+        qty: 1,
+        cost: Number(item.monthlyCost) || 0,
+        gY1: growth.y1 || 0,
+        gY2: growth.y2 || 0,
+        gY3: growth.y3 || 0,
+        gY4: growth.y4 || 0,
+        gY5: growth.y5 || 0,
+      };
     });
     return next;
   };
@@ -1736,95 +1707,372 @@ export default function DoctyModel() {
     }
   };
 
-  const SHEETS = [
-    { id: "1. Basics", label: "1. Basics" },
-    { id: "A. Data Needed", label: "A. Data Needed" },
-    { id: "A.I Revenue Streams - P1", label: "A.I Rev. P1" },
-    { id: "A.I Revenue Streams - P2", label: "A.I Rev. P2" },
-    { id: "A.IIOPEX", label: "A.II OPEX" },
-    { id: "A.III CAPEX", label: "A.III CAPEX" },
-    { id: "B.I Sales - P1", label: "B.I Sales P1" },
-    { id: "B.I Sales - P2", label: "B.I Sales P2" },
-    { id: "B.II - OPEX", label: "B.II OPEX" },
-    { id: "2.Total Project Cost", label: "2. Project Cost" },
-    { id: "B.II OPEX - P1", label: "B.II OPEX P1" },
-    { id: "4. P&L", label: "4. P&L" },
-    { id: "3b. Costing - (Capital Exp)", label: "3b. Costing" },
-    { id: "5. Balance sheet", label: "5. Balance Sheet" },
-    { id: "6. Ratios", label: "6. Ratios" },
-    { id: "DSCR", label: "DSCR" },
-    { id: "Repayment schedule", label: "Repayment" },
-    { id: "FA Schedule", label: "FA Schedule" },
-    { id: "Phase 1", label: "Phase 1 Loan" },
-    { id: "Phase 2", label: "Phase 2 Loan" },
-    { id: "Costing", label: "Costing" },
-    { id: "Scenarios", label: "🎯 Scenarios" },
+  const SHEET_GROUPS = [
+    {
+      type: 'single',
+      id: "1. Basics",
+      label: "Cover",
+      icon: Layout
+    },
+    {
+      type: 'group',
+      label: "Your inputs",
+      items: [
+        { id: "A. Data Needed", label: "Timeline", icon: Calendar },
+        { id: "A.I Revenue Streams - P1", label: "Sales (Phase 1)", icon: TrendingUp },
+        { id: "A.I Revenue Streams - P2", label: "Sales (Phase 2)", icon: TrendingUp },
+        { id: "A.IIOPEX", label: "SG&A / Costs", icon: DollarSign },
+        { id: "A.III CAPEX", label: "Capital Expenditures", icon: Building },
+        { id: "Repayment schedule", label: "Financing", icon: CreditCard },
+      ]
+    },
+    {
+      type: 'divider',
+      label: "calculations and outputs"
+    },
+    {
+      type: 'list',
+      items: [
+        { id: "B.I Sales - P1", label: "Sales Analysis (P1)", icon: TrendingUp },
+        { id: "B.I Sales - P2", label: "Sales Analysis (P2)", icon: TrendingUp },
+        { id: "B.II - OPEX", label: "SG&A Analysis", icon: DollarSign },
+        { id: "2.Total Project Cost", label: "Project Cost", icon: Building },
+        { id: "4. P&L", label: "Income Statement", icon: FileText },
+        { id: "5. Balance sheet", label: "Balance Sheet", icon: Scale },
+        { id: "6. Ratios", label: "Financial Ratios", icon: PieChart },
+        { id: "FA Schedule", label: "Fixed Assets", icon: Layout },
+        { id: "Scenarios", label: "Charts & Scenarios", icon: BarChart3 },
+      ]
+    }
   ];
+
+  // Flatten for internal logic compatibility
+  const SHEETS = SHEET_GROUPS.flatMap(g => g.items || (g.id ? [g] : []));
+
+  const Sidebar = () => {
+    if (!sidebarOpen) {
+      return (
+        <div style={{ width: 32, height: "100%", background: "#FFF", borderLeft: `1px solid ${C.border}`, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 14 }}>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            title="Open file sheets"
+            style={{
+              width: 22,
+              height: 40,
+              borderRadius: 999,
+              border: `1px solid ${C.border}`,
+              background: C.bg1,
+              color: C.text2,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)"
+            }}
+          >
+            <ChevronRight size={14} strokeWidth={2.5} />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ width: 280, height: "100%", background: "#FFF", borderLeft: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflowY: "auto", padding: "16px 12px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, paddingLeft: 8, gap: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.1em" }}>File Sheets</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={handleDownloadExcel}
+              disabled={downloading}
+              title="Export model"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "6px 8px",
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: C.bg1,
+                color: C.text1,
+                cursor: downloading ? "not-allowed" : "pointer",
+                fontSize: 11,
+                fontWeight: 600
+              }}
+            >
+              <Download size={13} strokeWidth={2} />
+              Export
+            </button>
+            <button
+              onClick={() => setShowImportModal(true)}
+              title="Import strategy plan"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "6px 8px",
+                borderRadius: 8,
+                border: "none",
+                background: `linear-gradient(135deg, ${C.goldL}, ${C.gold})`,
+                color: "#fff",
+                cursor: "pointer",
+                fontSize: 11,
+                fontWeight: 600
+              }}
+            >
+              <Sparkles size={13} strokeWidth={2} />
+              Import
+            </button>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              title="Close file sheets"
+              style={{
+                width: 24,
+                height: 36,
+                borderRadius: 999,
+                border: `1px solid ${C.border}`,
+                background: C.bg1,
+                color: C.text2,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 700 }}>&gt;</span>
+            </button>
+          </div>
+        </div>
+        
+        {SHEET_GROUPS.map((group, gIdx) => {
+          if (group.type === 'single') {
+            const Icon = group.icon;
+            const active = sheet === group.id;
+            return (
+              <div 
+                key={group.id} 
+                onClick={() => setSheet(group.id)}
+                style={{ 
+                  display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, cursor: "pointer",
+                  background: active ? "#F3F4F6" : "transparent", color: active ? C.text0 : C.text2,
+                  marginBottom: 4, transition: "all 0.2s"
+                }}
+              >
+                <Icon size={16} strokeWidth={active ? 2.5 : 2} />
+                <span style={{ fontSize: 13, fontWeight: active ? 600 : 500 }}>{group.label}</span>
+              </div>
+            );
+          }
+          if (group.type === 'group') {
+            return (
+              <div key={gIdx} style={{ marginTop: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, background: C.bg0, marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                     <Layout size={14} color={C.text3} />
+                     <span style={{ fontSize: 12, fontWeight: 700, color: C.text1, textTransform: "uppercase", letterSpacing: "0.02em" }}>{group.label}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, opacity: 0.6 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.greenL }} />
+                    <span style={{ fontSize: 9, fontWeight: 600, color: C.text3, textTransform: "uppercase" }}>Active</span>
+                  </div>
+                </div>
+                <div style={{ paddingLeft: 4 }}>
+                  {group.items.map(item => {
+                    const Icon = item.icon;
+                    const active = sheet === item.id;
+                    return (
+                      <div 
+                        key={item.id} 
+                        onClick={() => setSheet(item.id)}
+                        style={{ 
+                          display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", borderRadius: 8, cursor: "pointer",
+                          color: active ? C.blue : C.text2,
+                          background: active ? `${C.blue}10` : "transparent",
+                          marginBottom: 2
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 13, fontWeight: active ? 600 : 500 }}>{item.label}</span>
+                        </div>
+                        <div style={{ width: 32, height: 18, background: active ? C.blue : C.bg3, borderRadius: 10, position: "relative", cursor: "pointer" }}>
+                          <div style={{ width: 14, height: 14, background: "#FFF", borderRadius: "50%", position: "absolute", top: 2, right: active ? 2 : 16, transition: "all 0.2s" }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+          if (group.type === 'divider') {
+            return (
+              <div key={gIdx} style={{ margin: "24px 0 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ flex: 1, height: 1, background: C.border }} />
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em" }}>{group.label}</span>
+                <div style={{ flex: 1, height: 1, background: C.border }} />
+              </div>
+            );
+          }
+          if (group.type === 'list') {
+            return (
+              <div key={gIdx}>
+                {group.items.map(item => {
+                  const Icon = item.icon;
+                  const active = sheet === item.id;
+                  return (
+                    <div 
+                      key={item.id} 
+                      onClick={() => setSheet(item.id)}
+                      style={{ 
+                        display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, cursor: "pointer",
+                        background: active ? "#F3F4F6" : "transparent", color: active ? C.text0 : C.text2,
+                        marginBottom: 4
+                      }}
+                    >
+                      <div style={{ width: 32, height: 32, borderRadius: 6, background: "#F3F4F6", display: "flex", alignItems: "center", justifyContent: "center", color: C.text3 }}>
+                        <Icon size={16} />
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: active ? 600 : 500 }}>{item.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+    );
+  };
+
+  const applyFinancialExtractionToState = async (extracted) => {
+    if (!extracted) return;
+    console.log("[AGENT] Applying structured extraction:", extracted);
+
+    let nextSnapshot = null;
+    setD(prev => {
+      let next = { ...prev };
+      if (extracted.basics) {
+        next.basics = { ...next.basics, ...extracted.basics };
+      }
+      if (extracted.revenue_streams) {
+        extracted.revenue_streams.forEach(stream => {
+          (stream.items || []).forEach(item => {
+            next = applyRevenueAction(next, {
+              streamName: stream.header,
+              productName: item.sub,
+              units: item.qty,
+              price: item.price
+            });
+          });
+        });
+      }
+      if (extracted.opex_streams) {
+        extracted.opex_streams.forEach(stream => {
+          (stream.items || []).forEach(item => {
+            next = applyOpexAction(next, {
+              category: stream.header,
+              subCategory: item.sub,
+              units: item.qty,
+              price: item.cost
+            });
+          });
+        });
+      }
+      if (extracted.funding) {
+        next.totalProjectCost = {
+          ...next.totalProjectCost,
+          promoterContrib: extracted.funding.promoterContrib ?? next.totalProjectCost.promoterContrib,
+          termLoan: extracted.funding.termLoan ?? next.totalProjectCost.termLoan,
+          wcLoan: extracted.funding.wcLoan ?? next.totalProjectCost.wcLoan,
+        };
+        if (extracted.funding.loan1) {
+          next.loan1 = { ...next.loan1, ...extracted.funding.loan1 };
+        }
+      }
+      nextSnapshot = next;
+      return next;
+    });
+
+    if (nextSnapshot) {
+      const patches = modelStateToPatches(nextSnapshot);
+      await writePatchesToExcel(patches);
+    }
+  };
 
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
     setInput(""); setLoading(true);
+    
+    // Add user message immediately
     const nextMsgs = [...msgs, { role: "user", text }];
     setMsgs(nextMsgs);
-    if (/start fresh|new data|reset/i.test(text)) {
-      setBusinessModel("consulting");
-      setD(buildEmptyState());
-      setSheet("1. Basics");
-      console.log("[AGENT] Action: Reset flow (Static)");
-      setMsgs(p => [...p, { role: "assistant", text: "Of course! Let's start with a clean slate. Tell me about your business vision, and we'll build the model together from scratch." }]);
-      setLoading(false);
-      return;
-    }
+
     try {
-      console.log("[AGENT] Action: Model refinement (LLM)");
-      const res = await fetch("/api/chat-simple", {
+      console.log("[AGENT] Action: Structured Financial Agent Chat");
+      const res = await fetch("/api/financial-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system: AI_SYSTEM,
-          messages: nextMsgs,
-          prompt: `Current data snapshot:\n${JSON.stringify(d)}\n\nLatest user request:\n${text}`
+          messages: nextMsgs.map(m => ({ role: m.role, content: m.text })),
+          knowledgeGraph: d,
+          stage: stage
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "LLM request failed");
-      const raw = data?.text || "{}";
-      console.log("[DEBUG] Raw LLM response:", raw.substring(0, 500));
-      const tags = extractDataTags(raw);
-      console.log("[DEBUG] Extracted tags:", tags);
-      if (tags.length) {
-        for (const tag of tags) {
-          console.log("[DEBUG] Applying action:", tag);
-          // eslint-disable-next-line no-await-in-loop
-          await applyDataAction(tag);
+
+      if (!res.ok) throw new Error("API request failed");
+
+      // Handle Headers (Stage/Completion)
+      const newStage = res.headers.get("X-Stage");
+      const newCompletion = res.headers.get("X-Completion");
+      if (newStage) setStage(newStage);
+      if (newCompletion) setCompletion(Number(newCompletion));
+
+      // Read the data stream (Protocol: 0:text, 2:extraction)
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantText = "";
+      let buffer = "";
+      
+      setMsgs(prev => [...prev, { role: "assistant", text: "" }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop(); 
+        
+        for (const line of lines) {
+          if (line.startsWith("0:")) {
+            try {
+              const content = JSON.parse(line.substring(2));
+              assistantText += content;
+              setMsgs(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1].text = assistantText;
+                return updated;
+              });
+            } catch {}
+          } else if (line.startsWith("2:")) {
+            try {
+              const extracted = JSON.parse(line.substring(2));
+              await applyFinancialExtractionToState(extracted);
+            } catch (e) {
+              console.error("Failed to parse stream extraction:", e);
+            }
+          }
         }
       }
-      const suggestions = extractSuggestions(raw);
-      if (suggestions && Array.isArray(suggestions) && suggestions.length > 0) {
-        setLlmSuggestions(suggestions);
-      }
-      let parsed;
-      try { parsed = JSON.parse(raw.replace(/```json|```/g, "").trim()); } catch { parsed = { message: raw, changes: null }; }
-      if (parsed.changes) {
-        setD(prev => ({
-          basics: parsed.changes.basics ? { ...prev.basics, ...parsed.changes.basics } : prev.basics,
-          revP1: parsed.changes.revP1 || prev.revP1,
-          revP2: parsed.changes.revP2 || prev.revP2,
-          opexP1: parsed.changes.opexP1 || prev.opexP1,
-          capex: parsed.changes.capex || prev.capex,
-          totalProjectCost: parsed.changes.totalProjectCost ? { ...prev.totalProjectCost, ...parsed.changes.totalProjectCost } : prev.totalProjectCost,
-          loan1: parsed.changes.loan1 ? { ...prev.loan1, ...parsed.changes.loan1 } : prev.loan1,
-          loan2: parsed.changes.loan2 ? { ...prev.loan2, ...parsed.changes.loan2 } : prev.loan2,
-          fixedAssets: parsed.changes.fixedAssets || prev.fixedAssets,
-        }));
-      }
-      setMsgs(p => [...p, { role: "assistant", text: cleanForDisplay(parsed.message || raw || "Done!") }]);
-    } catch (e) {
-      setMsgs(p => [...p, { role: "assistant", text: `I'm sorry, I hit a small snag while processing that: ${(e && e.message) ? e.message : "something went wrong on my end."} Should we try again, or perhaps look at another part of the model?` }]);
+    } catch (err) {
+      console.error("Chat error:", err);
+      setMsgs(prev => [...prev, { role: "assistant", text: "I'm sorry, I encountered an error. Please try again." }]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
+
 
   const renderSheet = () => {
     switch (sheet) {
@@ -1858,7 +2106,108 @@ export default function DoctyModel() {
   const opexY1 = calcOpexYearly(d.opexP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
 
   return (
-    <div style={{ display: "flex", flexDirection: "row-reverse", height: "100vh", background: C.bg0, fontFamily: "'Poppins', sans-serif", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: C.bg0, fontFamily: "'Poppins', sans-serif", overflow: "hidden" }}>
+      {chatOpen && (
+        <div style={{ width: 450, flexShrink: 0, display: "flex", flexDirection: "column", background: C.bg1, borderRight: `1px solid ${C.border}` }}>
+          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#2B6CB0,#4299E1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 2px 4px rgba(43,108,176,0.2)" }}>
+                  <Bot size={17} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.text0 }}>Fina AI Strategist</div>
+                  <div style={{ fontSize: 9, color: C.teal, fontWeight: 600, textTransform: "uppercase" }}>
+                    {stage.replace("_", " ")}
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.teal }}>{completion}%</div>
+            </div>
+            
+            {/* Progress Bar (Polished) */}
+            <div style={{ 
+              width: "100%", height: 10, background: C.bg0, borderRadius: 10, 
+              overflow: "hidden", border: `1px solid ${C.border}`, padding: 2,
+              marginTop: 4
+            }}>
+              <div 
+                style={{ 
+                  width: `${completion}%`, 
+                  height: "100%", 
+                  background: `linear-gradient(90deg, ${C.blue}, ${C.blueL})`, 
+                  borderRadius: 10, 
+                  transition: "width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  boxShadow: `0 0 12px ${C.blue}44`
+                }} 
+              />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 2px" }}>
+                <span style={{ fontSize: 9, color: completion >= 33 ? C.blue : C.text3, fontWeight: 700, textTransform: "uppercase" }}>Discovery</span>
+                <span style={{ fontSize: 9, color: completion >= 66 ? C.blue : C.text3, fontWeight: 700, textTransform: "uppercase" }}>Drafting</span>
+                <span style={{ fontSize: 9, color: completion >= 100 ? C.blue : C.text3, fontWeight: 700, textTransform: "uppercase" }}>Review</span>
+            </div>
+
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
+            {msgs.map((m, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 16 }}>
+                <div style={{
+                  maxWidth: "92%",
+                  padding: "12px 16px",
+                  borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
+                  background: m.role === "user" ? "#042B3D" : C.bg2,
+                  border: `1px solid ${m.role === "user" ? "transparent" : C.border}`,
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: m.role === "user" ? "#FFFFFF" : C.text0,
+                  whiteSpace: "pre-wrap",
+                  boxShadow: m.role === "user" ? "0 2px 4px rgba(4,43,61,0.15)" : "none"
+                }}>
+                  {m.text.split(/(\*\*.*?\*\*)/).map((p, j) => p.startsWith("**") && p.endsWith("**") ? <strong key={j} style={{ color: m.role === "user" ? "#FFFFFF" : C.teal }}>{p.slice(2, -2)}</strong> : p)}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
+                <div style={{ padding: "8px 13px", borderRadius: "2px 10px 10px 10px", background: C.bg2, border: `1px solid ${C.border}`, display: "flex", gap: 4 }}>
+                  {[0, 1, 2].map(i => <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: C.teal, animation: `p 1.2s ${i * 0.2}s infinite` }} />)}
+                  <style>{`@keyframes p{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}`}</style>
+                </div>
+              </div>
+            )}
+            <div ref={endRef} />
+          </div>
+          <div style={{ padding: "8px 10px", borderTop: `1px solid ${C.border}` }}>
+            {cellSuggestion && (
+              <div style={{ marginBottom: 10, padding: 10, background: C.bg2, border: `1px solid ${C.teal}`, borderRadius: 8 }}>
+                <div style={{ fontSize: 10, color: C.teal, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>AI Suggestion for: {cellSuggestion.field}</div>
+                {cellSuggestion.loading ? (
+                  <div style={{ fontSize: 11, color: C.text2 }}>Analyzing industry benchmarks...</div>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13, color: C.gold, fontWeight: 700, marginBottom: 2 }}>{cellSuggestion.suggestion}</div>
+                    <div style={{ fontSize: 10, color: C.text1, lineHeight: 1.4, marginBottom: 8 }}>{cellSuggestion.reason}</div>
+                    <button
+                      onClick={() => setInput(String(cellSuggestion.suggestion))}
+                      style={{ padding: "4px 10px", fontSize: 10, background: C.teal, border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontWeight: 700 }}
+                    >
+                      Use Suggestion
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 10, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 24, padding: "8px 12px", alignItems: "flex-end", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
+              <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Describe your business idea..." rows={1} style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 13, lineHeight: 1.5, fontFamily: "Poppins, sans-serif", maxHeight: 90, overflowY: "auto", padding: "4px 0" }} />
+              <button onClick={send} disabled={loading || !input.trim()} style={{ width: 34, height: 34, borderRadius: 17, background: loading || !input.trim() ? C.border : "#042B3D", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
+                <Send size={15} strokeWidth={2} color="#fff" style={{ marginLeft: -2 }} />
+              </button>
+            </div>
+            <div style={{ textAlign: "center", marginTop: 8, fontSize: 10, color: C.text3 }}>Press Enter to send · Shift+Enter for new line</div>
+          </div>
+        </div>
+      )}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
         *{box-sizing:border-box;} ::-webkit-scrollbar{width:4px;height:4px;} ::-webkit-scrollbar-track{background:${C.bg0};} ::-webkit-scrollbar-thumb{background:${C.navB};border-radius:2px;}
@@ -1868,58 +2217,95 @@ export default function DoctyModel() {
 
       {/* MAIN AREA STAYS LEFT */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-        {/* Top bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", height: 48, background: C.nav, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: "linear-gradient(135deg,#2C7A7B,#38B2AC)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
-              <Activity size={16} strokeWidth={2.5} />
+        {/* Top bar (Consolidated) */}
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "250px 1fr 320px", 
+          alignItems: "center", 
+          padding: "0 16px", 
+          height: 54, 
+          background: "#FFF", 
+          borderBottom: `1px solid ${C.border}`, 
+          flexShrink: 0,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+        }}>
+          {/* Left: Branding */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ 
+              width: 32, height: 32, borderRadius: 8, 
+              background: `linear-gradient(135deg, ${C.teal}, ${C.tealL})`, 
+              display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+              boxShadow: `0 2px 4px ${C.teal}33`
+            }}>
+              <Activity size={18} strokeWidth={2.5} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.text0, lineHeight: 1.2 }}>OnEasy Financial Model</div>
-              <div style={{ fontSize: 9, color: C.text2, textTransform: "uppercase", letterSpacing: "0.07em" }}>OnEasy · Hyderabad · {SHEETS.length} Sheets</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text0, lineHeight: 1 }}>Fina AI</div>
+              <div style={{ fontSize: 9, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 2 }}>Strategist · {SHEETS.length} Sheets</div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+
+          {/* Center: Live Stats */}
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24 }}>
+            {[
+              ["Revenue", revY1, C.teal],
+              ["OPEX", opexY1, C.redL],
+              ["EBITDA", revY1 - opexY1, revY1 > opexY1 ? C.greenL : C.redL]
+            ].map(([label, val, color]) => (
+              <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: color, fontFamily: "monospace" }}>{fmtINR(val, true)}</span>
+              </div>
+            ))}
+            <div style={{ width: 1, height: 20, background: C.border, margin: "0 8px" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10, color: C.greenL, fontWeight: 600 }}>
+              <div style={{ width: 6, height: 6, background: C.greenL, borderRadius: "50%", boxShadow: `0 0 4px ${C.greenL}` }} />
+              Live
+            </div>
+          </div>
+
+          {/* Right: Actions */}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
             <button
               onClick={handleDownloadExcel}
               disabled={downloading}
+              title="Download Excel Model"
               style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "6px 14px",
-                fontSize: 11,
-                background: "linear-gradient(135deg,#2F855A,#48BB78)",
-                border: "none",
-                borderRadius: 6,
-                color: "#fff",
-                cursor: downloading ? "not-allowed" : "pointer",
-                opacity: downloading ? 0.7 : 1,
-                fontWeight: 600,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 11,
+                background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text1,
+                cursor: downloading ? "not-allowed" : "pointer", fontWeight: 600, transition: "all 0.2s"
               }}
             >
-              <Download size={13} strokeWidth={2.5} />
-              {downloading ? "Downloading..." : "Download Excel"}
+              <Download size={14} strokeWidth={2} />
+              {downloading ? "..." : "Export"}
             </button>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, padding: "4px 10px", background: "rgba(72,187,120,0.1)", border: `1px solid rgba(72,187,120,0.2)`, borderRadius: 6, color: C.greenL, fontWeight: 500 }}>
-              <div style={{ width: 6, height: 6, background: C.greenL, borderRadius: "50%" }}></div> Live Calculation
-            </div>
-            <button onClick={() => setShowImportModal(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", fontSize: 11, background: "linear-gradient(135deg,#ECC94B,#D69E2E)", border: "none", borderRadius: 6, color: "#fff", cursor: "pointer", fontWeight: 600, boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
-              <Sparkles size={13} strokeWidth={2.5} color="#fff" /> Import Plan
+            
+            <button 
+              onClick={() => setShowImportModal(true)} 
+              title="Import Strategy Plan"
+              style={{ 
+                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 11, 
+                background: `linear-gradient(135deg, ${C.goldL}, ${C.gold})`, border: "none", borderRadius: 8, 
+                color: "#fff", cursor: "pointer", fontWeight: 600, boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+              }}
+            >
+              <Sparkles size={14} strokeWidth={2} />
+              Import
             </button>
-            <button onClick={() => setChatOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", fontSize: 11, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text1, cursor: "pointer", fontWeight: 500, boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
-              <MessageSquare size={13} strokeWidth={2.5} />
-              {chatOpen ? "Hide Panel" : "Open Chat"}
+
+            <button 
+              onClick={() => setChatOpen(v => !v)} 
+              style={{ 
+                width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center",
+                background: chatOpen ? `${C.blue}10` : C.bg1, 
+                border: `1px solid ${chatOpen ? C.blue : C.border}`, 
+                borderRadius: 8, color: chatOpen ? C.blue : C.text2, cursor: "pointer", transition: "all 0.2s"
+              }}
+              title={chatOpen ? "Hide Chat" : "Open Chat"}
+            >
+              <MessageSquare size={18} strokeWidth={2} />
             </button>
           </div>
-        </div>
-
-        {/* Sheet tabs — scrollable */}
-        <div style={{ display: "flex", gap: 1, padding: "5px 10px 0", background: C.nav, borderBottom: `1px solid ${C.border}`, overflowX: "auto", flexShrink: 0, scrollbarWidth: "none" }}>
-          {SHEETS.map(s => (
-            <button key={s.id} onClick={() => setSheet(s.id)} style={{ padding: "4px 11px", fontSize: 10, fontWeight: 600, background: sheet === s.id ? C.bg0 : "transparent", color: sheet === s.id ? C.gold : C.text2, border: "none", borderRadius: "3px 3px 0 0", cursor: "pointer", borderBottom: sheet === s.id ? `2px solid ${C.gold}` : "2px solid transparent", whiteSpace: "nowrap", flexShrink: 0 }}>
-              {s.label}
-            </button>
-          ))}
         </div>
 
         {/* Sheet content */}
@@ -1958,127 +2344,27 @@ export default function DoctyModel() {
           </div>
         )}
 
-        {/* Status bar */}
-        <div style={{ display: "flex", gap: 18, padding: "3px 14px", background: C.nav, borderTop: `1px solid ${C.border}`, flexShrink: 0, alignItems: "center" }}>
-          {[["Rev Y1", fmtINR(revY1, true), C.tealL], ["OPEX Y1", fmtINR(opexY1, true), C.redL], ["EBITDA Y1", fmtINR(revY1 - opexY1, true), revY1 > opexY1 ? C.greenL : C.redL]].map(([k, v, col]) => (
-            <div key={k} style={{ display: "flex", gap: 6 }}>
-              <span style={{ fontSize: 10, color: C.text2 }}>{k}:</span>
-              <span style={{ fontSize: 10, color: col, fontFamily: "monospace", fontWeight: 700 }}>{v}</span>
-            </div>
-          ))}
-          <div style={{ marginLeft: "auto", fontSize: 10, color: C.text3 }}>💡 Click <span style={{ color: C.inputBlue }}>blue</span> cells to edit · Use chat for bulk changes</div>
+        {/* Status bar combined with Hint */}
+        <div style={{ 
+          display: "flex", 
+          padding: "6px 16px", 
+          background: C.bg0, 
+          borderTop: `1px solid ${C.border}`, 
+          flexShrink: 0, 
+          alignItems: "center",
+          justifyContent: "space-between"
+        }}>
+          <div style={{ fontSize: 10, color: C.text3, display: "flex", alignItems: "center", gap: 4 }}>
+            <Activity size={10} />
+            <span>Ready for analysis</span>
+          </div>
+          <div style={{ fontSize: 10, color: C.text3, fontWeight: 500 }}>
+            💡 Tip: Click <span style={{ color: C.blue, fontWeight: 700 }}>blue cells</span> to edit · Use chat to automate
+          </div>
         </div>
       </div>
 
-      {/* CHAT PANEL ON THE RIGHT */}
-      {chatOpen && (
-        <div style={{ width: 450, flexShrink: 0, display: "flex", flexDirection: "column", background: C.bg1, borderLeft: `1px solid ${C.border}` }}>
-          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#2B6CB0,#4299E1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", boxShadow: "0 2px 4px rgba(43,108,176,0.2)" }}>
-              <Bot size={17} strokeWidth={2.5} />
-            </div>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.text0 }}>AI Model Editor</div>
-              <div style={{ fontSize: 9, color: C.teal }}>Edit any sheet with natural language</div>
-            </div>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
-            {msgs.map((m, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 16 }}>
-                <div style={{
-                  maxWidth: "92%",
-                  padding: "12px 16px",
-                  borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
-                  background: m.role === "user" ? "#042B3D" : C.bg2,
-                  border: `1px solid ${m.role === "user" ? "transparent" : C.border}`,
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  color: m.role === "user" ? "#FFFFFF" : C.text0,
-                  whiteSpace: "pre-wrap",
-                  boxShadow: m.role === "user" ? "0 2px 4px rgba(4,43,61,0.15)" : "none"
-                }}>
-                  {m.text.split(/(\*\*.*?\*\*)/).map((p, j) => p.startsWith("**") && p.endsWith("**") ? <strong key={j} style={{ color: m.role === "user" ? "#FFFFFF" : C.teal }}>{p.slice(2, -2)}</strong> : p)}
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 8 }}>
-                <div style={{ padding: "8px 13px", borderRadius: "2px 10px 10px 10px", background: C.bg2, border: `1px solid ${C.border}`, display: "flex", gap: 4 }}>
-                  {[0, 1, 2].map(i => <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: C.teal, animation: `p 1.2s ${i * 0.2}s infinite` }} />)}
-                  <style>{`@keyframes p{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}`}</style>
-                </div>
-              </div>
-            )}
-            <div ref={endRef} />
-          </div>
-          <div style={{ padding: "4px 8px 6px", display: "flex", flexWrap: "wrap", gap: 4 }}>
-            <div style={{ display: "flex", width: "100%", gap: 6, marginBottom: 4 }}>
-              <select
-                value={selectedSuggestion}
-                onChange={(e) => {
-                  setSelectedSuggestion(e.target.value);
-                  if (e.target.value) setInput(e.target.value);
-                }}
-                style={{ flex: 1, background: C.bg0, color: C.text0, border: `1px solid ${C.teal}`, borderRadius: 8, padding: "6px 8px", fontSize: 11 }}
-              >
-                <option value="">💡 AI Suggestions...</option>
-                {llmSuggestions.map((s, i) => <option key={i} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div style={{ display: "flex", width: "100%", background: C.bg0, border: `1px solid ${C.borderLight}`, borderRadius: 8, padding: 4 }}>
-              <input
-                type="text"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") send(); }}
-                placeholder="Ask AI to change data e.g., 'Increase price of consultations to 500'"
-                style={{
-                  flex: 1, background: "transparent", border: "none", color: C.text0, padding: "8px 12px", fontSize: 12
-                }}
-              />
-              <button
-                onClick={send}
-                disabled={loading}
-                style={{
-                  background: loading ? C.nav : "linear-gradient(135deg,#3b78d4,#1a4db5)",
-                  border: "none", borderRadius: 6, color: "white", padding: "0 14px", fontWeight: 600, fontSize: 13, cursor: loading ? "not-allowed" : "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center"
-                }}
-              >
-                {loading ? "..." : "↑"}
-              </button>
-            </div>
-          </div>
-          <div style={{ padding: "8px 10px", borderTop: `1px solid ${C.border}` }}>
-            {cellSuggestion && (
-              <div style={{ marginBottom: 10, padding: 10, background: C.bg2, border: `1px solid ${C.teal}`, borderRadius: 8 }}>
-                <div style={{ fontSize: 10, color: C.teal, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>AI Suggestion for: {cellSuggestion.field}</div>
-                {cellSuggestion.loading ? (
-                  <div style={{ fontSize: 11, color: C.text2 }}>Analyzing industry benchmarks...</div>
-                ) : (
-                  <>
-                    <div style={{ fontSize: 13, color: C.gold, fontWeight: 700, marginBottom: 2 }}>{cellSuggestion.suggestion}</div>
-                    <div style={{ fontSize: 10, color: C.text1, lineHeight: 1.4, marginBottom: 8 }}>{cellSuggestion.reason}</div>
-                    <button
-                      onClick={() => setInput(String(cellSuggestion.suggestion))}
-                      style={{ padding: "4px 10px", fontSize: 10, background: C.teal, border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontWeight: 700 }}
-                    >
-                      Use Suggestion
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-            <div style={{ display: "flex", gap: 10, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 24, padding: "8px 12px", alignItems: "flex-end", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
-              <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Describe your business idea..." rows={1} style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 13, lineHeight: 1.5, fontFamily: "Poppins, sans-serif", maxHeight: 90, overflowY: "auto", padding: "4px 0" }} />
-              <button onClick={send} disabled={loading || !input.trim()} style={{ width: 34, height: 34, borderRadius: 17, background: loading || !input.trim() ? C.border : "#042B3D", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
-                <Send size={15} strokeWidth={2} color="#fff" style={{ marginLeft: -2 }} />
-              </button>
-            </div>
-            <div style={{ textAlign: "center", marginTop: 8, fontSize: 10, color: C.text3 }}>Press Enter to send · Shift+Enter for new line</div>
-          </div>
-        </div>
-      )}
+      <Sidebar />
     </div>
   );
 }

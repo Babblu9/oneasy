@@ -170,6 +170,30 @@ export const INDUSTRY_TEMPLATES = {
         kpis: ['Active Clients', 'Revenue/Consultant', 'Utilization Rate', 'Project Margin'],
     },
 
+    ca_firm: {
+        id: 'ca_firm',
+        name: 'CA Firm / Accounting Practice',
+        icon: '🧾',
+        growthProfile: 'conservative',
+        keywords: ['ca firm', 'chartered accountant', 'chartered accountants', 'accounting firm', 'tax consultant', 'gst filing', 'audit firm', 'bookkeeping', 'roc compliance'],
+        revenueStreams: [
+            { stream: 'Audit & Assurance', name: 'Statutory Audit Engagements', price: 60000, quantity: 8 },
+            { stream: 'Taxation', name: 'Income Tax Filing & Advisory', price: 12000, quantity: 35 },
+            { stream: 'GST & Compliance', name: 'GST Returns and Compliance', price: 8000, quantity: 40 },
+            { stream: 'Accounting Services', name: 'Bookkeeping & MIS', price: 15000, quantity: 18 },
+            { stream: 'Advisory', name: 'Virtual CFO / Business Advisory', price: 50000, quantity: 6 },
+        ],
+        opex: [
+            { category: 'Staff', name: 'Partner / CA Salaries', monthlyCost: 300000 },
+            { category: 'Staff', name: 'Article Assistants & Accountants', monthlyCost: 180000 },
+            { category: 'Operations', name: 'Office Rent & Utilities', monthlyCost: 90000 },
+            { category: 'Technology', name: 'Accounting, Tax, and Compliance Software', monthlyCost: 35000 },
+            { category: 'Business Development', name: 'Client Acquisition & Networking', monthlyCost: 40000 },
+            { category: 'Admin', name: 'Admin & Filing Costs', monthlyCost: 25000 },
+        ],
+        kpis: ['Active Clients', 'Revenue/Client', 'Monthly Filings', 'Advisory Margin'],
+    },
+
     manufacturing: {
         id: 'manufacturing',
         name: 'Manufacturing',
