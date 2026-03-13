@@ -1327,7 +1327,51 @@ export default function DoctyModel() {
   const [downloading, setDownloading] = useState(false);
   const [chatOpen, setChatOpen] = useState(true);
   const endRef = useRef(null);
+  // Schema generation Modal State
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importLoading, setImportLoading] = useState(false);
+
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
+
+  const handleImportPlan = async () => {
+    if (!importText.trim()) return;
+    setImportLoading(true);
+    try {
+      const res = await fetch("/api/generate-from-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strategyPlan: importText })
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to parse plan");
+      }
+      const data = await res.json();
+
+      // Update state with parsed data
+      setD(prev => ({
+        ...prev,
+        basics: data.basics || prev.basics,
+        revP1: data.revP1 || prev.revP1,
+        revP2: data.revP2 || prev.revP2,
+        opexP1: data.opexP1 || prev.opexP1,
+        capex: data.capex || prev.capex,
+        totalProjectCost: data.totalProjectCost || prev.totalProjectCost,
+        loan1: data.loan1 || prev.loan1,
+        loan2: data.loan2 || prev.loan2,
+        fixedAssets: data.fixedAssets || prev.fixedAssets,
+      }));
+
+      setShowImportModal(false);
+      setMsgs(p => [...p, { role: "assistant", text: "I've successfully imported your Strategic Execution Plan and updated all the financial projections across Revenue, OPEX, and CAPEX. Review the sheets and let me know if you want to tweak any numbers!" }]);
+      setImportText(""); // Clear the textarea after successful import
+    } catch (e) {
+      setMsgs(p => [...p, { role: "assistant", text: `Could not import plan: ${(e && e.message) ? e.message : "Unknown error"}` }]);
+    } finally {
+      setImportLoading(false);
+    }
+  };
 
   const handleDownloadExcel = async () => {
     if (downloading) return;
@@ -1859,6 +1903,9 @@ export default function DoctyModel() {
             <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, padding: "4px 10px", background: "rgba(72,187,120,0.1)", border: `1px solid rgba(72,187,120,0.2)`, borderRadius: 6, color: C.greenL, fontWeight: 500 }}>
               <div style={{ width: 6, height: 6, background: C.greenL, borderRadius: "50%" }}></div> Live Calculation
             </div>
+            <button onClick={() => setShowImportModal(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", fontSize: 11, background: "linear-gradient(135deg,#ECC94B,#D69E2E)", border: "none", borderRadius: 6, color: "#fff", cursor: "pointer", fontWeight: 600, boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+              <Sparkles size={13} strokeWidth={2.5} color="#fff" /> Import Plan
+            </button>
             <button onClick={() => setChatOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", fontSize: 11, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text1, cursor: "pointer", fontWeight: 500, boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
               <MessageSquare size={13} strokeWidth={2.5} />
               {chatOpen ? "Hide Panel" : "Open Chat"}
@@ -1877,6 +1924,39 @@ export default function DoctyModel() {
 
         {/* Sheet content */}
         <div style={{ flex: 1, overflow: "auto" }}>{renderSheet()}</div>
+
+        {/* Import Modal */}
+        {showImportModal && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, backdropFilter: "blur(4px)" }}>
+            <div style={{ width: 600, maxWidth: "90%", background: C.bg1, borderRadius: 16, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+              <div style={{ padding: "20px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(214,158,46,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: C.goldL }}><Sparkles size={20} strokeWidth={2} /></div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 16, color: C.text0 }}>Generate from Strategic Execution Plan</h3>
+                    <div style={{ fontSize: 12, color: C.text2, marginTop: 2 }}>Paste your Business Validator strategy to auto-build the model.</div>
+                  </div>
+                </div>
+                <button onClick={() => setShowImportModal(false)} style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 20, color: C.text3 }}>&times;</button>
+              </div>
+              <div style={{ padding: 24 }}>
+                <textarea
+                  value={importText}
+                  onChange={e => setImportText(e.target.value)}
+                  placeholder="Paste the Strategic Execution Plan text here..."
+                  style={{ width: "100%", height: 300, padding: 16, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: "monospace", resize: "none", outline: "none", background: C.bg0, color: C.text0 }}
+                />
+              </div>
+              <div style={{ padding: "16px 24px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "flex-end", gap: 12, background: C.bg0 }}>
+                <button onClick={() => setShowImportModal(false)} style={{ padding: "10px 20px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.bg1, color: C.text1, cursor: "pointer", fontWeight: 600, fontSize: 13 }}>Cancel</button>
+                <button onClick={handleImportPlan} disabled={importLoading || !importText.trim()} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 24px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#ECC94B,#D69E2E)", color: "#fff", cursor: importLoading ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 13, opacity: importLoading ? 0.7 : 1 }}>
+                  {importLoading ? <Activity size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  {importLoading ? "Generating Framework..." : "Generate Financial Model"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Status bar */}
         <div style={{ display: "flex", gap: 18, padding: "3px 14px", background: C.nav, borderTop: `1px solid ${C.border}`, flexShrink: 0, alignItems: "center" }}>
