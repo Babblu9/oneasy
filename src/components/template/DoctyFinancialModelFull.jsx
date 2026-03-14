@@ -736,14 +736,21 @@ function TotalProjectCost({ data, setData, onFocus }) {
 }
 
 // ─── SHEET: P&L ──────────────────────────────────────────────────────────────
-function PL({ revP1, opexP1 }) {
+function PL({ revP1, opexP1, loan1, loan2 }) {
   const revByYear = YEARS.map((_, yi) => calcRevYearly(revP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
   const opexByYear = YEARS.map((_, yi) => calcOpexYearly(opexP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
   const grossProfit = YEARS.map((_, yi) => revByYear[yi] - opexByYear[yi] * 0.3);
   const ebitda = YEARS.map((_, yi) => revByYear[yi] - opexByYear[yi]);
   const deprn = YEARS.map(() => 75000 * 12);
   const ebit = YEARS.map((_, yi) => ebitda[yi] - deprn[yi]);
-  const interest = YEARS.map((_, yi) => [0, 3000000 * 12, 5775000 * 12, 0, 0][yi] || 0);
+  
+  // Dynamic interest calculation: Y2 for Loan 1, Y3 for Loan 2 (matching export logic)
+  const interest = YEARS.map((_, yi) => {
+    if (yi === 1) return (Number(loan1?.amount) || 0) * (Number(loan1?.rate) || 0) / 100;
+    if (yi === 2) return (Number(loan2?.amount) || 0) * (Number(loan2?.rate) || 0) / 100;
+    return 0;
+  });
+
   const pbt = YEARS.map((_, yi) => ebit[yi] - interest[yi]);
   const tax = YEARS.map((_, yi) => Math.max(0, pbt[yi] * 0.25));
   const pat = YEARS.map((_, yi) => pbt[yi] - tax[yi]);
@@ -819,13 +826,15 @@ function PL({ revP1, opexP1 }) {
 }
 
 // ─── SHEET: BALANCE SHEET ────────────────────────────────────────────────────
-function BalanceSheet({ revP1, opexP1 }) {
+function BalanceSheet({ revP1, opexP1, loan1, loan2 }) {
   const revByYear = YEARS.map((_, yi) => calcRevYearly(revP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
   const opexByYear = YEARS.map((_, yi) => calcOpexYearly(opexP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
+  
   const pat = YEARS.map((_, yi) => {
     const ebitda = revByYear[yi] - opexByYear[yi];
     const ebit = ebitda - 75000 * 12;
-    const pbt = ebit;
+    const interest = (yi === 1 ? (Number(loan1?.amount) || 0) * (Number(loan1?.rate) || 0) / 100 : yi === 2 ? (Number(loan2?.amount) || 0) * (Number(loan2?.rate) || 0) / 100 : 0);
+    const pbt = ebit - interest;
     return pbt - Math.max(0, pbt * 0.25);
   });
   const retainedEarnings = YEARS.map((_, yi) => pat.slice(0, yi + 1).reduce((s, v) => s + v, 0));
@@ -899,10 +908,16 @@ function BalanceSheet({ revP1, opexP1 }) {
 }
 
 // ─── SHEET: RATIOS ────────────────────────────────────────────────────────────
-function Ratios({ revP1, opexP1 }) {
+function Ratios({ revP1, opexP1, loan1, loan2 }) {
   const revByYear = YEARS.map((_, yi) => calcRevYearly(revP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
   const opexByYear = YEARS.map((_, yi) => calcOpexYearly(opexP1).reduce((s, g) => s + g.yearlyTotals[yi], 0));
-  const pat = YEARS.map((_, yi) => { const e = revByYear[yi] - opexByYear[yi] - 75000 * 12; return e - Math.max(0, e * 0.25); });
+  const pat = YEARS.map((_, yi) => {
+    const ebitda = revByYear[yi] - opexByYear[yi];
+    const ebit = ebitda - 75000 * 12;
+    const interest = (yi === 1 ? (Number(loan1?.amount) || 0) * (Number(loan1?.rate) || 0) / 100 : yi === 2 ? (Number(loan2?.amount) || 0) * (Number(loan2?.rate) || 0) / 100 : 0);
+    const pbt = ebit - interest;
+    return pbt - Math.max(0, pbt * 0.25);
+  });
   const fixedAssets = [425000, 403750, 339521, 453865, 466535];
   const ratioRows = [
     { label: "Gross Receipts", vals: revByYear, type: "currency" },
@@ -1363,38 +1378,37 @@ export default function DoctyModel() {
     const streamName = String(action.streamName || "Revenue").trim();
     const subName = String(action.subName || "General").trim();
     const productName = String(action.productName || action.label || "Service").trim();
+    const finalSub = productName || subName;
     const qty = Math.max(0, Number(action.units) || 0);
     const price = Math.max(0, Number(action.price ?? action.value) || 0);
 
     const next = { ...prev, revP1: prev.revP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
 
-    // Match by header name, or find first generic/empty group
-    let targetGroup = next.revP1.find(g => String(g.header || "").toLowerCase() === streamName.toLowerCase());
+    let targetGroup = next.revP1.find(g => String(g.header || "").trim().toLowerCase() === streamName.toLowerCase());
     if (!targetGroup) {
       targetGroup = next.revP1.find(g => !String(g.header || "").trim() || g.header.startsWith("Revenue Stream"));
     }
-
     if (!targetGroup) {
       targetGroup = { id: String(next.revP1.length + 1), header: streamName, items: Array(5).fill(null).map((_, i) => ({ id: `${next.revP1.length + 1}${String.fromCharCode(97 + i)}`, sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 })) };
       next.revP1.push(targetGroup);
     }
 
-    // Always ensure the header is updated if it was generic or empty
     if (!targetGroup.header || targetGroup.header.startsWith("Revenue Stream")) {
       targetGroup.header = streamName;
     }
 
-    let targetItem = targetGroup.items.find(it => !String(it.sub || "").trim() || it.sub.startsWith("Sub service"));
+    let targetItem = targetGroup.items.find(it => String(it.sub || "").trim().toLowerCase() === finalSub.toLowerCase());
+    if (!targetItem) {
+      targetItem = targetGroup.items.find(it => !String(it.sub || "").trim() || it.sub.startsWith("Sub service"));
+    }
     if (!targetItem) {
       targetItem = { id: `${targetGroup.id}${String.fromCharCode(97 + targetGroup.items.length)}`, sub: "", qty: 0, price: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 };
       targetGroup.items.push(targetItem);
     }
 
-    if (targetItem) {
-      targetItem.sub = productName || subName;
-      targetItem.qty = qty;
-      targetItem.price = price;
-    }
+    targetItem.sub = finalSub;
+    targetItem.qty = qty;
+    targetItem.price = price;
     return next;
   };
 
@@ -1406,7 +1420,7 @@ export default function DoctyModel() {
 
     const next = { ...prev, opexP1: prev.opexP1.map(g => ({ ...g, items: g.items.map(it => ({ ...it })) })) };
 
-    let targetGroup = next.opexP1.find(g => String(g.header || "").toLowerCase() === cat.toLowerCase());
+    let targetGroup = next.opexP1.find(g => String(g.header || "").trim().toLowerCase() === cat.toLowerCase());
     if (!targetGroup) {
       targetGroup = next.opexP1.find(g => !String(g.header || "").trim() || g.header.startsWith("Expense Category") || g.header.startsWith("OPEX Group"));
     }
@@ -1420,17 +1434,18 @@ export default function DoctyModel() {
       targetGroup.header = cat;
     }
 
-    let targetItem = targetGroup.items.find(it => !String(it.sub || "").trim() || it.sub.startsWith("Expense item") || it.sub.startsWith("Item..."));
+    let targetItem = targetGroup.items.find(it => String(it.sub || "").trim().toLowerCase() === sub.toLowerCase());
+    if (!targetItem) {
+      targetItem = targetGroup.items.find(it => !String(it.sub || "").trim() || it.sub.startsWith("Expense item") || it.sub.startsWith("Item..."));
+    }
     if (!targetItem) {
       targetItem = { id: `${targetGroup.id}${String.fromCharCode(97 + targetGroup.items.length)}`, sub: "", qty: 0, cost: 0, gY1: 0, gY2: 0, gY3: 0, gY4: 0, gY5: 0 };
       targetGroup.items.push(targetItem);
     }
 
-    if (targetItem) {
-      targetItem.sub = sub;
-      targetItem.qty = units;
-      targetItem.cost = cost;
-    }
+    targetItem.sub = sub;
+    targetItem.qty = units;
+    targetItem.cost = cost;
     return next;
   };
 
@@ -1711,7 +1726,7 @@ export default function DoctyModel() {
     {
       type: 'single',
       id: "1. Basics",
-      label: "Cover",
+      label: "Model Overview (Cover)",
       icon: Layout
     },
     {
@@ -1737,11 +1752,11 @@ export default function DoctyModel() {
         { id: "B.I Sales - P2", label: "Sales Analysis (P2)", icon: TrendingUp },
         { id: "B.II - OPEX", label: "SG&A Analysis", icon: DollarSign },
         { id: "2.Total Project Cost", label: "Project Cost", icon: Building },
-        { id: "4. P&L", label: "Income Statement", icon: FileText },
+        { id: "4. P&L", label: "P&L Statement", icon: FileText },
         { id: "5. Balance sheet", label: "Balance Sheet", icon: Scale },
         { id: "6. Ratios", label: "Financial Ratios", icon: PieChart },
         { id: "FA Schedule", label: "Fixed Assets", icon: Layout },
-        { id: "Scenarios", label: "Charts & Scenarios", icon: BarChart3 },
+        { id: "Scenarios", label: "Model Dashboard & Scenarios", icon: BarChart3 },
       ]
     }
   ];
@@ -2087,11 +2102,11 @@ export default function DoctyModel() {
       case "B.II - OPEX": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} onFocus={handleCellFocus} />;
       case "2.Total Project Cost": return <TotalProjectCost data={d.totalProjectCost} setData={v => setD(p => ({ ...p, totalProjectCost: typeof v === "function" ? v(p.totalProjectCost) : v }))} onFocus={handleCellFocus} />;
       case "B.II OPEX - P1": return <OpexSheet groups={d.opexP1} setGroups={v => setD(p => ({ ...p, opexP1: typeof v === "function" ? v(p.opexP1) : v }))} onFocus={handleCellFocus} />;
-      case "4. P&L": return <PL revP1={d.revP1} opexP1={d.opexP1} />;
+      case "4. P&L": return <PL revP1={d.revP1} opexP1={d.opexP1} loan1={d.loan1} loan2={d.loan2} />;
       case "3b. Costing - (Capital Exp)": return <CapitalCosting data={d.capex} setData={v => setD(p => ({ ...p, capex: typeof v === "function" ? v(p.capex) : v }))} onFocus={handleCellFocus} />;
-      case "5. Balance sheet": return <BalanceSheet revP1={d.revP1} opexP1={d.opexP1} />;
-      case "6. Ratios": return <Ratios revP1={d.revP1} opexP1={d.opexP1} />;
-      case "DSCR": return <DSCR revP1={d.revP1} opexP1={d.opexP1} />;
+      case "5. Balance sheet": return <BalanceSheet revP1={d.revP1} opexP1={d.opexP1} loan1={d.loan1} loan2={d.loan2} />;
+      case "6. Ratios": return <Ratios revP1={d.revP1} opexP1={d.opexP1} loan1={d.loan1} loan2={d.loan2} />;
+      case "DSCR": return <DSCR revP1={d.revP1} opexP1={d.opexP1} loan1={d.loan1} loan2={d.loan2} />;
       case "Repayment schedule": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} onFocus={handleCellFocus} />;
       case "FA Schedule": return <FASchedule assets={d.fixedAssets} setAssets={v => setD(p => ({ ...p, fixedAssets: typeof v === "function" ? v(p.fixedAssets) : v }))} onFocus={handleCellFocus} />;
       case "Phase 1": return <RepaymentSchedule loan1={d.loan1} loan2={d.loan2} onFocus={handleCellFocus} />;
@@ -2266,32 +2281,36 @@ export default function DoctyModel() {
 
           {/* Right: Actions */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-            <button
-              onClick={handleDownloadExcel}
-              disabled={downloading}
-              title="Download Excel Model"
-              style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 11,
-                background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text1,
-                cursor: downloading ? "not-allowed" : "pointer", fontWeight: 600, transition: "all 0.2s"
-              }}
-            >
-              <Download size={14} strokeWidth={2} />
-              {downloading ? "..." : "Export"}
-            </button>
-            
-            <button 
-              onClick={() => setShowImportModal(true)} 
-              title="Import Strategy Plan"
-              style={{ 
-                display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 11, 
-                background: `linear-gradient(135deg, ${C.goldL}, ${C.gold})`, border: "none", borderRadius: 8, 
-                color: "#fff", cursor: "pointer", fontWeight: 600, boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-              }}
-            >
-              <Sparkles size={14} strokeWidth={2} />
-              Import
-            </button>
+            {sidebarOpen && (
+              <>
+                <button
+                  onClick={handleDownloadExcel}
+                  disabled={downloading}
+                  title="Download Excel Model"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 11,
+                    background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text1,
+                    cursor: downloading ? "not-allowed" : "pointer", fontWeight: 600, transition: "all 0.2s"
+                  }}
+                >
+                  <Download size={14} strokeWidth={2} />
+                  {downloading ? "..." : "Export"}
+                </button>
+                
+                <button 
+                  onClick={() => setShowImportModal(true)} 
+                  title="Import Strategy Plan"
+                  style={{ 
+                    display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 11, 
+                    background: `linear-gradient(135deg, ${C.goldL}, ${C.gold})`, border: "none", borderRadius: 8, 
+                    color: "#fff", cursor: "pointer", fontWeight: 600, boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                  }}
+                >
+                  <Sparkles size={14} strokeWidth={2} />
+                  Import
+                </button>
+              </>
+            )}
 
             <button 
               onClick={() => setChatOpen(v => !v)} 
@@ -2304,6 +2323,19 @@ export default function DoctyModel() {
               title={chatOpen ? "Hide Chat" : "Open Chat"}
             >
               <MessageSquare size={18} strokeWidth={2} />
+            </button>
+
+            <button 
+              onClick={() => setSidebarOpen(v => !v)} 
+              style={{ 
+                width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center",
+                background: sidebarOpen ? `${C.teal}10` : C.bg1, 
+                border: `1px solid ${sidebarOpen ? C.teal : C.border}`, 
+                borderRadius: 8, color: sidebarOpen ? C.teal : C.text2, cursor: "pointer", transition: "all 0.2s"
+              }}
+              title={sidebarOpen ? "Hide Sheets" : "Show Sheets"}
+            >
+              {sidebarOpen ? <ChevronRight size={18} strokeWidth={2.5} /> : <Layout size={18} strokeWidth={2} />}
             </button>
           </div>
         </div>
@@ -2364,7 +2396,7 @@ export default function DoctyModel() {
         </div>
       </div>
 
-      <Sidebar />
+      {sidebarOpen && <Sidebar />}
     </div>
   );
 }

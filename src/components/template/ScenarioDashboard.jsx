@@ -111,7 +111,7 @@ function applyScenarioMultiplier(groups, multiplier, isRev) {
     }));
 }
 
-function calcScenario(revP1, opexP1, scenarioConfig) {
+function calcScenario(revP1, opexP1, loan1, loan2, scenarioConfig) {
     const adjRev = applyScenarioMultiplier(revP1, scenarioConfig.growthMultiplier, true);
     const adjOpex = applyScenarioMultiplier(opexP1, scenarioConfig.opexMultiplier, false);
 
@@ -125,8 +125,17 @@ function calcScenario(revP1, opexP1, scenarioConfig) {
     const ebitdaMargin = YEARS.map((_, yi) => revByYear[yi] > 0 ? ebitda[yi] / revByYear[yi] : 0);
     const deprn = YEARS.map(() => 75000 * 12);
     const ebit = YEARS.map((_, yi) => ebitda[yi] - deprn[yi]);
-    const tax = YEARS.map((_, yi) => Math.max(0, ebit[yi] * 0.25));
-    const pat = YEARS.map((_, yi) => ebit[yi] - tax[yi]);
+    
+    // Dynamic interest calculation (matching main logic)
+    const interest = YEARS.map((_, yi) => {
+        if (yi === 1) return (Number(loan1?.amount) || 0) * (Number(loan1?.rate) || 0) / 100;
+        if (yi === 2) return (Number(loan2?.amount) || 0) * (Number(loan2?.rate) || 0) / 100;
+        return 0;
+    });
+
+    const pbt = YEARS.map((_, yi) => ebit[yi] - interest[yi]);
+    const tax = YEARS.map((_, yi) => Math.max(0, pbt[yi] * 0.25));
+    const pat = YEARS.map((_, yi) => pbt[yi] - tax[yi]);
 
     return { revByYear, opexByYear, ebitda, ebitdaMargin, pat };
 }
@@ -276,7 +285,7 @@ function WaterfallChart({ scenarios, years }) {
 }
 
 // ─── Main ScenarioDashboard ────────────────────────────────────────────────────
-export default function ScenarioDashboard({ revP1, opexP1 }) {
+export default function ScenarioDashboard({ revP1, opexP1, loan1, loan2 }) {
     const [activeScenario, setActiveScenario] = useState('all');
 
     // Real-time: recalculates whenever revP1 or opexP1 changes (no button needed)
@@ -284,10 +293,10 @@ export default function ScenarioDashboard({ revP1, opexP1 }) {
         return Object.fromEntries(
             Object.entries(SCENARIO_CONFIGS).map(([key, cfg]) => [
                 key,
-                calcScenario(revP1, opexP1, cfg),
+                calcScenario(revP1, opexP1, loan1, loan2, cfg),
             ])
         );
-    }, [revP1, opexP1]);
+    }, [revP1, opexP1, loan1, loan2]);
 
     const hasData = useMemo(() => {
         const totalRev = scenarios.baseline?.revByYear[0] || 0;

@@ -293,34 +293,14 @@ Return structured JSON. Only include changed or new fields.`,
             }
         }
 
-        const deterministicReply = buildDiscoveryReply(updatedKG, lastUserMessage.content, isMeaningfulUserMessage(lastUserMessage.content) ? effectiveStep : null);
-        const shouldBypassModel = updatedStage !== "review" && updatedStage !== "model_ready";
-
-        if (shouldBypassModel) {
-            const stream = new ReadableStream({
-                start(controller) {
-                    const encoder = new TextEncoder();
-                    if (extractedData) {
-                        controller.enqueue(encoder.encode(`2:${JSON.stringify(extractedData)}\n`));
-                    }
-                    controller.enqueue(encoder.encode(`0:${JSON.stringify(deterministicReply)}\n`));
-                    controller.close();
-                },
-            });
-
-            const customHeaders = {
-                "X-Stage": updatedStage || "discovery",
-                "X-Completion": String(getFinancialCompletionPercentage(updatedKG) || 0),
-                "Access-Control-Expose-Headers": "X-Stage, X-Completion"
-            };
-
-            return new Response(stream, {
-                headers: {
-                    "Content-Type": "text/plain; charset=utf-8",
-                    ...customHeaders,
-                },
-            });
+        // Automatic stage promotion if nextMissingStep is review
+        if (updatedStage !== "model_ready" && nextMissingStep(updatedKG) === "review") {
+            updatedStage = "review";
         }
+
+        const deterministicReplyHint = buildDiscoveryReply(updatedKG, lastUserMessage.content, isMeaningfulUserMessage(lastUserMessage.content) ? effectiveStep : null);
+        // We no longer bypass the model. We use deterministicReplyHint as a context hint if needed, 
+        // but for now we just rely on the refined Consultant prompt.
 
         // ── Phase 2: Consultant (Manager) ─────────────────────────
         const result = streamText({
