@@ -1256,7 +1256,7 @@ export default function DoctyModel() {
   const [businessModel, setBusinessModel] = useState("consulting");
   const [msgs, setMsgs] = useState([{
     role: "assistant",
-    text: "Hi! I'm your **Financial Strategist**. Tell me about your business - what do you do and who are your customers?"
+    text: "Hi! I'm your **Financial Strategist**. Tell me more about yourself and the business you are working on. You can also share your website URL, pitch deck, any documentation or data related to the business, and any additional details you are comfortable sharing."
   }]);
   const [cellSuggestion, setCellSuggestion] = useState(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState("");

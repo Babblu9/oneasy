@@ -38,13 +38,14 @@ ${JSON.stringify(kg, null, 2)}
 
 Rules:
 - Do not invent values.
+- If the user shares a website URL, pitch deck, or business materials, capture those in basics fields if possible.
 - Do not estimate revenue, opex, funding, growth, or staffing.
 - Greetings like "hi" or "hello" contain no financial meaning.
 - If the user only greets, return null for all fields and keep stage as discovery.
 - Suggested stage should follow the next missing data area.
 
 Extract:
-1. Basics: legalName, tradeName, description, burningDesire, startDateP1, promoters, location.
+1. Basics: legalName, tradeName, description, burningDesire, startDateP1, promoters, location, pitchDeck, website.
 2. Revenue streams and items with qty, price, growth if explicitly given.
 3. OPEX streams and items with qty, cost, growth if explicitly given.
 4. Funding only if explicitly given.

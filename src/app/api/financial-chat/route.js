@@ -12,6 +12,17 @@ const gateway = createOpenAI({
 
 export const maxDuration = 60;
 
+function extractUrls(text) {
+    return String(text || '').match(/https?:\/\/[^\s]+/g) || [];
+}
+
+function looksLikeShortName(text) {
+    const clean = String(text || '').trim();
+    if (!clean) return false;
+    if (/https?:\/\//i.test(clean)) return false;
+    return clean.split(/\s+/).length <= 4 && clean.length <= 40;
+}
+
 function hasMeaningfulHeader(value) {
     const v = String(value || '').trim().toLowerCase();
     if (!v) return false;
@@ -29,6 +40,50 @@ function hasMeaningfulSub(value) {
     return !['service', 'general', 'sub service...', 'expense item', 'item...'].includes(v);
 }
 
+
+function buildTemplateRevenueGroups(template, growth) {
+    const groups = new Map();
+    for (const item of template?.revenueStreams || []) {
+        const header = String(item.stream || '').trim();
+        if (!header) continue;
+        if (!groups.has(header)) groups.set(header, []);
+        const items = groups.get(header);
+        if (items.length >= 5) continue;
+        items.push({
+            sub: item.name,
+            qty: item.quantity,
+            price: item.price,
+            gY1: growth.y1,
+            gY2: growth.y2,
+            gY3: growth.y3,
+            gY4: growth.y4,
+            gY5: growth.y5,
+        });
+    }
+    return Array.from(groups.entries()).slice(0, 5).map(([header, items]) => ({ header, items }));
+}
+
+function buildTemplateOpexGroups(template, growth) {
+    const groups = new Map();
+    for (const item of template?.opex || []) {
+        const header = String(item.category || '').trim();
+        if (!header) continue;
+        if (!groups.has(header)) groups.set(header, []);
+        const items = groups.get(header);
+        if (items.length >= 7) continue;
+        items.push({
+            sub: item.name,
+            qty: 1,
+            cost: item.monthlyCost,
+            gY1: growth.y1,
+            gY2: growth.y2,
+            gY3: growth.y3,
+            gY4: growth.y4,
+            gY5: growth.y5,
+        });
+    }
+    return Array.from(groups.entries()).slice(0, 5).map(([header, items]) => ({ header, items }));
+}
 
 function inferBusinessType(kg) {
     const text = JSON.stringify(kg?.basics || {}).toLowerCase();
@@ -67,11 +122,11 @@ function buildDiscoveryReply(kg, lastUserMessage, effectiveStep = null) {
     const text = String(lastUserMessage || "").trim().toLowerCase();
     const greetings = ["hi", "hello", "hey", "hi fina", "hello fina", "hey fina"];
     if (greetings.includes(text)) {
-        return "Hello! What is the name of your company or brand?";
+        return "Hello! Tell me more about yourself and the business you are working on. You can also share your website URL, pitch deck, any supporting documents, and anything else you are comfortable sharing.";
     }
 
     if (effectiveStep === "company_name") {
-        return "What type of business are you building? Tell me in one line.";
+        return "Tell me more about yourself and the business you are working on. You can also share your website URL, pitch deck, any supporting documents, and anything else you are comfortable sharing.";
     }
     if (effectiveStep === "business_type") {
         return "I have drafted likely revenue streams and price points from the market. Who are your target customers?";
@@ -95,7 +150,7 @@ function buildDiscoveryReply(kg, lastUserMessage, effectiveStep = null) {
     const step = nextMissingStep(kg);
     const businessType = inferBusinessType(kg);
 
-    if (step === "company_name") return "What is the name of your company or brand?";
+    if (step === "company_name") return "Tell me more about yourself and the business you are working on. You can also share your website URL, pitch deck, any supporting documents, and anything else you are comfortable sharing.";
     if (step === "business_type") return "What type of business are you building? Tell me in one line.";
     if (step === "main_streams") return `What are the main revenue streams for your ${businessType.replace(/_/g, " ")}?`;
     if (step === "substreams") return "I have drafted likely revenue streams and price points from the market. Who are your target customers?";
@@ -182,12 +237,16 @@ Return structured JSON. Only include changed or new fields.`,
         if (isMeaningfulUserMessage(lastUserMessage.content)) {
             const latestText = String(lastUserMessage.content || "").trim();
             if (effectiveStep === "company_name") {
+                const urls = extractUrls(latestText);
+                const shortName = looksLikeShortName(latestText) ? latestText : (extractedData?.basics?.tradeName || extractedData?.basics?.legalName || "");
                 extractedData = {
                     ...extractedData,
                     basics: {
                         ...extractedData?.basics,
-                        legalName: latestText,
-                        tradeName: latestText,
+                        legalName: extractedData?.basics?.legalName || shortName,
+                        tradeName: extractedData?.basics?.tradeName || shortName,
+                        pitchDeck: extractedData?.basics?.pitchDeck || urls[0] || "",
+                        description: extractedData?.basics?.description || (!looksLikeShortName(latestText) ? latestText : ""),
                     },
                     suggested_stage: extractedData?.suggested_stage || "discovery",
                 };
@@ -247,32 +306,8 @@ Return structured JSON. Only include changed or new fields.`,
                         ...extractedData?.basics,
                         description: extractedData?.basics?.description || template.name,
                     },
-                    revenue_streams: extractedData?.revenue_streams?.length ? extractedData.revenue_streams : template.revenueStreams.map((item) => ({
-                        header: item.stream,
-                        items: [{
-                            sub: item.name,
-                            qty: item.quantity,
-                            price: item.price,
-                            gY1: growth.y1,
-                            gY2: growth.y2,
-                            gY3: growth.y3,
-                            gY4: growth.y4,
-                            gY5: growth.y5,
-                        }],
-                    })),
-                    opex_streams: extractedData?.opex_streams?.length ? extractedData.opex_streams : template.opex.map((item) => ({
-                        header: item.category,
-                        items: [{
-                            sub: item.name,
-                            qty: 1,
-                            cost: item.monthlyCost,
-                            gY1: growth.y1,
-                            gY2: growth.y2,
-                            gY3: growth.y3,
-                            gY4: growth.y4,
-                            gY5: growth.y5,
-                        }],
-                    })),
+                    revenue_streams: extractedData?.revenue_streams?.length ? extractedData.revenue_streams : buildTemplateRevenueGroups(template, growth),
+                    opex_streams: extractedData?.opex_streams?.length ? extractedData.opex_streams : buildTemplateOpexGroups(template, growth),
                     suggested_stage: extractedData?.suggested_stage || "revenue_setup",
                 };
             }
