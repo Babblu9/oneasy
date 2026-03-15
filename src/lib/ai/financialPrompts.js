@@ -30,11 +30,48 @@ function nextMissingStep(kg) {
     return "review";
 }
 
+function summarizeKnowledgeGraph(kg) {
+    const basics = kg?.basics || {};
+    const rev = Array.isArray(kg?.revP1) ? kg.revP1 : [];
+    const opex = Array.isArray(kg?.opexP1) ? kg.opexP1 : [];
+
+    return {
+        basics: {
+            tradeName: basics.tradeName || basics.legalName || '',
+            description: basics.description || '',
+            customers: basics.burningDesire || '',
+            launchDate: basics.startDateP1 || '',
+            pitchDeck: basics.pitchDeck || '',
+        },
+        revenue: rev
+            .filter((s) => String(s?.header || '').trim())
+            .slice(0, 5)
+            .map((s) => ({
+                header: s.header,
+                items: (s.items || [])
+                    .filter((i) => String(i?.sub || '').trim())
+                    .slice(0, 5)
+                    .map((i) => ({ sub: i.sub, qty: i.qty || 0, price: i.price || 0 }))
+            })),
+        opex: opex
+            .filter((s) => String(s?.header || '').trim())
+            .slice(0, 5)
+            .map((s) => ({
+                header: s.header,
+                items: (s.items || [])
+                    .filter((i) => String(i?.sub || '').trim())
+                    .slice(0, 7)
+                    .map((i) => ({ sub: i.sub, qty: i.qty || 0, cost: i.cost || 0 }))
+            })),
+        nextMissingStep: nextMissingStep(kg),
+    };
+}
+
 export function getFinancialExtractorPrompt(kg, messageCount = 0) {
     return `You are a Financial Data Extractor. Extract only facts the user explicitly stated.
 
 CURRENT KNOWLEDGE GRAPH:
-${JSON.stringify(kg, null, 2)}
+${JSON.stringify(summarizeKnowledgeGraph(kg))}
 
 Rules:
 - Do not invent values.
@@ -64,7 +101,7 @@ MEANINGFUL USER MESSAGE COUNT: ${messageCount}
 BUSINESS TYPE: ${businessType}
 NEXT MISSING STEP: ${nextStep}
 CURRENT KNOWLEDGE GRAPH:
-${JSON.stringify(kg, null, 2)}
+${JSON.stringify(summarizeKnowledgeGraph(kg))}
 
 Behavior rules:
 - Be conversational, professional, and precise.

@@ -1,9 +1,13 @@
+import fs from 'fs';
+import path from 'path';
+import ExcelJS from 'exceljs';
 import { streamText, generateObject } from "ai";
 import { createOpenAI } from '@ai-sdk/openai';
 import { financialExtractionSchema } from "@/lib/ai/financialExtractionSchema";
 import { mergeFinancialExtraction, getFinancialCompletionPercentage } from "@/lib/ai/financialAgent";
 import { getFinancialExtractorPrompt, getFinancialConsultantPrompt } from "@/lib/ai/financialPrompts";
 import { classifyIndustry, getGrowthRates } from "@/lib/engine/industryTemplates";
+import { buildHyperFormulaFromWorkbook, extractDashboardMetrics } from '@/lib/hyperFormulaEngine';
 
 const gateway = createOpenAI({
     apiKey: process.env.AI_GATEWAY_API_KEY || '',
@@ -11,6 +15,49 @@ const gateway = createOpenAI({
 });
 
 export const maxDuration = 60;
+
+const WORK_EXCEL = '/tmp/active_working.xlsx';
+const SOURCE_EXCEL = path.join(process.cwd(), 'excel-templates', 'active_working.xlsx');
+
+function ensureWorkingFile() {
+    if (!fs.existsSync(WORK_EXCEL)) {
+        if (!fs.existsSync(SOURCE_EXCEL)) throw new Error(`Source template not found: ${SOURCE_EXCEL}`);
+        fs.copyFileSync(SOURCE_EXCEL, WORK_EXCEL);
+    }
+}
+
+async function getWorkbookMetrics() {
+    try {
+        ensureWorkingFile();
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.readFile(WORK_EXCEL);
+        const hfContext = buildHyperFormulaFromWorkbook(workbook);
+        return extractDashboardMetrics(hfContext);
+    } catch (error) {
+        console.error('workbook metrics error:', error);
+        return null;
+    }
+}
+
+function isSheetReadIntent(text) {
+    return /read it from the sheet|from the sheet|sheet itself|is that p\s*&\s*l correct|is that p&l correct|profit\s*&\s*loss correct|profit and loss correct|check p\s*&\s*l|check p&l/i.test(String(text || ''));
+}
+
+function buildWorkbookReply(metrics) {
+    if (!metrics) {
+        return "I could not read the active workbook summary right now. Retry once the sheet has finished recalculating.";
+    }
+
+    const currency = (value) => {
+        const num = Number(value || 0);
+        if (!num) return '₹0';
+        if (Math.abs(num) >= 10000000) return `₹${(num / 10000000).toFixed(2)} Cr`;
+        if (Math.abs(num) >= 100000) return `₹${(num / 100000).toFixed(2)} L`;
+        return `₹${Math.round(num).toLocaleString('en-IN')}`;
+    };
+
+    return `I read the current workbook summary. Year 1 revenue is ${currency(metrics.year1Revenue)}, Year 2 revenue is ${currency(metrics.year2Revenue)}, EBITDA is ${currency(metrics.ebitda)}, and the model break-even is around month ${metrics.breakEvenMonth}. Based on the live sheet, the P&L is using the current assumptions already in the workbook.`;
+}
 
 function extractUrls(text) {
     return String(text || '').match(/https?:\/\/[^\s]+/g) || [];
@@ -334,8 +381,40 @@ Return structured JSON. Only include changed or new fields.`,
         }
 
         const deterministicReplyHint = buildDiscoveryReply(updatedKG, lastUserMessage.content, isMeaningfulUserMessage(lastUserMessage.content) ? effectiveStep : null);
-        // We no longer bypass the model. We use deterministicReplyHint as a context hint if needed, 
-        // but for now we just rely on the refined Consultant prompt.
+
+        const makeDirectResponse = (replyText) => {
+            const stream = new ReadableStream({
+                start(controller) {
+                    const encoder = new TextEncoder();
+                    try {
+                        if (extractedData) controller.enqueue(encoder.encode(`2:${JSON.stringify(extractedData)}\n`));
+                        controller.enqueue(encoder.encode(`0:${JSON.stringify(replyText)}\n`));
+                        controller.close();
+                    } catch (error) {
+                        controller.error(error);
+                    }
+                },
+            });
+
+            return new Response(stream, {
+                headers: {
+                    "Content-Type": "text/plain; charset=utf-8",
+                    "X-Stage": updatedStage || "discovery",
+                    "X-Completion": String(getFinancialCompletionPercentage(updatedKG) || 0),
+                    "Access-Control-Expose-Headers": "X-Stage, X-Completion"
+                },
+            });
+        };
+
+        if (isSheetReadIntent(lastUserMessage.content)) {
+            const workbookMetrics = await getWorkbookMetrics();
+            return makeDirectResponse(buildWorkbookReply(workbookMetrics));
+        }
+
+        const shouldBypassConsultant = updatedStage !== 'review' && updatedStage !== 'model_ready';
+        if (shouldBypassConsultant && deterministicReplyHint) {
+            return makeDirectResponse(deterministicReplyHint);
+        }
 
         // ── Phase 2: Consultant (Manager) ─────────────────────────
         const result = streamText({

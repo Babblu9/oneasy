@@ -1268,6 +1268,7 @@ export default function DoctyModel() {
   const [chatOpen, setChatOpen] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const endRef = useRef(null);
+  const inputRef = useRef(null);
   // Schema generation Modal State
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState("");
@@ -1278,6 +1279,150 @@ export default function DoctyModel() {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
+  useEffect(() => {
+    if (!inputRef.current) return;
+    inputRef.current.style.height = "0px";
+    inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 140)}px`;
+  }, [input]);
+
+  const activeRevenueItems = (d.revP1 || []).flatMap(group => (group.items || []).filter(item => item.sub || item.qty || item.price));
+  const activeOpexItems = (d.opexP1 || []).flatMap(group => (group.items || []).filter(item => item.sub || item.cost));
+  const hasCapex = (d.capex || []).some(category => (category.items || []).some(item => item.name || item.total));
+  const hasFunding = Boolean(d.totalProjectCost?.total || d.totalProjectCost?.termLoan || d.totalProjectCost?.wcLoan || d.loan1?.amount || d.loan2?.amount);
+
+  const inputChecks = [
+    {
+      key: 'basics',
+      label: 'Business context',
+      done: Boolean(d.basics?.tradeName || d.basics?.legalName || d.basics?.description || d.basics?.pitchDeck),
+      hint: 'Name, business summary, website or pitch deck',
+      target: '1. Basics'
+    },
+    {
+      key: 'revenue',
+      label: 'Revenue assumptions',
+      done: activeRevenueItems.length > 0,
+      hint: 'Streams, substreams, pricing and volumes',
+      target: 'A.I Revenue Streams - P1'
+    },
+    {
+      key: 'opex',
+      label: 'Operating costs',
+      done: activeOpexItems.length > 0,
+      hint: 'Salaries, software, rent, marketing, operations',
+      target: 'A.IIOPEX'
+    },
+    {
+      key: 'capex',
+      label: 'Capital expenditure',
+      done: hasCapex,
+      hint: 'Equipment, setup, furniture, infrastructure',
+      target: 'A.III CAPEX'
+    },
+    {
+      key: 'funding',
+      label: 'Funding and debt',
+      done: hasFunding,
+      hint: 'Project cost, loans, founder contribution',
+      target: '2.Total Project Cost'
+    }
+  ];
+
+  const missingChecks = inputChecks.filter(item => !item.done);
+  const revY1 = calcRevYearly(d.revP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
+  const opexY1 = calcOpexYearly(d.opexP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
+  const monthlyRevenue = activeRevenueItems.reduce((sum, item) => sum + ((item.qty || 0) * (item.price || 0)), 0);
+  const monthlyOpex = activeOpexItems.reduce((sum, item) => sum + ((item.qty && item.qty > 0 ? item.qty : 1) * (item.cost || 0)), 0);
+  const netMonthly = monthlyRevenue - monthlyOpex;
+  const fundingPool = Number(d.totalProjectCost?.promoterContrib || 0) + Number(d.totalProjectCost?.termLoan || 0) + Number(d.totalProjectCost?.wcLoan || 0);
+  const runwayMonths = netMonthly < 0 && fundingPool > 0 ? fundingPool / Math.abs(netMonthly) : null;
+
+  const validationIssues = [
+    activeRevenueItems.length > 0 && activeRevenueItems.some(item => !item.sub) ? { level: 'warn', text: 'Some revenue rows are missing substream names.', target: 'A.I Revenue Streams - P1' } : null,
+    activeRevenueItems.length > 0 && activeRevenueItems.some(item => !item.price) ? { level: 'warn', text: 'Some revenue rows have no price assumption.', target: 'A.I Revenue Streams - P1' } : null,
+    activeRevenueItems.length > 0 && activeRevenueItems.some(item => !item.qty) ? { level: 'warn', text: 'Some revenue rows have no volume assumption.', target: 'A.I Revenue Streams - P1' } : null,
+    activeOpexItems.length > 0 && activeOpexItems.some(item => !item.sub) ? { level: 'warn', text: 'Some OPEX rows are missing category detail.', target: 'A.IIOPEX' } : null,
+    activeOpexItems.length > 0 && activeOpexItems.some(item => !item.cost) ? { level: 'warn', text: 'Some OPEX rows have no monthly cost.', target: 'A.IIOPEX' } : null,
+    completion >= 66 && revY1 > 0 && opexY1 > revY1 * 1.2 ? { level: 'risk', text: 'OPEX is materially above revenue in Year 1. Review burn assumptions.', target: 'A.IIOPEX' } : null,
+    completion >= 66 && !hasFunding ? { level: 'risk', text: 'Model has operating assumptions but no funding structure.', target: '2.Total Project Cost' } : null
+  ].filter(Boolean).slice(0, 4);
+
+  const generationSteps = [
+    { label: 'Template inputs', done: inputChecks[0].done || inputChecks[1].done },
+    { label: 'Forecast numbers', done: inputChecks[1].done && inputChecks[2].done },
+    { label: 'Review outputs', done: completion >= 100 }
+  ];
+
+  const kpiReview = [
+    { label: 'Monthly revenue', value: monthlyRevenue > 0 ? fmtINR(monthlyRevenue, true) : '—', tone: C.teal },
+    { label: 'Monthly opex', value: monthlyOpex > 0 ? fmtINR(monthlyOpex, true) : '—', tone: C.redL },
+    { label: 'Net monthly', value: netMonthly ? fmtINR(netMonthly, true) : '—', tone: netMonthly >= 0 ? C.greenL : C.redL },
+    { label: 'Runway', value: runwayMonths ? `${runwayMonths.toFixed(1)} mo` : (hasFunding ? 'Positive cashflow' : 'Not set'), tone: runwayMonths ? C.gold : C.text2 }
+  ];
+
+  const nextActions = [
+    !inputChecks[0].done ? { label: 'Complete Basics', target: '1. Basics' } : null,
+    !inputChecks[1].done ? { label: 'Define Revenue', target: 'A.I Revenue Streams - P1' } : null,
+    !inputChecks[2].done ? { label: 'Add OPEX', target: 'A.IIOPEX' } : null,
+    !inputChecks[3].done ? { label: 'Add CAPEX', target: 'A.III CAPEX' } : null,
+    !inputChecks[4].done ? { label: 'Set Funding', target: '2.Total Project Cost' } : null,
+    completion >= 66 ? { label: 'Review P&L', target: '4. P&L' } : null,
+    completion >= 66 ? { label: 'Review Scenarios', target: 'Scenarios' } : null
+  ].filter(Boolean).slice(0, 3);
+
+  const sheetGuides = {
+    '1. Basics': {
+      title: 'Model basics',
+      description: 'Define the company identity and source documents before drafting numbers.',
+      prompts: ['Company name, website or pitch deck', 'Launch timing and business description']
+    },
+    'A.I Revenue Streams - P1': {
+      title: 'Revenue build',
+      description: 'Translate business lines into monetizable streams with price and volume assumptions.',
+      prompts: ['Main streams and 3–5 substreams', 'Monthly volume and price per offering']
+    },
+    'A.I Revenue Streams - P2': {
+      title: 'Phase 2 revenue',
+      description: 'Capture the second growth layer or additional business line for the model.',
+      prompts: ['New streams for phase 2', 'Volumes and pricing for expansion stage']
+    },
+    'A.IIOPEX': {
+      title: 'Operating cost plan',
+      description: 'Map the fixed and variable costs required to run the business.',
+      prompts: ['Team, rent, software, marketing, logistics', 'Monthly cost and expected growth']
+    },
+    'A.III CAPEX': {
+      title: 'Capital plan',
+      description: 'Capture one-time setup spends and long-life assets.',
+      prompts: ['Equipment, devices, furniture, setup', 'Timing and spend by year']
+    },
+    '2.Total Project Cost': {
+      title: 'Funding structure',
+      description: 'Tie startup cost, working capital, debt and promoter contribution together.',
+      prompts: ['Total project cost and founder capital', 'Loan requirement and working capital']
+    },
+    '4. P&L': {
+      title: 'Profitability review',
+      description: 'Review the income statement after the input sheets are filled.',
+      prompts: ['Check margin shape and break-even timing', 'Validate if assumptions are realistic']
+    },
+    '5. Balance sheet': {
+      title: 'Balance sheet review',
+      description: 'Validate how assets, liabilities and equity evolve from your assumptions.',
+      prompts: ['Review debt and retained earnings', 'Check asset build and capital structure']
+    },
+    'Scenarios': {
+      title: 'Scenario dashboard',
+      description: 'Stress-test the model across downside, base and upside assumptions.',
+      prompts: ['Compare growth and cost scenarios', 'Use this before export or investor review']
+    }
+  };
+
+  const activeSheetGuide = sheetGuides[sheet] || {
+    title: 'Active worksheet',
+    description: 'Use this sheet to refine the active section of the model.',
+    prompts: ['Update assumptions in blue editable cells', 'Use chat to automate bulk changes']
+  };
 
   const handleImportPlan = async () => {
     if (!importText.trim()) return;
@@ -1857,6 +2002,122 @@ export default function DoctyModel() {
             </button>
           </div>
         </div>
+
+        <div style={{ padding: '4px 8px 12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Active sheet guide</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text0, marginBottom: 6 }}>{activeSheetGuide.title}</div>
+            <div style={{ fontSize: 12, color: C.text2, lineHeight: 1.55, marginBottom: 10 }}>{activeSheetGuide.description}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {activeSheetGuide.prompts.map((prompt) => (
+                <div key={prompt} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.blue, marginTop: 6, flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: C.text1, lineHeight: 1.45 }}>{prompt}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Model health</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: missingChecks.length === 0 ? C.greenL : C.gold }}>{inputChecks.length - missingChecks.length}/{inputChecks.length}</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {inputChecks.map((item) => (
+                <div key={item.key} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: C.text1 }}>{item.label}</div>
+                    <div style={{ fontSize: 10, color: C.text3, lineHeight: 1.45 }}>{item.hint}</div>
+                  </div>
+                  <div style={{ marginTop: 2, width: 18, height: 18, borderRadius: 999, background: item.done ? `${C.greenL}22` : `${C.gold}18`, border: `1px solid ${item.done ? C.greenL : C.gold}`, color: item.done ? C.greenL : C.gold, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                    {item.done ? '✓' : '!'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Generation status</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {generationSteps.map((step, idx) => (
+                <div key={step.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 18, height: 18, borderRadius: 999, border: `1px solid ${step.done ? C.greenL : C.border}`, background: step.done ? `${C.greenL}20` : '#FFF', color: step.done ? C.greenL : C.text3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                    {step.done ? '✓' : idx + 1}
+                  </div>
+                  <div style={{ fontSize: 12, color: step.done ? C.text1 : C.text2, fontWeight: step.done ? 600 : 500 }}>{step.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>KPI review</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {kpiReview.map((item) => (
+                <div key={item.label} style={{ background: '#FFF', border: `1px solid ${C.border}`, borderRadius: 10, padding: 10 }}>
+                  <div style={{ fontSize: 10, color: C.text3, marginBottom: 4 }}>{item.label}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: item.tone, fontFamily: 'monospace' }}>{item.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Validation</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {validationIssues.length > 0 ? validationIssues.map((issue) => (
+                <button
+                  key={issue.text}
+                  onClick={() => setSheet(issue.target)}
+                  style={{
+                    textAlign: 'left',
+                    padding: '9px 10px',
+                    borderRadius: 10,
+                    border: `1px solid ${issue.level === 'risk' ? C.redL : C.gold}`,
+                    background: issue.level === 'risk' ? `${C.redL}10` : `${C.gold}10`,
+                    color: C.text1,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div style={{ fontSize: 10, fontWeight: 700, color: issue.level === 'risk' ? C.redL : C.gold, textTransform: 'uppercase', marginBottom: 4 }}>
+                    {issue.level === 'risk' ? 'Risk' : 'Warning'}
+                  </div>
+                  <div style={{ fontSize: 11, lineHeight: 1.45 }}>{issue.text}</div>
+                </button>
+              )) : (
+                <div style={{ fontSize: 11, color: C.text2, lineHeight: 1.5 }}>No structural issues detected from the current assumptions.</div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ background: C.bg0, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Next actions</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {nextActions.length > 0 ? nextActions.map((action) => (
+                <button
+                  key={action.label}
+                  onClick={() => setSheet(action.target)}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 999,
+                    border: `1px solid ${C.border}`,
+                    background: '#FFF',
+                    color: C.text1,
+                    cursor: 'pointer',
+                    fontSize: 11,
+                    fontWeight: 600
+                  }}
+                >
+                  {action.label}
+                </button>
+              )) : (
+                <div style={{ fontSize: 11, color: C.text2, lineHeight: 1.5 }}>Core inputs are in place. Review statements, scenarios, and then export the workbook.</div>
+              )}
+            </div>
+          </div>
+        </div>
         
         {SHEET_GROUPS.map((group, gIdx) => {
           if (group.type === 'single') {
@@ -2117,9 +2378,6 @@ export default function DoctyModel() {
     }
   };
 
-  const revY1 = calcRevYearly(d.revP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
-  const opexY1 = calcOpexYearly(d.opexP1).reduce((s, g) => s + g.yearlyTotals[0], 0);
-
   return (
     <div style={{ display: "flex", height: "100vh", background: C.bg0, fontFamily: "'Poppins', sans-serif", overflow: "hidden" }}>
       {chatOpen && (
@@ -2214,7 +2472,35 @@ export default function DoctyModel() {
               </div>
             )}
             <div style={{ display: "flex", gap: 10, background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 24, padding: "8px 12px", alignItems: "flex-end", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}>
-              <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Describe your business idea..." rows={1} style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 13, lineHeight: 1.5, fontFamily: "Poppins, sans-serif", maxHeight: 90, overflowY: "auto", padding: "4px 0" }} />
+              <button
+                onClick={() => setShowImportModal(true)}
+                title="Import strategy plan"
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 17,
+                  background: `linear-gradient(135deg, ${C.goldL}, ${C.gold})`,
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  color: "#fff",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.12)"
+                }}
+              >
+                <Sparkles size={16} strokeWidth={2} />
+              </button>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+                placeholder="Describe your business idea..."
+                rows={1}
+                style={{ flex: 1, background: "transparent", border: "none", color: C.text0, fontSize: 13, lineHeight: 1.5, fontFamily: "Poppins, sans-serif", minHeight: 26, maxHeight: 140, overflowY: "auto", padding: "4px 0", resize: "none" }}
+              />
               <button onClick={send} disabled={loading || !input.trim()} style={{ width: 34, height: 34, borderRadius: 17, background: loading || !input.trim() ? C.border : "#042B3D", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.2s" }}>
                 <Send size={15} strokeWidth={2} color="#fff" style={{ marginLeft: -2 }} />
               </button>
@@ -2281,37 +2567,6 @@ export default function DoctyModel() {
 
           {/* Right: Actions */}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-            {sidebarOpen && (
-              <>
-                <button
-                  onClick={handleDownloadExcel}
-                  disabled={downloading}
-                  title="Download Excel Model"
-                  style={{
-                    display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 11,
-                    background: C.bg1, border: `1px solid ${C.border}`, borderRadius: 8, color: C.text1,
-                    cursor: downloading ? "not-allowed" : "pointer", fontWeight: 600, transition: "all 0.2s"
-                  }}
-                >
-                  <Download size={14} strokeWidth={2} />
-                  {downloading ? "..." : "Export"}
-                </button>
-                
-                <button 
-                  onClick={() => setShowImportModal(true)} 
-                  title="Import Strategy Plan"
-                  style={{ 
-                    display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", fontSize: 11, 
-                    background: `linear-gradient(135deg, ${C.goldL}, ${C.gold})`, border: "none", borderRadius: 8, 
-                    color: "#fff", cursor: "pointer", fontWeight: 600, boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                  }}
-                >
-                  <Sparkles size={14} strokeWidth={2} />
-                  Import
-                </button>
-              </>
-            )}
-
             <button 
               onClick={() => setChatOpen(v => !v)} 
               style={{ 
@@ -2341,7 +2596,58 @@ export default function DoctyModel() {
         </div>
 
         {/* Sheet content */}
-        <div style={{ flex: 1, overflow: "auto" }}>{renderSheet()}</div>
+        <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, background: '#FFF', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Current focus</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.text0, marginBottom: 4 }}>{activeSheetGuide.title}</div>
+              <div style={{ fontSize: 12, color: C.text2, lineHeight: 1.55 }}>{activeSheetGuide.description}</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, minWidth: 260 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
+                {nextActions.slice(0, 2).map((action) => (
+                  <button
+                    key={action.label}
+                    onClick={() => setSheet(action.target)}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: 999,
+                      border: `1px solid ${C.border}`,
+                      background: C.bg0,
+                      color: C.text1,
+                      cursor: 'pointer',
+                      fontSize: 11,
+                      fontWeight: 600
+                    }}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {validationIssues.slice(0, 2).map((issue) => (
+                  <button
+                    key={issue.text}
+                    onClick={() => setSheet(issue.target)}
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: 999,
+                      border: `1px solid ${issue.level === 'risk' ? C.redL : C.gold}`,
+                      background: issue.level === 'risk' ? `${C.redL}10` : `${C.gold}10`,
+                      color: issue.level === 'risk' ? C.redL : C.gold,
+                      cursor: 'pointer',
+                      fontSize: 10,
+                      fontWeight: 700
+                    }}
+                  >
+                    {issue.level === 'risk' ? 'Risk' : 'Warning'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div style={{ flex: 1, overflow: 'auto' }}>{renderSheet()}</div>
+        </div>
 
         {/* Import Modal */}
         {showImportModal && (
