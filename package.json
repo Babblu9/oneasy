@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "next dev",
         "build": "next build",
-        "start": "next start",
+        "start": "HOSTNAME=0.0.0.0 next start -p ${PORT:-8080}",
         "test": "node engine/test.js"
     },
     "dependencies": {
